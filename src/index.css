@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme {
+  --color-off-white: #FFFDF4;
+  --color-brown: #7E4C3C;
+}
+
+@layer base {
+  *:focus {
+    @apply outline-none;
+  }
+}
