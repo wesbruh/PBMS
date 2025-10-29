@@ -6,7 +6,8 @@ import Home from './pages/Home/home.jsx'
 import About from './pages/About/about.jsx'
 import Contact from './pages/Contact/contact.jsx'
 import Testimonials from './pages/Testimonials/testimonials.jsx';
-import SignUp from './pages/SignUp/SignUp.jsx'
+import SignUp from './pages/SignUp/SignUp.jsx';
+import Login from './pages/Login/login.jsx';
 
 function App() {
   // const [count, setCount] = useState(0)
@@ -21,6 +22,7 @@ function App() {
         <Route path="/contact" element={<Contact />} />
         <Route path="/testimonials" element={<Testimonials />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path ="/login" element={<Login />} />
       </Routes>
 
       <Footer />
