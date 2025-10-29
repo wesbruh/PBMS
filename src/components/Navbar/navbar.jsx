@@ -8,11 +8,11 @@ function Navbar() {
       <Link to="/testimonials">Testimonials</Link>
       <Link
        to="/login"
-       className= "ml-auto shrink-0 inline-block px-4 py-1.5 bg-brown text-white text-ms leading-tight font-serif hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
+       className= "ml-auto shrink-0 inline-block px-4 py-1.5 bg-brown text-white text-sm leading-tight font-serif hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
       >Log in</Link>
       <Link
        to="/signup"
-       className="ml-2.5 shrink-0 inline-block px-4 py-1.5 bg-brown text-white text-ms leading-tight font-serif hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
+       className="ml-2.5 shrink-0 inline-block px-4 py-1.5 bg-brown text-white text-sm leading-tight font-serif hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
       >Create account</Link>
     </nav>
   );
