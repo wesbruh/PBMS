@@ -1,7 +1,8 @@
 function Home() {
   return (
-    <div className=''>
-      <h1 className='text-center'>Home Page</h1>
+    <div className="min-h-screen flex flex-col">
+      <main className="grow text-center"> Home Page Main Placeholder
+  </main>
     </div>
   );
 }

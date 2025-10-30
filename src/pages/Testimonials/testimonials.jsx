@@ -109,7 +109,7 @@ function Testimonials() {
           </div>
         </div>
       </div>
-      <div className='relative h-auto w-full'>
+      <div className='relative h-100 md:h-110 lg:h-120 w-full'>
         <img className='absolute w-full object-cover object-[30%_35%] h-100 md:h-110 lg:h-120'
           src={temp_booking} />
         <div className='absolute flex flex-col my-25 w-full justify-between'>
