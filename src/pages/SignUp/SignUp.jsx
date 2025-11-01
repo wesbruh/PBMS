@@ -9,7 +9,7 @@ export default function SignUp(){
         setForm((f) => ({ ...f, [name]: value }));
         if(name === "confirmPassword" || name === "password")
             setError("");
-        };
+    };
     const onSubmit = (e) => {
         e.preventDefault();
         if(form.password !== form.confirmPassword){

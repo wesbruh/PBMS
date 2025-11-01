@@ -50,7 +50,7 @@ export default function Login(){
                 </h1>
                 <form className="flex flex-col font-mono text-xs w-full max-w-xl" noValidate onSubmit={onSubmit}>
                     <label className="mb-4">
-                        <p className="text-center text-brown py-3">EMAIL *</p>
+                        <p className="text-center text-brown py-3">EMAIL ADDRESS *</p>
                         <input
                             className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
                             id="email" name="email" type="email" autoComplete="email" required
