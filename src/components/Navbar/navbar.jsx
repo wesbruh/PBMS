@@ -30,6 +30,7 @@ function Navbar() {
       <Link to="/testimonials" className={`${linkStyles} ${isActive('/testimonials') ? activeLinkStyles : ''}`}>Testimonials</Link>
       <Link to="/portfolio" className={`${linkStyles} ${isActive('/portfolio') ? activeLinkStyles : ''}`}>Portfolio</Link>
       <Link to="/services" className={`${linkStyles} ${isActive('/services') ? activeLinkStyles : ''}`}>Services</Link>
+      <Link to="/inquiry"  className={`${linkStyles} ${isActive('/inquiry') ? activeLinkStyles : ''}`}>Book with me </Link>
       
       {/* Special Services Dropdown Menu */}
       <div className="inline-block relative group">
@@ -44,8 +45,7 @@ function Navbar() {
           </li>
         </ul>
 
-      </div>
-      <Link to="/contact" className={`${linkStyles} ${isActive('/contact') ? activeLinkStyles : ''}`}>Book With Me</Link>
+       </div>
       </div>
 
       {/* Login/Create Account buttons */}
