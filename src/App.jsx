@@ -4,10 +4,11 @@ import Navbar from './components/Navbar/navbar.jsx'
 import Footer from './components/Footer/footer.jsx'
 import Home from './pages/Home/home.jsx'
 import About from './pages/About/about.jsx'
-import Contact from './pages/Contact/contact.jsx'
 import Testimonials from './pages/Testimonials/testimonials.jsx';
 import SignUp from './pages/SignUp/SignUp.jsx';
 import Login from './pages/Login/login.jsx';
+import InquiryPage from "./pages/Inquiry/index.jsx";
+
 
 function App() {
   // const [count, setCount] = useState(0)
@@ -20,10 +21,10 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
-        <Route path="/contact" element={<Contact />} />
         <Route path="/testimonials" element={<Testimonials />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path ="/login" element={<Login />} />
+        <Route path="/inquiry" element={<InquiryPage />} />
       </Routes>
       </main>
 
