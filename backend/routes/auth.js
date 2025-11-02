@@ -21,23 +21,41 @@ router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    //Required field check
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required." });
+    }
+
+    //Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format." });
+    }
+
+    //Lookup user in database
     const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
     const user = result.rows[0];
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) {
+      return res.status(404).json({ message: "Account not found." });
+    }
 
+    //Verify password
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid) return res.status(401).json({ message: "Invalid credentials" });
+    if (!valid) {
+      return res.status(401).json({ message: "Invalid credentials." });
+    }
 
+    //Create JWT and respond
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" });
     res.json({ token, message: "Login successful" });
   } catch (err) {
     console.error("❌ Login error:", err);
-    res.status(500).json({ message: "Server error", error: err });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
 
-// forgot password routing
+//Forgot password routing
 router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
 
