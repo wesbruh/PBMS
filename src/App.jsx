@@ -7,6 +7,9 @@ import Testimonials from './pages/Testimonials/testimonials';
 import SignUp from './pages/SignUp/signup';
 import Login from './pages/Login/login';
 import InquiryPage from "./pages/Inquiry/index.jsx";
+import Services from './pages/Services/services.jsx';
+import Weddings from './pages/Special/Weddings.jsx';
+import Labor from './pages/Special/Labor.jsx';
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import ClientDashboard from "./pages/Dashboard/ClientDashboard.jsx";
 import AuthCallback from "./pages/Auth/AuthCallback.jsx";
@@ -43,6 +46,9 @@ function AppContent() {
           <Route path="/testimonials" element={<Testimonials />} />
           <Route path="/signup" element={<SignUp />} />
           <Route path ="/login" element={<Login />} />
+          <Route path="/services/weddings" element={<Weddings />} />
+          <Route path="/services/labor-and-delivery" element={<Labor />} />
+          <Route path="/services" element={<Services />} />
           <Route path="/inquiry" element={<InquiryPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/dashboard" element={
