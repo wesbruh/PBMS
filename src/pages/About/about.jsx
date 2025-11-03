@@ -47,7 +47,7 @@ export default function About() {
             {/* Body*/}
             <div className="max-w-[560px] font-mono text-[15px] md:text-[16px] leading-8 text-neutral-600 space-y-6">
               <p>
-                My name is Bailey Palestini. I'm a 24 year old self-taught photographer, wife, mom,
+                My name is Bailey White. I'm a 24 year old self-taught photographer, wife, mom,
                 proud dog mom and a crazy plant lady.
               </p>
               <p>

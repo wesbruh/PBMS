@@ -1,5 +1,12 @@
 import {useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import { useNavigate, useLocation } from "react-router-dom";
+
 export default function Login(){
+    const navigate = useNavigate();
+    const location = useLocation();
+    const from = location.state?.from?.pathname || "/dashboard";
+
     const [form, setForm] = useState({ email: "", password: "",});
     const [error, setError] = useState("");
 
@@ -14,15 +21,54 @@ export default function Login(){
         if(error) setError("");
     };
 
-    const onSubmit = (e) =>{
+    const onSubmit = async (e) => {
         e.preventDefault();
-        if(!form.email || !form.password){
+        if (!form.email || !form.password) {
             setError("Please fill in all required fields!");
             return;
         }
-        // Call API login here
-        console.log("Logging in", form);
+
+        const { error } = await supabase.auth.signInWithPassword({
+            email: form.email,
+            password: form.password,
+        });
+
+        if (error) {
+            const msg = error.message?.toLowerCase() || "";
+            if (msg.includes("email not confirmed")) {
+            setError("Please confirm your email first. Check your inbox for the link.");
+            } else {
+            setError(error.message || "Unable to log in.");
+            }
+            return;
+        }
+
+        // we are logged in – update the User table
+        const { data: userData, error: getErr } = await supabase.auth.getUser();
+        if (getErr) {
+            console.error("getUser after login failed:", getErr);
+        }
+
+        const authedUser = userData?.user;
+        if (authedUser?.id) {
+            const { error: updateErr } = await supabase
+            .from("User")
+            .update({
+                is_active: true,
+                last_login_at: new Date().toISOString(),
+            })
+            .eq("id", authedUser.id);
+
+            if (updateErr) {
+            // if you see this in console, you have RLS blocking it
+            console.error("User update failed:", updateErr);
+            }
+        }
+
+        navigate(from, { replace: true });
     };
+
+
 
     // Open/submit handlers for reset popup
     const openReset = () => {
@@ -30,16 +76,31 @@ export default function Login(){
         setResetMsg("");
         setShowReset(true);
     };
-    const sendReset = (e) => {
+    const sendReset = async (e) => {
         e.preventDefault();
-        const formEl = e.currentTarget; 
+
+        const formEl = e.currentTarget;
         if (!formEl.checkValidity()) {
             formEl.reportValidity();
             return;
         }
-        // TODO: call backend reset endpoint here
+
+        setResetMsg("");
+
+        const redirectUrl = `${window.location.origin}/auth/callback`; // reuse callback
+
+        const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+            redirectTo: redirectUrl,
+        });
+
+        if (error) {
+            setResetMsg(error.message || "Could not send reset email.");
+            return;
+        }
+
         setResetMsg("If an account exists for that email, a reset link has been sent.");
     };
+
 
     return(
         <div className=''>
