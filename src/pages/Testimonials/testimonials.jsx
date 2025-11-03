@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 function Testimonials() {
-  {/*Slideshow Gallery*/ }
+  { /* Slideshow Gallery */ }
   const [itr, setItr] = useState(0);
 
   const prev = () => {
@@ -9,7 +9,7 @@ function Testimonials() {
   };
 
   const next = () => {
-    setItr((itr) => (itr === 7 ? 0 : prev + 1));
+    setItr((itr) => (itr === 7 ? 0 : itr + 1));
   };
 
   const temp_img = "/images/temp_img.jpg"
@@ -43,7 +43,7 @@ function Testimonials() {
             <div className='absolute inset-0 flex items-center justify-center'>
               <div className='text-center text-4xl md:text-5xl lg:text-6xl text-shadow-sm font-extralight
                             w-11/12 md:w-7/12 lg:w-10/24'>
-                <p>love Notes from people i"ve photographed</p>
+                <p>love Notes from people i&apos;ve photographed</p>
               </div>
             </div>
           </div>
@@ -79,7 +79,7 @@ function Testimonials() {
               </p>
               <div className='flex md:h-44 lg:h-47 items-center'>
                 <p className='flex text-xs md:text-xs lg:text-sm my-10 md:my-15 lg:my-25 w-4/5 md:w-full lg:w-full'>
-                  "{temp_list[itr].test}"
+                  &quot;{temp_list[itr].test}&quot;
                 </p>
               </div>
             </div>
@@ -88,12 +88,12 @@ function Testimonials() {
             </div>
           </div>
           <div className='flex flex-col mr-0 md:mr-5 lg:mr-10 w-full md:w-5/8 lg:w-5/8'>
-            <div className='relative h-auto w-full'>
+            <div className='relative h-full w-full overflow-auto'>
               <div className='absolute right-0 flex flex-row border-red-400 h-full w-full'>
                 <button onClick={prev} className="cursor-pointer bg-transparent text-transparent w-1/2">Previous</button>
                 <button onClick={next} className="cursor-pointer bg-transparent text-transparent w-1/2">Next</button>
               </div>
-              <img className='object-cover object-[center_65%] h-70 md:h-80 lg:h-100 w-full'
+              <img className='object-cover object-[0%_60%] h-70 md:h-80 lg:h-100 w-full'
                 src={temp_list[itr].img} />
             </div>
             <div className='w-full h-auto'>
