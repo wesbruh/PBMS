@@ -8,6 +8,10 @@ import Testimonials from './pages/Testimonials/testimonials.jsx';
 import SignUp from './pages/SignUp/SignUp.jsx';
 import Login from './pages/Login/login.jsx';
 import InquiryPage from "./pages/Inquiry/index.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import ClientDashboard from "./pages/Dashboard/ClientDashboard.jsx";
+import AuthCallback from "./pages/Auth/AuthCallback.jsx";
+import AuthHashRouter from './components/AuthHashRouter.jsx';
 
 
 function App() {
@@ -18,14 +22,22 @@ function App() {
     <div className='min-h-screen flex flex-col'>
       <Navbar />
       <main className ='flex-grow'>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/about" element={<About />} />
-        <Route path="/testimonials" element={<Testimonials />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path ="/login" element={<Login />} />
-        <Route path="/inquiry" element={<InquiryPage />} />
-      </Routes>
+      <AuthHashRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/testimonials" element={<Testimonials />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path ="/login" element={<Login />} />
+          <Route path="/inquiry" element={<InquiryPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <ClientDashboard />
+            </ProtectedRoute>} 
+          />
+        </Routes>
+      </AuthHashRouter>
       </main>
 
       <Footer />

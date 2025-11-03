@@ -1,8 +1,21 @@
 import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import { supabase } from "../../lib/supabaseClient";
+import { useNavigate } from "react-router-dom";
 
 function Navbar() {
   // determines location of user based on current page
   const location = useLocation();
+
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/login");
+  };
+
+
   // helper functions to indicate if the page link is an active page, including special services tab
   const isActive = (path) => location.pathname === path;
   const isSpecialServicesActive = location.pathname.startsWith('/services/weddings') || location.pathname.startsWith('/services/labor-and-delivery');
@@ -49,14 +62,38 @@ function Navbar() {
       </div>
 
       {/* Login/Create Account buttons */}
-      <Link
-       to="/login"
-       className= "ml-12 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-lg leading-tight hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
-      >Log in</Link>
-      <Link
-       to="/signup"
-       className="ml-8 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-lg leading-tight hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
-      >Create account</Link>
+      {user ? (
+        <>
+          <Link
+            to="/dashboard"
+            className="ml-12 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-lg leading-tight hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
+          >
+            Dashboard
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="ml-4 shrink-0 inline-block px-4 py-1.5 bg-white text-[#7E4C3C] text-lg leading-tight hover:bg-neutral-100 transition border-2 border-black rounded-lg"
+          >
+            Log out
+          </button>
+        </>
+      ) : (
+        <>
+          <Link
+            to="/login"
+            className="ml-12 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-lg leading-tight hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
+          >
+            Log in
+          </Link>
+          <Link
+            to="/signup"
+            className="ml-8 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-lg leading-tight hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
+          >
+            Create account
+          </Link>
+        </>
+          )}
+
       </div>
     </nav>
   );
