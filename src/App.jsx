@@ -7,6 +7,11 @@ import Testimonials from './pages/Testimonials/testimonials';
 import SignUp from './pages/SignUp/signup';
 import Login from './pages/Login/login';
 import InquiryPage from "./pages/Inquiry/index.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import ClientDashboard from "./pages/Dashboard/ClientDashboard.jsx";
+import AuthCallback from "./pages/Auth/AuthCallback.jsx";
+import AuthHashRouter from './components/AuthHashRouter.jsx';
+
 // temp admin entrance
 import AdminRoutes from './admin/routes'
 import AdminNavbar from './admin/components/Navbar/navbar';
@@ -31,16 +36,24 @@ function AppContent() {
         <AdminNavbar /> : <Navbar />
       }
       <main className='grow'>
+      <AuthHashRouter>
         <Routes>
           <Route index element={<Home />} />
-          <Route path="about" element={<About />} />
-          <Route path="testimonials" element={<Testimonials />} />
-          <Route path="login" element={<Login />} />
-          <Route path="signup" element={<SignUp />} /> 
-          <Route path="inquiry" element={<InquiryPage />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/testimonials" element={<Testimonials />} />
+          <Route path="/signup" element={<SignUp />} />
+          <Route path ="/login" element={<Login />} />
+          <Route path="/inquiry" element={<InquiryPage />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/dashboard" element={
+            <ProtectedRoute>
+              <ClientDashboard />
+            </ProtectedRoute>} 
+          />
           {/* temp admin entrance*/}
           {AdminRoutes()}
         </Routes>
+      </AuthHashRouter>
       </main>
 
       <Footer />
