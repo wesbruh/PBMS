@@ -2,16 +2,41 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
+import { is } from "zod/locales";
+import { set } from "zod";
+import e from "cors";
 
 export default function ClientDashboard() {
-  const { user, profile } = useAuth();
+  const { user, profile,setProfile } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [galleries, setGalleries] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
-  // Will be used to dissplay settings modal 
+  const [changingPassword, setChangingPassword] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const[passwordForm, setPasswordForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmNewPassword: "",
+  });
+ 
+  // Will be used to display settings modal 
   const [showSettings, setShowSettings] = useState(false);
+
+  // To allow a user to edit their profile information and to check if they are editting
+  const [isEditing, setIsEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    first_name:"", 
+    last_name: "",
+    phone:"",
+    email:"",
+  });
+
+
+  const [saveError, setSaveError] = useState("");
+  const [saveSuccess, setSaveSuccess] = useState("");
+
 
   // load all data that belongs to THIS user only
   useEffect(() => {
@@ -99,10 +124,178 @@ export default function ClientDashboard() {
     loadData();
   }, [user]);
 
+  // When opening edit profile, load the current profile values into the edit form
+  useEffect(() => {
+    if (showSettings && profile) {
+      setEditForm({
+        first_name: profile.first_name ?? "",
+        last_name: profile.last_name ?? "",
+        phone: profile.phone ?? "",
+        email: user?.email ?? "",
+      });
+
+      // Clear previous messages
+      setSaveError("");
+      setSaveSuccess("");
+      setIsEditing(false); // still in view mode
+   }
+  }, [showSettings]);
+
+
+  // Used in the welcome message if no first or last name is set fallback to email
   const fullName =
     profile?.first_name || profile?.last_name
       ? `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim()
       : user?.email;
+
+  // Handle typing into fields, updates the edit form page when something else is typed
+  function handleEditChange(e) {
+    const { name, value } = e.target;
+    setEditForm((prev) => ({ ...prev, [name]: value }));
+  }
+
+// Save updated profile info to supabase
+  async function handleSaveProfile() {
+    // Clear previous messages to start with a clean state
+    setSaveError("");
+    setSaveSuccess("");
+
+    const newFirstName = editForm.first_name.trim();
+    const newLastName = editForm.last_name.trim();
+    const newPhone = editForm.phone.trim();
+    const newEmail = editForm.email.trim();
+    
+    // Users current email for comparison
+    const currentEmail = (user?.email ?? "").trim();
+
+    // Check if the user changed their email
+    const emailChanged = newEmail.toLowerCase() !== currentEmail.toLowerCase();
+
+    // Basic validarion if email was changed
+    if (emailChanged) {
+      // Simple email format check
+      if(!newEmail.includes("@") || !newEmail.includes(".")) {
+        setSaveError("Please enter a valid email address.");
+        return;
+      }
+
+      // Ensure that the new email is not already in use by another user
+      const { data: existingUsers, error: userErr } = await supabase
+        .from("User")
+        .select("id")
+        .eq("email", newEmail)
+        .maybeSingle();
+
+      if (userErr) {
+        console.error("Error checking existing email:", userErr);
+        setSaveError("Could not check email right now. Please try again later.");
+        return;
+      }
+      if (existingUsers && existingUsers.id !== user.id) {
+        setSaveError("That email is already in use. Please choose another.");
+        return;
+      }
+
+    }
+  // Update fields in the "User" table
+  const updates = {
+    first_name: newFirstName,
+    last_name: newLastName,
+    phone: newPhone,
+    email: newEmail,
+  };
+
+  // Send the update to Supabase for the currently logged-in user
+  const { data, error } = await supabase
+    .from("User")
+    .update(updates)
+    .eq("id", user.id)
+    .select()
+    .maybeSingle();
+
+  // If there was a problem show error message and stop
+  if (error) {
+    setSaveError("Could not save changes.");
+    return;
+  }
+
+  // Update global profile in AuthContext so the whole website has the latest info
+  setProfile(data);
+
+  // If email was changed ask Supabase to send a verification link to that email
+  if(emailChanged) {
+    const { error: emailErr } = await supabase.auth.updateUser({
+      email: newEmail }, 
+    {emailRedirectTo: `${window.location.origin}/auth/callback`,}
+  );
+
+  if(emailErr) {
+    setSaveError("Could not update email address.");
+    return;
+  }
+
+  setSaveSuccess("Profile will be updated once you verify your new email address. Please check your inbox.");
+} else {
+
+    setSaveSuccess("Profile updated successfully.");
+  } 
+  setIsEditing(false); // back to view mode
+}
+
+ // Change password logic that is current password to new password
+  async function handleChangePassword() {
+    setSaveError("");
+    setSaveSuccess("");
+
+    const { currentPassword, newPassword, confirmNewPassword } = passwordForm;
+
+    // Basic validation
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      setSaveError("All password fields are required.");
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      setSaveError("New passwords do not match.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setSaveError("Password must be at least 8 characters.");
+      return;
+    }
+
+    // Re- authenticate using current password
+    const { error: loginErr } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword,
+    });
+
+    if (loginErr) {
+      console.error("signInWithPassword error:", loginErr);
+      setSaveError("Current password is incorrect.");
+      return;
+    }
+
+    // Updating password
+    const { error: updateErr } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (updateErr) {
+      console.error("updateUser password error:", updateErr);
+      setSaveError("Could not update password. Please try again.");
+      return;
+    }
+
+    setSaveSuccess("Password updated successfully.");
+    setChangingPassword(false);
+    setPasswordForm({
+      currentPassword: "",
+      newPassword: "",
+      confirmNewPassword: "",
+    });
+  }
 
   if (loading) {
     return (
@@ -112,8 +305,6 @@ export default function ClientDashboard() {
     );
   }
 
-console.log("AUTH USER ID:", user?.id);
-console.log("PROFILE ROW:", profile);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
@@ -314,77 +505,306 @@ console.log("PROFILE ROW:", profile);
             <h2 className="text-center text-2xl font-serif font-extralight mb-4">
               Account Settings
             </h2>
+            {saveError && (
+              <p className="text-center text-xs text-red-600 mb-2">{saveError}</p>
+            )}
+            {saveSuccess && (
+              <p className="text-center text-xs text-green-700 mb-2">{saveSuccess}</p>
+            )}
 
           {/* Modal Content */}
             <div className="flex flex-col font-mono text-xs">
               <label className ="mb-4">
                 <p className="text-center text-brown py-3">FIRST NAME *</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="first_name"
+                    value={editForm.first_name}
+                    onChange={handleEditChange}
+                    className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"/>
+                ) : (
                 <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
                   {profile?.first_name || "Not set"}
                 </div>
+                )}
               </label>
 
               <label className ="mb-4">
                 <p className="text-center text-brown py-3">LAST NAME *</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="last_name"
+                    value={editForm.last_name}
+                    onChange={handleEditChange}
+                    className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"/>
+                ) : (
                 <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
                   {profile?.last_name || "Not set"}
                 </div>
+                )}
               </label>
 
               <label className="mb-4">
                 <p className="text-center text-brown py-3">EMAIL *</p>
+                {isEditing ? (
+                  <input
+                    type="email"
+                    name="email"
+                    value={editForm.email}
+                    onChange={handleEditChange}
+                    className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"/>
+                ) : (
                 <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
                   {user?.email || "N/A"}
                 </div>
+                )}
               </label>
 
               <label className="mb-4">
                 <p className="text-center text-brown py-3">PHONE NUMBER *</p>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    name="phone"
+                    value={editForm.phone}
+                    onChange={handleEditChange}
+                    className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"/>
+                ) : (
                 <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
                   {profile?.phone || "N/A"}
                 </div>
+                )}
               </label>
 
+              <label className="mb-4">
+                <p className="text-center text-brown py-3">PASSWORD *</p>
 
-            <label className="mb-4">
-             <p className="text-center text-brown py-3">PASSWORD *</p>
-             <input
-              type="password"
-              value="placeholderpassword"
-              readOnly
-              disabled
-              className="w-full text-center border-neutral-200 border-b py-3 text-sm bg-transparent cursor-default"/>
-            </label>
+             {/* View mode for password */}
+             {!isEditing && (
+              <input
+                type="password"
+                value="********"
+                readOnly
+                disabled
+                className="w-full text-center border-neutral-200 border-b py-3 text-sm bg-transparent cursor-default"
+                />
+              )}
+
+             {/* Edit mode for password */}
+             {isEditing && (
+               <input
+                type="password"
+                value="********"
+                readOnly
+                disabled
+                className="w-full text-center border-neutral-200 border-b py-3 text-sm bg-off-white cursor-default"
+                />
+               )}
+              </label>
+            
+            </div>
+
+         {/* Footer actions – change depending on whether the user is editing */}
+          <div className="flex items-center justify-center gap-3 mt-6">
+            {/* View mode, not editing yet*/}
+            {!isEditing ? (
+              <>
+                {/* Just close the modal */}
+                <button
+                  type="button"
+                  onClick={() => setShowSettings(false)}
+                  className="px-4 py-2 bg-off-white text-brown text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition"
+                >
+                  Close
+                </button>
+
+                {/* Switch into edit mode – turns labels into inputs */}
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 bg-off-white text-brown text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition"
+                >
+                  Edit Profile
+                </button>
+
+                {/* Placeholder for delete account, will be implemented later*/}
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Need to implment delete account functionality
+                  }}
+                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition"
+                >
+                  Delete Account
+                </button>
+              </>
+            ) : (
+              /* Edit mode, user is changing their info */
+              <>
+                {/* Cancel editing: exit edit mode and reset fields back to profile data */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditing(false);
+                    setEditForm({
+                      first_name: profile?.first_name ?? "",
+                      last_name: profile?.last_name ?? "",
+                      phone: profile?.phone ?? "",
+                      email: user?.email ?? "",
+                    });
+                    setSaveError("");
+                    setSaveSuccess("");
+                  }}
+                  className="px-4 py-2 bg-off-white text-brown text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition"
+                >
+                  Cancel
+                </button>
+                {/* Change password button, opens password change modal */}
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(true)}
+                  className="px-4 py-2 bg-off-white text-brown text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition"
+                >
+                  Change Password
+                </button>
+
+                {/* Save changes: calls handleSaveProfile that updates Supabase*/}
+                <button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition"
+                >
+                  Save Changes
+                </button>
+              </>
+            )}
           </div>
 
-          {/* Close Button */ }
-          <div className ="flex items-center justify-center gap-3 mt-6">
-            <button
-              type="button"
-              onClick={() => setShowSettings(false)}
-              className="px-4 py-2 bg-white text-black text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition">
-              Close
-            </button>
-            <button 
-              type="button"
-              onClick ={() => { /* Will implement update functionality later */ }}
-              className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition">
-
-                Delete Account
-            </button>
-          </div>
-
-          {/* Close Modal */}
+          {/* “X” button in the top-right corner of the modal to exit*/}
           <button
             type="button"
-            aria-label = "Close"
+            aria-label="Close"
             onClick={() => setShowSettings(false)}
-            className="absolute top-2 right-2 px-2 py-1 font-sans text-sm border-2 border-black rounded-md bg-white hover:opacity-80">
+            className="absolute top-2 right-2 px-2 py-1 font-sans text-sm border-2 border-black rounded-md bg-white hover:opacity-80"
+          >
             x
           </button>
          </div>
         </div>
       )}
+          {/* Password change modal */}
+          {showPasswordModal && (
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setShowPasswordModal(false);
+              }}
+            >
+              <div className="absolute inset-0 bg-black/50"></div>
+
+              <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border-2 border-black rounded-md shadow-lg">
+              
+                <h2 className="text-center text-2xl font-serif font-extralight mb-4">
+                   Change Password
+                </h2>
+
+              {saveError && (
+                <p className="text-center text-xs text-red-600 mb-2">{saveError}</p>
+              )}
+
+              {saveSuccess && (
+                <p className="text-center text-xs text-green-700 mb-2">{saveSuccess}</p>
+              )}
+
+             <div className="flex flex-col font-mono text-xs space-y-3">
+              <input
+                type="password"
+                placeholder="Current Password"
+                value={passwordForm.currentPassword}
+                onChange={(e) =>
+                  setPasswordForm((prev) => ({
+                    ...prev,
+                    currentPassword: e.target.value,
+                  }))
+                }
+                className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
+              />
+
+              <input
+                type="password"
+                placeholder="New Password"
+                value={passwordForm.newPassword}
+                onChange={(e) =>
+                  setPasswordForm((prev) => ({
+                    ...prev,
+                    newPassword: e.target.value,
+                  }))
+                }
+                className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
+              />
+
+              <input
+                type="password"
+                placeholder="Confirm New Password"
+                value={passwordForm.confirmNewPassword}
+                onChange={(e) =>
+                  setPasswordForm((prev) => ({
+                    ...prev,
+                    confirmNewPassword: e.target.value,
+                  }))
+                }
+                className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
+              />
+
+              <div className="flex justify-center gap-3 pt-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPasswordModal(false);
+                    setPasswordForm({
+                      currentPassword: "",
+                      newPassword: "",
+                      confirmNewPassword: "",
+                    });
+                    setSaveError("");
+                    setSaveSuccess("");
+                  }}
+                  className="px-4 py-2 bg-white text-brown text-sm border-2 border-black rounded-md hover:opacity-80 transition"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await handleChangePassword();
+                    if (!saveError) {
+                      setShowPasswordModal(false);
+                    }
+                  }}
+                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm border-2 border-black rounded-md transition"
+                >
+                  Save Password
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setShowPasswordModal(false)}
+              className="absolute top-2 right-2 px-2 py-1 text-sm border-2 border-black rounded-md bg-white hover:opacity-80"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+    
+
