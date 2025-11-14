@@ -10,6 +10,8 @@ export default function ClientDashboard() {
   const [galleries, setGalleries] = useState([]);
   const [contracts, setContracts] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Will be used to dissplay settings modal 
+  const [showSettings, setShowSettings] = useState(false);
 
   // load all data that belongs to THIS user only
   useEffect(() => {
@@ -110,6 +112,9 @@ export default function ClientDashboard() {
     );
   }
 
+console.log("AUTH USER ID:", user?.id);
+console.log("PROFILE ROW:", profile);
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
       {/* header */}
@@ -124,6 +129,14 @@ export default function ClientDashboard() {
           Here are your sessions, invoices, galleries, and forms/contracts. Only
           your information is shown.
         </p>
+
+        {/* Settings button*/}
+        <button
+          type = "button"
+          onClick={() => setShowSettings(true)}
+          className="self-end mt-3 px-4 py-2 bg-off-white text-brown text-sm font-mono border-2 border-black rounded-md hover:opacity-80 transition">
+          Account Settings
+        </button>
       </header>
 
       {/* grid */}
@@ -284,6 +297,94 @@ export default function ClientDashboard() {
           )}
         </section>
       </div>
+
+      {/*Settings Modal*/ }
+      {showSettings &&(
+        <div className="fixed inset-0 z-50 flex items-center justify-center"
+          role="dialog"
+          aria-modal="true"
+          onClick={(e)=>{if(e.target === e.currentTarget) setShowSettings(false);}}>
+          
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50">
+          </div>
+
+          {/* Dialog */}
+          <div className = "relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border-2 border-black rounded-md shadow-lg">
+            <h2 className="text-center text-2xl font-serif font-extralight mb-4">
+              Account Settings
+            </h2>
+
+          {/* Modal Content */}
+            <div className="flex flex-col font-mono text-xs">
+              <label className ="mb-4">
+                <p className="text-center text-brown py-3">FIRST NAME *</p>
+                <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
+                  {profile?.first_name || "Not set"}
+                </div>
+              </label>
+
+              <label className ="mb-4">
+                <p className="text-center text-brown py-3">LAST NAME *</p>
+                <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
+                  {profile?.last_name || "Not set"}
+                </div>
+              </label>
+
+              <label className="mb-4">
+                <p className="text-center text-brown py-3">EMAIL *</p>
+                <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
+                  {user?.email || "N/A"}
+                </div>
+              </label>
+
+              <label className="mb-4">
+                <p className="text-center text-brown py-3">PHONE NUMBER *</p>
+                <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
+                  {profile?.phone || "N/A"}
+                </div>
+              </label>
+
+
+            <label className="mb-4">
+             <p className="text-center text-brown py-3">PASSWORD *</p>
+             <input
+              type="password"
+              value="placeholderpassword"
+              readOnly
+              disabled
+              className="w-full text-center border-neutral-200 border-b py-3 text-sm bg-transparent cursor-default"/>
+            </label>
+          </div>
+
+          {/* Close Button */ }
+          <div className ="flex items-center justify-center gap-3 mt-6">
+            <button
+              type="button"
+              onClick={() => setShowSettings(false)}
+              className="px-4 py-2 bg-white text-black text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition">
+              Close
+            </button>
+            <button 
+              type="button"
+              onClick ={() => { /* Will implement update functionality later */ }}
+              className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition">
+
+                Delete Account
+            </button>
+          </div>
+
+          {/* Close Modal */}
+          <button
+            type="button"
+            aria-label = "Close"
+            onClick={() => setShowSettings(false)}
+            className="absolute top-2 right-2 px-2 py-1 font-sans text-sm border-2 border-black rounded-md bg-white hover:opacity-80">
+            x
+          </button>
+         </div>
+        </div>
+      )}
     </div>
   );
 }
