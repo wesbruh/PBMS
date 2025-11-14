@@ -2,9 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
-import { is } from "zod/locales";
-import { set } from "zod";
-import e from "cors";
+
 
 export default function ClientDashboard() {
   const { user, profile,setProfile } = useAuth();
@@ -20,6 +18,8 @@ export default function ClientDashboard() {
     newPassword: "",
     confirmNewPassword: "",
   });
+
+  const[showDeleteConfirm, setShowDeleteConfirm] = useState(false);
  
   // Will be used to display settings modal 
   const [showSettings, setShowSettings] = useState(false);
@@ -632,10 +632,8 @@ export default function ClientDashboard() {
                 {/* Placeholder for delete account, will be implemented later*/}
                 <button
                   type="button"
-                  onClick={() => {
-                    // Need to implment delete account functionality
-                  }}
-                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition"
+                  onClick={() => setShowDeleteConfirm(true)} 
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm border-2 border-black rounded-md transition"
                 >
                   Delete Account
                 </button>
@@ -802,7 +800,61 @@ export default function ClientDashboard() {
           </div>
         </div>
       )}
+      {/* Delete account confirmation modal */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowDeleteConfirm(false);
+          }}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/50"></div>
 
+          {/* Dialog */}
+          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border-2 border-black rounded-md shadow-lg">
+            <h2 className="text-center text-2xl font-serif font-extralight mb-4">
+              Delete Account
+            </h2>
+
+            <p className="text-center text-sm text-neutral-700 mb-4 font-bold">
+              Are you sure you want to delete your account? This action cannot be undone.
+            </p>
+
+            <div className="flex justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 bg-white text-brown text-sm border-2 border-black rounded-md hover:opacity-80 transition"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                   // Need to implment delete account functionality
+                  console.log("Delete account clicked");
+                  setShowDeleteConfirm(false);
+                }}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm border-2 border-black rounded-md transition"
+              >
+                Delete Account
+              </button>
+            </div>
+
+            {/* X button on the top right to exit */}
+            <button
+              type="button"
+              aria-label="Close"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="absolute top-2 right-2 px-2 py-1 text-sm border-2 border-black rounded-md bg-white hover:opacity-80"
+            >
+              x
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
