@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
 
 
+
 export default function ClientDashboard() {
   const { user, profile,setProfile } = useAuth();
   const [sessions, setSessions] = useState([]);
@@ -295,6 +296,34 @@ export default function ClientDashboard() {
       newPassword: "",
       confirmNewPassword: "",
     });
+  }
+
+  // Function to delete user account permanently
+  async function handleDeleteAccount(){
+    setSaveError("");
+    setSaveSuccess("");
+
+    if(!user?.id){
+      setSaveError("No user is currently logged in.");
+      return;
+    }
+
+    //Delete user from the User table in the database
+    const { error: deleteErr } = await supabase
+      .from("User")
+      .delete()
+      .eq("id", user.id);
+
+    if(deleteErr){
+      console.error("Error deleting user account:", deleteErr);
+      setSaveError("Could not delete account. Please try again later.");
+      return;
+    }
+
+    //Clear profile, log user out, and redirect to homepage
+    setProfile(null);
+    await supabase.auth.signOut();
+    window.location.href = "/";
   }
 
   if (loading) {
@@ -832,8 +861,8 @@ export default function ClientDashboard() {
 
               <button
                 type="button"
-                onClick={() => {
-                   // Need to implment delete account functionality
+                onClick={async() => {
+                  await handleDeleteAccount();
                   console.log("Delete account clicked");
                   setShowDeleteConfirm(false);
                 }}
