@@ -19,37 +19,43 @@ function Home() {
   return (
    <div>
     {/* Home background image  */}
-    <div className='relative min-h-screen'>
-      <div className='w-full'>
-        <img className='object-cover object-bottom md:h-200 lg:h-200 w-full ' src={temp_bg_img} alt="Home Background Image" />
-        <div className='absolute font-serif ml-[5%] top-[30%] left-[25%] transform -translate-x-1/2 -translate-y-1/2 text-left m-4 text-white z-10 max-w-4xl px-8'>
-        <h1 className='md:text-4xl lg:text-5xl leading-normal'>preserve your emotions and connections</h1>
+    <div className='relative '>
+      <div className='relative w-full'>
+        <img className='object-cover object-bottom sm:h-200 md:h-200 lg:h-200 w-full ' src={temp_bg_img} alt="Home Background Image" />
+        <div className='absolute font-serif  top-[30%] left-8  text-left  text-white z-10 max-w-4xl '>
+        <h1 className='sm:text-3xl md:text-4xl lg:text-4xl leading-normal'>preserve your emotions and connections</h1>
       </div>
       <div className='absolute font-serif bottom-[10%] left-[65%] text-center m-3 text-white'> 
-        <h2 className='text-2xl md:text-2xl lg:text-3xl leading-snug'>Candid & Romance Photographer, <br /> Northern CA</h2>
+        <h2 className='sm:text-3xl md:text-3xl lg:text-3xl leading-snug'>Candid & Romance Photographer, <br /> Northern CA</h2>
       </div>
       </div>
     </div>
 
     {/* Section 1 */}
-    <section className='relative grid grid-cols-3 md:grid-cols-3'>
+    <section className='border border-green-500 relative grid grid-cols-1 md:grid-cols-3  gap-4 m-5 min-h-170 overflow-hidden '>
       {sectionDesign}
-      <div className='font-serif' >
-      <h1 className='font-mono text-center  md:text-1xl lg:text-2xl ml-[15%] pt-[11%] pl-[4%] pb-[4%] text-[#7E4C3C] z-10'> 
+
+      {/* title, order: mobile 1st, desktop 3rd */}
+      <div className='font-serif pt-10 pr-5 pl-1 z-10 order-1 md:order-3 md:col-start-3'>
+          <h1 className='relative text-2xl md:text-4xl lg:text-5xl text-center md:text-right  text-[#7E4C3C]'>
+            documentary photography that tells your story</h1>
+        </div>
+
+        {/* image section, order: mobile 2nd, desktop 1st */}
+      <div className='font-serif border border-red-500 pt-10 order-2 md:order-1' >
+      <h1 className=' border border-red-500 font-mono text-center pb-5 text-md md:text-xl lg:text-2xl  text-[#7E4C3C] z-10'> 
         Life is unique
       </h1>
-        <img className='object-cover object-top md:h-140 lg:h-140 w-125 ml-[10%] mt-[5%] mb-20 rounded-xl z-10' src={temp_ia_img} alt="second home image" />
+        <img className='relative object-cover object-top sm:h-140 md:h-140 lg:h-140 sm:w-100 md:w-125 lg:w-125 rounded-xl z-10' src={temp_ia_img} alt="second home image" />
         </div>
-        <div className='z-10'>
-          
-          <p className='font-mono  md:text-lg lg:text-xl text-left mt-[95%] ml-[22%] text-[#3a4848]'>
+
+        {/* paragraph section, order: mobile 3rd, desktop 2nd */}
+        <div className='relative z-10 flex flex-col justify-end ml-5 mr-5 md:mb-25 order-3 md:order-2'>
+          <p className='relative font-mono sm:text-md md:text-lg lg:text-xl  md:min-h-75 overflow-hidden  text-[#3a4848] border border-red-500 '>
             Every moment in life is unique, and photography allows me to capture these
              moments in all their natural beauty. Through my lens, I preserve the emotions, 
-             the connections, and the memories as they unfold.</p>
-        </div>
-        <div className='font-serif z-10'>
-          <h1 className='text-4xl md:text-4xl lg:text-6xl text-right mr-[20%] mt-[25%] text-[#7E4C3C]'>
-            documentary photography that tells your story</h1>
+             the connections, and the memories as they unfold.
+             </p>
         </div>
         </section>
 
