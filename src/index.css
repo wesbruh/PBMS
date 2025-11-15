@@ -3,8 +3,41 @@
 @theme {
   --color-off-white: #FFFDF4;
   --color-brown: #7E4C3C;
-}
 
+
+/* COLOR PALETTE */ 
+/* commented out for now to keep styling consistent */
+/* --color-light-brown: #936e4c;
+--color-brown: #422c1d;
+
+--color-green: #51511a;
+--color-light-green: #878338;
+
+--color-blue: #446780;
+--color-light-blue:#98c0dc;
+
+--color-off-white: #ebdfbf;
+
+/* Background color variables */
+/* --bg-light-brown: #936e4c;
+--bg-brown: #422c1d;
+
+--bg-green: #51511a;
+--bg-light-green: #878338;
+
+--bg-blue: #446780;
+--bg-light-blue:#98c0dc;
+
+--bg-off-white: #ebdfbf; */
+
+/* FONT FAMILIES */
+--font-serif: 'Bodoni Moda', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+
+/* Because of the use of 'font-mono' across the pages, I have implemented the variable for it to be used as a serif instead
+therefore anytime someone used 'mono' it will default to serif */
+--font-mono: 'Bodoni Moda', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+
+}
 @layer base {
   *:focus {
     @apply outline-none;
