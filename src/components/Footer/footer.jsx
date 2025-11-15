@@ -1,18 +1,63 @@
 import { Link } from "react-router-dom";
 
-// page footer with logo and copyright, should be available across all pages
+// page footer with logo and copyright, should be available across all pages - updated as there were media device errors
   function Footer() {
     return (
-      <footer className='relative w-full text-[#7E4C3C] m-3 py-1 font-serif '>
-        <div className='flex justify-between items-center '>
+      <footer className='relative w-full text-[#7E4C3C] px-3 py-4 font-serif '>
+
+        {/* mobile layout */}
+        <div className='md:hidden flex flex-col items-center gap-4'>
           
-          {/* left side logo and copyright */}
+          {/* logo and copyright */}
           <div className='flex items-center gap-3'>
-            <img src="public/favicon.ico" alt="Your Roots Photography Logo" className='h-12 w-12' />
-            <span className='text-[#7E4C3C] font-serif text-md'> &copy; Your Roots Photography</span>
+            <img src="public/logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12' />
+            <span className='text-[#7E4C3C] font-serif text-sm'> &copy;2025 Your Roots Photography</span>
           </div>
   
-          {/* centered social media icons, working links */}
+          {/* social media icons, working links */}
+          <div className='flex gap-8 items-center'>
+            <a 
+              href="https://www.instagram.com/your.rootsphotography/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className='text-[#7E4C3C] hover:text-[#AB8C4B] transition'
+              aria-label="Instagram"
+            >
+              <i className="fab fa-instagram text-xl"></i>
+            </a>
+            
+            <a 
+              href="https://www.facebook.com/bailey.palestini" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className='text-[#7E4C3C] hover:text-[#AB8C4B] transition'
+              aria-label="Facebook"
+            >
+              <i className="fab fa-facebook text-xl"></i>
+            </a>
+            
+            <a 
+              href="https://www.tiktok.com/@baileypalestini" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className='text-[#7E4C3C] hover:text-[#AB8C4B] transition'
+              aria-label="TikTok"
+            >
+              <i className="fab fa-tiktok text-xl"></i>
+            </a>
+          </div>
+        </div>
+
+        {/* desktop layout */}
+        <div className='hidden md:flex relative justify-between items-center'>
+          
+          {/* logo and copyright */}
+          <div className='flex items-center gap-3'>
+            <img src="public/logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12' />
+            <span className='text-[#7E4C3C] font-serif text-md'> &copy;2025 Your Roots Photography</span>
+          </div>
+  
+          {/* social media icons, working links */}
           <div className='flex gap-8 items-center absolute left-1/2 transform -translate-x-1/2'>
             <a 
               href="https://www.instagram.com/your.rootsphotography/" 
@@ -45,6 +90,7 @@ import { Link } from "react-router-dom";
             </a>
           </div>
         </div>
+
       </footer>
     );
   }

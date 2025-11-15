@@ -53,7 +53,7 @@ function CarouselSection() {
         <div className='flex justify-center mt-12'>
           <Link
             to="/contact"
-            className='inline-block px-8 py-3 bg-[#7E4C3C] text-white text-lg font-mono hover:bg-[#AB8C4B] transition'
+            className='inline-block px-8 py-3 bg-[#7E4C3C] text-white text-lg font-serif hover:bg-[#AB8C4B] transition'
           >
             Book With Me!
           </Link>

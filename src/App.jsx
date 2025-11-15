@@ -4,7 +4,7 @@ import Footer from './components/Footer/footer';
 import Home from './pages/Home/home';
 import About from './pages/About/about';
 import Testimonials from './pages/Testimonials/testimonials';
-import SignUp from './pages/SignUp/signup.jsx';
+import SignUp from './pages/SignUp/SignUp.jsx';
 import Login from './pages/Login/login';
 import InquiryPage from "./pages/Inquiry/index.jsx";
 import Services from './pages/Services/services.jsx';
