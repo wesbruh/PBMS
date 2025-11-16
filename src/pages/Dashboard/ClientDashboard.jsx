@@ -3,11 +3,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
 import { Link } from "react-router-dom";
-<<<<<<< Updated upstream
 
 
-=======
->>>>>>> Stashed changes
 
 export default function ClientDashboard() {
   const { user, profile,setProfile } = useAuth();
