@@ -15,7 +15,10 @@ import ClientDashboard from "./pages/Dashboard/ClientDashboard.jsx";
 import AuthCallback from "./pages/Auth/AuthCallback.jsx";
 import AuthHashRouter from './components/AuthHashRouter.jsx';
 import ContractsPage from "./pages/Dashboard/Contracts.jsx";
+<<<<<<< Updated upstream
 import ContractDetail from "./pages/Dashboard/ContractDetail.jsx";
+=======
+>>>>>>> Stashed changes
 
 // temp admin entrance
 import AdminRoutes from './admin/routes'
@@ -53,7 +56,10 @@ function AppContent() {
           <Route path="/services" element={<Services />} />
           <Route path="/inquiry" element={<InquiryPage />} />
           <Route path="/dashboard/contracts" element={<ContractsPage />} />
+<<<<<<< Updated upstream
           <Route path="/dashboard/contracts/:id" element={<ContractDetail />} />
+=======
+>>>>>>> Stashed changes
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
