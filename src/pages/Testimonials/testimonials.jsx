@@ -120,11 +120,11 @@ function Testimonials() {
           <div className="flow-root my-24">
             <div className='flex flex-col float-left md:float-right lg:float-right pl-10 md:pr-13 lg:pr-15'>
               <p className='font-mono text-white'>YOUR ROOTS PHOTOGRAPHY</p>
-              <button className='flex justify-center items-center w-full mx-auto mt-5 mb-6 md:mb-8 lg:mb-10
+              <a className='flex justify-center items-center w-full mx-auto mt-5 mb-6 md:mb-8 lg:mb-10
                              bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm'
-                type="submit" >
+                href="mailto:Your.rootsphotography@gmail.com">
                 CONTACT ME!
-              </button>
+              </a>
             </div>
           </div>
         </div>
