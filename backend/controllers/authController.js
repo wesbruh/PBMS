@@ -49,7 +49,7 @@ exports.forgotPassword = async (req, res) => {
       auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
     });
 
-    const resetUrl = `http://localhost:3000/reset-password/${resetToken}`;
+    const resetUrl = `https://localhost:3000/reset-password/${resetToken}`; //secure HTTPS
     await transporter.sendMail({
       to: email,
       from: process.env.EMAIL_USER,

@@ -1,44 +1,45 @@
-const express = require("express");
-const cors = require("cors");
-const { Pool } = require("pg");
-require("dotenv").config();
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import https from "https";
+import fs from "fs";
+import invoiceRoutes from "./pdf/invoice.js";
+
+dotenv.config();
 
 const app = express();
-app.use(cors());
+
+// Supabase CORS
+app.use(
+    cors({
+        origin: [
+            //"http://localhost:5173",      // Vite frontend old URL
+            "https://localhost:5173",     // Vite + HTTPS
+            "https://your-supabase-domain.supabase.co" // your Supabase project
+        ],
+        methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+        credentials: true
+    })
+);
+
 app.use(express.json());
 
-// PostgreSQL connection
-const pool = new Pool({
-  host: process.env.PG_HOST,
-  port: process.env.PG_PORT,
-  user: process.env.PG_USER,
-  password: process.env.PG_PASSWORD,
-  database: process.env.PG_DATABASE,
-});
-
-pool.connect()
-    .then(() => console.log(" PostgreSQL connected"))
-    .catch(err => console.error("Database connection error:", err));
+// SSL certificate
+const options = {
+    key: fs.readFileSync("server.key"),
+    cert: fs.readFileSync("server.cert"),
+};
 
 // Routes
-const authRoutes = require("./routes/auth");
-app.use("/api/auth", authRoutes);
+app.use("/api/invoice", invoiceRoutes);
 
-app.get("/test-db", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT * FROM users LIMIT 5;");
-    res.json({
-      success: true,
-      rows: result.rows,
-    });
-  } catch (err) {
-    console.error("❌ Error querying database:", err);
-    res.status(500).json({
-      success: false,
-      error: err.message,
-    });
-  }
+app.get("/test-server", (_req, res) => {
+    res.json({ message: "HTTPS server running and Supabase-compatible!" });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+const PORT = process.env.PORT || 5001;
+
+// Start HTTPS server
+https.createServer(options, app).listen(PORT, () => {
+    console.log(`🚀 HTTPS Server running on https://localhost:${PORT}`);
+});
