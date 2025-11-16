@@ -14,6 +14,8 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import ClientDashboard from "./pages/Dashboard/ClientDashboard.jsx";
 import AuthCallback from "./pages/Auth/AuthCallback.jsx";
 import AuthHashRouter from './components/AuthHashRouter.jsx';
+import ContractsPage from "./pages/Dashboard/Contracts.jsx";
+import ContractDetail from "./pages/Dashboard/ContractDetail.jsx";
 
 // temp admin entrance
 import AdminRoutes from './admin/routes'
@@ -50,6 +52,8 @@ function AppContent() {
           <Route path="/services/labor-and-delivery" element={<Labor />} />
           <Route path="/services" element={<Services />} />
           <Route path="/inquiry" element={<InquiryPage />} />
+          <Route path="/dashboard/contracts" element={<ContractsPage />} />
+          <Route path="/dashboard/contracts/:id" element={<ContractDetail />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/dashboard" element={
             <ProtectedRoute>
