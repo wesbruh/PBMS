@@ -79,6 +79,8 @@ export function AuthProvider({ children }) {
     session,
     user: session?.user ?? null,
     profile,
+    // Ensure profile information can be updated
+    setProfile,
     loading,
   };
 
