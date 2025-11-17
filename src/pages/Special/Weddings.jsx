@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import GoToTop from '../../GoToTop';
 
 function Weddings() {
   const heroImg = "/images/temp_wedding_hero.jpg";
@@ -76,10 +77,11 @@ function Weddings() {
         </div>
 
         <div className="absolute right-10 bottom-10">
-          <Link to="/contact"
-            className="bg-brown px-6 py-3 text-white text-sm hover:bg-[#AB8C4B]">
+          <a
+            className="bg-brown px-6 py-3 text-white text-sm hover:bg-[#AB8C4B]"
+            href="mailto:Your.rootsphotography@gmail.com">
             INQUIRE HERE
-          </Link>
+          </a>
         </div>
       </div>
 
@@ -117,6 +119,7 @@ function Weddings() {
           </div>
         ))}
       </div>
+      <GoToTop />
     </div>
   );
 }

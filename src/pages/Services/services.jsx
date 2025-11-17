@@ -4,7 +4,6 @@ function Services() {
  const heroImg = "/images/temp_img.jpg";
  const ctaImg = "/images/temp_booking.jpg";
 
-
  const packages = [
    {
      name: "Mini Session",
@@ -104,7 +103,7 @@ function Services() {
                    <li key={idx}>{pt}</li>
                  ))}
                </ul>
-               <Link to="/contact"
+               <Link to="/inquiry"
                  className="flex justify-center items-center w-full mt-6 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm">
                  Book Now
                </Link>
@@ -122,7 +121,7 @@ function Services() {
 
 
          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-           <Link to="/weddings" className="block border border-white/30">
+           <Link to="/services/weddings" className="block border border-white/30">
              <img src="/images/temp_t.jpg" className="object-cover h-56 w-full" />
              <div className="p-5">
                <h4 className="font-serif text-2xl">Weddings</h4>
@@ -132,7 +131,7 @@ function Services() {
            </Link>
 
 
-           <Link to="/labor-delivery" className="block border border-white/30">
+           <Link to="/services/labor-delivery" className="block border border-white/30">
              <img src="/images/temp_s.jpg" className="object-cover h-56 w-full" />
              <div className="p-5">
                <h4 className="font-serif text-2xl">Labor & Delivery</h4>
@@ -154,11 +153,11 @@ function Services() {
          <div className="flow-root my-24">
            <div className="flex flex-col float-left md:float-right lg:float-right pl-10 md:pr-13 lg:pr-15">
              <p className="font-mono text-white">YOUR ROOTS PHOTOGRAPHY</p>
-             <Link to="/contact"
-               className="flex justify-center items-center w-full mx-auto mt-5 mb-6 md:mb-8 lg:mb-10
-                          bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm">
-               CONTACT ME
-             </Link>
+              <a className='flex justify-center items-center w-full mx-auto mt-5 mb-6 md:mb-8 lg:mb-10
+                             bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm'
+                href="mailto:Your.rootsphotography@gmail.com">
+                CONTACT ME!
+              </a>
            </div>
          </div>
        </div>

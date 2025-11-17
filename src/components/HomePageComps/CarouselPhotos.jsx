@@ -52,7 +52,7 @@ function CarouselSection() {
               {/* contact button */}
         <div className='flex justify-center mt-12'>
           <Link
-            to="/contact"
+            to="/inquiry"
             className='inline-block px-8 py-3 bg-[#7E4C3C] text-white text-lg font-serif hover:bg-[#AB8C4B] transition'
           >
             Book With Me!
