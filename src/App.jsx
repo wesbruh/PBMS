@@ -16,6 +16,7 @@ import AuthCallback from "./pages/Auth/AuthCallback.jsx";
 import AuthHashRouter from './components/AuthHashRouter.jsx';
 import ContractsPage from "./pages/Dashboard/Contracts.jsx";
 import ContractDetail from "./pages/Dashboard/ContractDetail.jsx";
+import IdleLogout from './components/IdleLogout.jsx';
 
 // temp admin entrance
 import AdminRoutes from './admin/routes'
@@ -35,6 +36,7 @@ function AppContent() {
 
   return (
     <div className='min-h-screen flex flex-col'>
+      <IdleLogout />
       { /* temp dynamic navbar */ }
       {
         isAdminPage ?

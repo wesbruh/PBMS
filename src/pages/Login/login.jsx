@@ -1,11 +1,13 @@
-import {useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 export default function Login(){
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || "/dashboard";
+    const { user, loading } = useAuth();
 
     const [form, setForm] = useState({ email: "", password: "",});
     const [error, setError] = useState("");
@@ -14,6 +16,13 @@ export default function Login(){
     const [showReset, setShowReset] = useState(false);
     const [resetEmail, setResetEmail] = useState("");
     const [resetMsg, setResetMsg] = useState("");
+
+    // If already authenticated (e.g., after clicking confirmation link), send to target page
+    useEffect(() => {
+        if (!loading && user) {
+            navigate(from, { replace: true });
+        }
+    }, [from, loading, navigate, user]);
 
     const onChange = (e) =>{
         const {name, value} = e.target;

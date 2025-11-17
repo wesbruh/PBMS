@@ -56,15 +56,15 @@ export default function SignUp() {
     const redirectUrl = `${window.location.origin}/auth/callback`;
 
     const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
+      email: values.email,
+      password: values.password,
+      options: {
         data: {
-            first_name: values.firstName,
-            last_name: values.lastName,
+          first_name: values.firstName,
+          last_name: values.lastName,
         },
         emailRedirectTo: redirectUrl,
-        },
+      },
     });
 
     // error path
@@ -81,20 +81,37 @@ export default function SignUp() {
     }
 
     const authUser = data.user;
+    const duplicateSignup =
+      authUser &&
+      Array.isArray(authUser.identities) &&
+      authUser.identities.length === 0;
+
+    if (duplicateSignup) {
+      setSubmitError("That email is already in use. Please log in instead.");
+      setInfoMsg("");
+      return;
+    }
 
     // upsert in your "User" table
     if (authUser?.id) {
-        const { error: userTableErr } = await supabase.from("User").upsert({
+      const profilePayload = {
         id: authUser.id,
         email: values.email,
         first_name: values.firstName,
         last_name: values.lastName,
         // if email is NOT confirmed yet, mark inactive
         is_active: !!authUser.email_confirmed_at,
-        });
-        if (userTableErr) {
+      };
+
+      if (data?.session) {
+        profilePayload.last_login_at = new Date().toISOString();
+        profilePayload.is_active = true;
+      }
+
+      const { error: userTableErr } = await supabase.from("User").upsert(profilePayload);
+      if (userTableErr) {
         console.error("User upsert error:", userTableErr);
-        }
+      }
     }
 
     // if no session was returned, it's confirmation mode
