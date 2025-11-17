@@ -6,17 +6,20 @@ import { useState, useEffect } from "react";
 function Admin() {
   const [users, setUsers] = useState([]);
 
+  // Load users on page load
   useEffect(() => {
     async function loadUsers() {
       const { data, error } = await supabase
         .from("User")
-        .select("id, email, first_name, last_name, phone");
+        .select("id, email, first_name, last_name");
 
-      if (!error) setUsers(data);
+      if (error) console.error(error);
+      else setUsers(data);
     }
     loadUsers();
   }, []);
 
+  // Handle notification sending
   async function handleSubmit(e) {
     e.preventDefault();
 
@@ -27,31 +30,24 @@ function Admin() {
       return;
     }
 
-    try {
-      const response = await fetch(
-        "https://zccwrooyhkpkslgqdkvq.supabase.co/functions/v1/hyper-worker",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
+    const selectedUser = users.find((u) => u.email === email);
 
-      const result = await response.json();
+    if (!selectedUser) {
+      alert("User not found.");
+      return;
+    }
 
-      if (!response.ok) {
-        console.error(result);
-        alert("❌ Failed to send email.");
-        return;
-      }
+    // Insert notification into custom table
+    const { error } = await supabase.from("user_notifications").insert({
+      user_id: selectedUser.id,
+      message: "Admin sent you a notification.",
+    });
 
-      alert("✅ Email sent!");
-    } catch (err) {
-      console.error(err);
-      alert("❌ Error sending email.");
+    if (error) {
+      console.error(error);
+      alert("❌ Failed to save notification.");
+    } else {
+      alert("✅ Notification saved!");
     }
   }
 
@@ -60,6 +56,7 @@ function Admin() {
       <div className="flex w-1/3">
         <Sidebar />
       </div>
+
       <div className="flex w-2/3">
         <Frame />
 
@@ -73,10 +70,11 @@ function Admin() {
               <label className="text-lg">Select a user:</label>
 
               <div className="flex flex-row gap-4">
-                <select name="userDropdown" id="userDropdown">
-                  <option value="OPTION_SELECT" disabled selected>
+                <select name="userDropdown" id="userDropdown" defaultValue="OPTION_SELECT">
+                  <option value="OPTION_SELECT" disabled>
                     Choose an option
                   </option>
+
                   {users.map((u) => (
                     <option key={u.id} value={u.email}>
                       {u.first_name} {u.last_name}
