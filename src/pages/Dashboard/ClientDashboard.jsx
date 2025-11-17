@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
+import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
+import { saveAs } from "file-saver";
 import { Link } from "react-router-dom";
 
 
@@ -41,6 +43,9 @@ export default function ClientDashboard() {
 
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
+
+  // used to track download gallery progress
+  const [downloadingGalleries, setDownloadingGalleries] = useState({});
 
 
   // load all data that belongs to THIS user only
@@ -354,6 +359,136 @@ export default function ClientDashboard() {
     );
   }
 
+// GALLERY DOWNLOAD FUNCTION //
+  // download entire gallery as a ZIP file, ensured its with the authenticate client's own gallery
+  const handleDownloadGallery = async (galleryId, galleryTitle) => {
+    try {
+      // CONSOLE DEBUG 
+      // console.log('Starting download for gallery ID:', galleryId);
+
+      // mark as downloading
+      setDownloadingGalleries(prev => ({ ...prev, [galleryId]: true }));
+
+      // 1) Fetch photos for this gallery
+      const {data: photos, error: photosError} = await supabase
+      .from("Photo")
+      .select("id, storage_path, filename")
+      .eq("gallery_id", galleryId)
+      .order("uploaded_at", { ascending: true });
+
+      // CONSOLE DEBUG 
+      // console.log('fetched photos:', photos);
+      // console.log('Photos Error:', photosError);
+      
+      // error in fetching photos
+      if (photosError) {
+        console.error("Error fetching photos:", photosError);
+        alert("Failed to fetch gallery photos. Please try again later.");
+        return;
+      }
+      
+      // no photos found in gallery message
+      if (!photos || photos.length === 0) {
+        alert ("This gallery has no photos.");
+        return;
+      }
+      
+      // 2) Create a new ZIP file
+      const zip = new JSZip();
+      const folder = zip.folder(galleryTitle || "Gallery");
+      
+      // 3) Download each photo and add to ZIP
+      let successCount = 0;
+      for (let i = 0; i < photos.length; i++) {
+        const photo = photos[i];
+
+        // CONSOLE DEBUG 
+        // console.log(`Processing photo ${i + 1}:`, photo.filename);
+        // console.log('Path:', photo.storage_path);
+
+        try {
+
+          // get signed URL for secure access from Supabase Storage
+          const { data: urlData, error: urlError } = await supabase.storage
+          .from("photos") // assuming 'photos' is the bucket name
+          .createSignedUrl(photo.storage_path, 3600); // URL valid for 1 hour
+          
+          // CONSOLE DEBUG 
+          // console.log( 'URL result:', {urlData, urlError});
+
+          if (urlError) {
+            console.error(`Error getting URL for ${photo.filename}:`, urlError);
+            continue;
+          }
+
+          // CONSOLE DEBUG 
+          // console.log('Signed URL obtained.');
+          
+          // fetch the photo as a blob
+          const response = await fetch(urlData.signedUrl);
+          
+          // CONSOLE DEBUG 
+          // console.log('Fetch response:', response.status, response.ok);
+
+          if (!response.ok) {
+            console.error(`Error downloading ${photo.filename}`);
+            continue;
+          }
+          
+          const blob = await response.blob();
+
+          // CONSOLE DEBUG
+          // console.log('Blob size:', blob.size, 'bytes');
+          
+          // add to zip folder
+          folder.file(photo.filename, blob);
+          successCount++;
+
+          // CONSOLE DEBUG
+          // console.log('Added to ZIP');
+
+        } catch (error) {
+          console.error(`Error processing ${photo.filename}:`, error);
+        }
+      }
+
+      // CONSOLE DEBUG
+      // console.log('\n Total successful:', successCount, 'out of', photos.length);
+
+      if (successCount === 0) {
+        alert ("Failed to download any photos from this gallery.");
+        return;
+      }
+      
+      // 4) generate the ZIP file and trigger download
+
+      // CONSOLE DEBUG (keep)
+      console.log('Generating ZIP...');
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const zipFilename = `${galleryTitle || "gallery"}_${new Date().getTime()}.zip`;
+
+      // CONSOLE DEBUG (keep)
+      console.log('Saving as:', zipFilename);
+
+      saveAs (zipBlob, zipFilename);
+      
+      if (successCount < photos.length) {
+        alert (`Downloaded ${successCount} out of ${photos.length} photos. Some files failed.`);
+      }
+    
+    } catch (error) {
+      console.error("Error downloading gallery:", error);
+      alert ("An error occurred while downloading the gallery. Please try again later.");
+    } finally {
+      // remove downloading state
+      setDownloadingGalleries(prev => {
+        const next = {...prev};
+        delete next[galleryId];
+        return next;
+      });
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
@@ -577,7 +712,10 @@ export default function ClientDashboard() {
             </p>
           ) : (
             <ul className="space-y-3">
-              {galleries.map((g) => (
+              {galleries.map((g) => {
+                // download button shows loading state if downloading
+                const isDownloading = downloadingGalleries[g.id];
+                return (
                 <li
                   key={g.id}
                   className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
@@ -598,8 +736,22 @@ export default function ClientDashboard() {
                       Protected
                     </span>
                   ) : null}
+                {/* Download Gallery Button */}
+                <button
+                  type="button"
+                  onClick={() => handleDownloadGallery(g.id, g.title)}
+                  disabled={isDownloading}
+                  className={`text-xs px-3 py-1 rounded border border-black font-semibold transition ${
+                    isDownloading
+                      ? "bg-neutral-200 text-neutral-500 cursor-wait"
+                      : "bg-[#446780] hover:bg-[#98c0dc] cursor-pointer text-white" 
+                  }`}
+                  >
+                    {isDownloading ? "Downloading..." : "Download"}
+                  </button>
                 </li>
-              ))}
+              );
+            })}
             </ul>
           )}
         </section>
