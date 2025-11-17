@@ -20,10 +20,16 @@ pool.connect()
     .then(() => console.log(" PostgreSQL connected"))
     .catch(err => console.error("Database connection error:", err));
 
-// Routes
+// Auth Routes
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
 
+// ⭐ ADD THIS
+const adminRoutes = require("./routes/admin");
+app.use("/api/admin", adminRoutes);
+// ⭐ Now /api/admin/send-notification works
+
+// Test route
 app.get("/test-db", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM users LIMIT 5;");
