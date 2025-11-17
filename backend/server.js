@@ -15,7 +15,6 @@ app.use(
         origin: [
             //"http://localhost:5173",      // Vite frontend old URL
             "https://localhost:5173",     // Vite + HTTPS
-            "https://your-supabase-domain.supabase.co" // your Supabase project
         ],
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
         credentials: true
@@ -41,5 +40,5 @@ const PORT = process.env.PORT || 5001;
 
 // Start HTTPS server
 https.createServer(options, app).listen(PORT, () => {
-    console.log(`🚀 HTTPS Server running on https://localhost:${PORT}`);
+    console.log(`HTTPS Server running on https://localhost:${PORT}`);
 });
