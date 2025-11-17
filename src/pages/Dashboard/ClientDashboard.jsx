@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
+import { Link } from "react-router-dom";
 
 
 
@@ -603,48 +604,63 @@ export default function ClientDashboard() {
           )}
         </section>
 
-        {/* Forms / Contracts */}
-        <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-          <h2 className="text-lg font-serif text-brown mb-3">
-            Forms & Contracts
-          </h2>
-          {contracts.length === 0 ? (
-            <p className="text-sm text-neutral-500">
-              No contracts have been issued to you yet.
+ {/* Forms / Contracts */}
+<section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
+  <h2 className="text-lg font-serif text-brown mb-3">Forms & Contracts</h2>
+
+  {contracts.length === 0 ? (
+    <div className="flex items-center justify-between">
+      <p className="text-sm text-neutral-500">
+        No contracts have been issued to you yet.
+      </p>
+      <Link
+        to="/dashboard/contracts"
+        className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
+      >
+        Go to Contracts
+      </Link>
+    </div>
+  ) : (
+    <ul className="space-y-3">
+      {contracts.map((c) => (
+        <li
+          key={c.id}
+          className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+        >
+          <div>
+            <p className="text-sm text-brown font-semibold">
+              {c.title || "Contract"}
             </p>
+            <p className="text-xs text-neutral-500">
+              {c.status === "signed"
+                ? `Signed ${c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}`
+                : `Status: ${c.status || "draft"}`}
+            </p>
+          </div>
+
+          {c.status === "signed" && c.signed_pdf_url ? (
+            <a
+              href={c.signed_pdf_url}
+              target="_blank"
+              rel="noreferrer"
+              className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
+            >
+              View Signed PDF
+            </a>
           ) : (
-            <ul className="space-y-3">
-              {contracts.map((c) => (
-                <li
-                  key={c.id}
-                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                >
-                  <div>
-                    <p className="text-sm text-brown font-semibold">
-                      Contract
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      {c.signed_at
-                        ? `Signed ${new Date(
-                          c.signed_at
-                        ).toLocaleDateString()}`
-                        : "Not signed yet"}
-                    </p>
-                  </div>
-                  <a
-                    href={c.pdf_url ?? "#"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
-                  >
-                    {c.signed_at ? "View" : "Open"}
-                  </a>
-                </li>
-              ))}
-            </ul>
+            <Link
+              to={`/dashboard/contracts?focus=${c.id}`}
+              className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
+            >
+              Review &amp; Sign
+            </Link>
           )}
-        </section>
-      </div>
+        </li>
+      ))}
+    </ul>
+  )}
+</section>
+</div>
 
       {/*Settings Modal*/}
       {showSettings && (
