@@ -24,6 +24,13 @@ pool.connect()
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
 
+// New Scheduling Routes
+const sessionsRoutes = require("./routes/sessionsRoutes");
+const availabilityRoutes = require("./routes/availabilityRoutes");
+app.use("/api/sessions", sessionsRoutes);
+app.use("/api/availability", availabilityRoutes);
+
+
 app.get("/test-db", async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM users LIMIT 5;");

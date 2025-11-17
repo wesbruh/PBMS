@@ -6,7 +6,7 @@ import {getUserSessions, getUserDocuments } from "../controller/dashboardControl
 
 const router = express.Router();
 
-router.get("./sessions", verifyToken, getUserSessions);
+router.get("/sessions", verifyToken, getUserSessions);
 router.get("/documents", verifyToken, getUserDocuments);
 
 export default router;

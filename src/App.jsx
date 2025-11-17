@@ -19,6 +19,8 @@ import AuthHashRouter from './components/AuthHashRouter.jsx';
 import AdminRoutes from './admin/routes'
 import AdminNavbar from './admin/components/Navbar/navbar';
 
+import SessionRoute from "./pages/SessionRoute.jsx";
+
 function App() {
   return (
     <BrowserRouter>
@@ -56,7 +58,16 @@ function AppContent() {
               <ClientDashboard />
             </ProtectedRoute>} 
           />
-          {/* temp admin entrance*/}
+          {/* temp admin entrance and booking page for signed-in users*/}
+          <Route
+              path="/session"
+              element={
+                <ProtectedRoute>
+                  <SessionRoute />
+                </ProtectedRoute>
+              }
+            />
+          {/* admin */}
           {AdminRoutes()}
         </Routes>
       </AuthHashRouter>
