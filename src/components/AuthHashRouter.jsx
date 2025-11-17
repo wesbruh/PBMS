@@ -14,20 +14,39 @@ export default function AuthHashRouter({ children }) {
   useEffect(() => {
     // only care about hash-based auth
     const hash = window.location.hash;
-    if (!hash || hash === "#") return;
+    const search = window.location.search;
+    if ((!hash || hash === "#") && !search) return;
 
     // these are the ones supabase uses
-    const hasAuthStuff =
+    const hasAuthHash =
       hash.includes("access_token=") ||
       hash.includes("refresh_token=") ||
       hash.includes("error=") ||
       hash.includes("type=recovery") ||
       hash.includes("type=signup");
 
+    const hasAuthQuery =
+      search.includes("access_token=") ||
+      search.includes("refresh_token=") ||
+      search.includes("error=") ||
+      search.includes("code=") || // oauth PKCE
+      search.includes("token_hash=") ||
+      search.includes("type=recovery") ||
+      search.includes("type=signup");
+
     // we are already on /auth/callback -> let that page handle it
-    if (hasAuthStuff && location.pathname !== "/auth/callback") {
+    if (location.pathname === "/auth/callback") {
+      return;
+    }
+
+    if (hasAuthHash) {
       // keep the hash when we navigate
       navigate(`/auth/callback${hash}`, { replace: true });
+      return;
+    }
+
+    if (hasAuthQuery) {
+      navigate(`/auth/callback${search}`, { replace: true });
     }
   }, [location.pathname, navigate]);
 

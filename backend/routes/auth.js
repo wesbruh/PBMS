@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
+const https = require("https");
 const { Pool } = require("pg");
 require("dotenv").config();
 
@@ -14,6 +15,58 @@ const pool = new Pool({
   password: process.env.PG_PASSWORD,
   database: process.env.PG_DATABASE,
 });
+
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+function supabaseRequest(path, { method = "GET", headers = {} } = {}) {
+  if (!SUPABASE_URL) {
+    return Promise.reject(new Error("Missing SUPABASE_URL environment variable."));
+  }
+
+  const url = new URL(path, SUPABASE_URL);
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      url,
+      {
+        method,
+        headers,
+      },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk) => {
+          data += chunk;
+        });
+        res.on("end", () => {
+          let parsed = data;
+          try {
+            parsed = data ? JSON.parse(data) : null;
+          } catch {
+            parsed = data;
+          }
+
+          if (res.statusCode >= 200 && res.statusCode < 300) {
+            resolve(parsed);
+          } else {
+            const err = new Error(
+              parsed?.error_description ||
+                parsed?.error ||
+                parsed?.message ||
+                `Supabase request failed (${res.statusCode})`
+            );
+            err.status = res.statusCode;
+            err.response = parsed;
+            reject(err);
+          }
+        });
+      }
+    );
+
+    req.on("error", reject);
+    req.end();
+  });
+}
 
 
 // Route for the Login 
@@ -158,6 +211,68 @@ router.post("/reset-password/:token", async (req, res) => {
     console.error("❌ Reset-password error:", err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
+});
+
+// Delete the currently authenticated Supabase user and their profile row
+router.delete("/account", async (req, res) => {
+  if (!SUPABASE_ANON_KEY || !SUPABASE_SERVICE_ROLE_KEY) {
+    return res
+      .status(500)
+      .json({ message: "Supabase credentials not configured on server." });
+  }
+
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+  if (!token) {
+    return res.status(401).json({ message: "Missing Authorization token." });
+  }
+
+  let authUser;
+  try {
+    authUser = await supabaseRequest("/auth/v1/user", {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  } catch (err) {
+    console.error("Supabase session validation failed:", err);
+    return res.status(401).json({ message: "Invalid session token." });
+  }
+
+  const userId = authUser?.id;
+  if (!userId) {
+    return res.status(400).json({ message: "Unable to determine user id." });
+  }
+
+  try {
+    await supabaseRequest(`/rest/v1/User?id=eq.${userId}`, {
+      method: "DELETE",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        Prefer: "return=minimal",
+      },
+    });
+  } catch (err) {
+    console.error("Failed deleting User row:", err);
+    // continue attempting to delete the auth user to avoid leaving a dangling account
+  }
+
+  try {
+    await supabaseRequest(`/auth/v1/admin/users/${userId}`, {
+      method: "DELETE",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
+    });
+  } catch (err) {
+    console.error("Failed deleting Supabase auth user:", err);
+    return res.status(500).json({ message: "Could not remove auth user." });
+  }
+
+  return res.json({ success: true });
 });
 
 

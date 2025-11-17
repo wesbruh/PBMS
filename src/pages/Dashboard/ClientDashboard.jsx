@@ -11,6 +11,7 @@ export default function ClientDashboard() {
   const [invoices, setInvoices] = useState([]);
   const [galleries, setGalleries] = useState([]);
   const [contracts, setContracts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [changingPassword, setChangingPassword] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -24,6 +25,8 @@ export default function ClientDashboard() {
 
   // Will be used to display settings modal 
   const [showSettings, setShowSettings] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   // To allow a user to edit their profile information and to check if they are editting
   const [isEditing, setIsEditing] = useState(false);
@@ -118,6 +121,21 @@ export default function ClientDashboard() {
         }
       }
       setContracts(contractRows);
+
+      // 5) notifications / reminders for this user (most recent first)
+      const { data: notificationRows, error: notifErr } = await supabase
+        .from("Notification")
+        .select("id, subject, body, status, sent_at, created_at, session_id")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (notifErr) {
+        console.error("Notification fetch error:", notifErr);
+        setNotifications([]);
+      } else {
+        setNotifications(notificationRows ?? []);
+      }
 
       setLoading(false);
     }
@@ -359,6 +377,57 @@ export default function ClientDashboard() {
           Account Settings
         </button>
       </header>
+
+      {/* Reminders / notifications */}
+      <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-serif text-brown">Reminders</h2>
+          <span className="text-xs text-neutral-500">
+            Showing latest {notifications.length || 0}
+          </span>
+        </div>
+        {notifications.length === 0 ? (
+          <p className="text-sm text-neutral-500">
+            You’re all caught up. New reminders will appear here.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {notifications.map((n) => (
+              <li
+                key={n.id}
+                className="bg-white border rounded-md px-3 py-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-brown font-semibold">
+                      {n.subject || "Reminder"}
+                    </p>
+                    <p className="text-xs text-neutral-600 whitespace-pre-wrap">
+                      {n.body || "You have an update to review."}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-[11px] px-2 py-1 rounded border ${
+                      n.status === "sent"
+                        ? "bg-neutral-100 border-neutral-200 text-neutral-700"
+                        : "bg-amber-50 border-amber-200 text-amber-700"
+                    }`}
+                  >
+                    {n.status || "pending"}
+                  </span>
+                </div>
+                <p className="text-[11px] text-neutral-500 mt-2">
+                  {n.sent_at
+                    ? `Sent ${new Date(n.sent_at).toLocaleString()}`
+                    : n.created_at
+                      ? `Created ${new Date(n.created_at).toLocaleString()}`
+                      : ""}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {/* grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -946,5 +1015,4 @@ export default function ClientDashboard() {
     </div>
   );
 }
-
-
+    
