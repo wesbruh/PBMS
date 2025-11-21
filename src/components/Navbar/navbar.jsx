@@ -8,7 +8,7 @@ function Navbar() {
   // determines location of user based on current page
   const location = useLocation();
 
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   // for mobile menu management and special services accordian
@@ -16,6 +16,15 @@ function Navbar() {
   const [isSpecialServicesOpen, setIsSpecialServicesOpen] = useState(false);
 
   const handleLogout = async () => {
+    if (user?.id) {
+      const { error } = await supabase
+        .from("User")
+        .update({ is_active: false })
+        .eq("id", user.id);
+      if (error) {
+        console.error("Failed to mark user inactive:", error);
+      }
+    }
     await supabase.auth.signOut();
     navigate("/login");
     setIsMenuOpen(false); // mobile menu close on logout
@@ -41,7 +50,7 @@ function Navbar() {
 
       {/* logo and brand name on left side of Navbar, adjusted size */}
       <div className='flex items-center gap-3'>
-        <img src="public/logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12 md:h-25 md:w-25'/>
+        <img src="/logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12 md:h-25 md:w-25'/>
         <h1 className={`${isHomePage ? 'text-white' : 'text-[#7E4C3C]'} font-serif text-2xl flex-grid`}>YOUR ROOTS PHOTOGRAPHY</h1> 
       </div>
 
