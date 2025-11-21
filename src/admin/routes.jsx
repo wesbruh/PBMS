@@ -1,4 +1,3 @@
-// src/admin/routes.jsx
 import { Outlet, Route } from 'react-router-dom';
 import AdminHome from './pages/Home/home';
 import Sessions from './pages/Sessions/sessions';
