@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
 import { saveAs } from "file-saver";
 import { Link } from "react-router-dom";
+import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
 
 
 
@@ -626,12 +627,7 @@ export default function ClientDashboard() {
                         >
                           <i class="fa-solid fa-eye"></i>
                         </a>
-                        <a
-                          className='text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.75'
-                          aria-label="Download"
-                        >
-                          <i className="fa-solid fa-download text-sm"></i>
-                        </a>
+                        <DownloadInvoiceButton invoiceId={inv.id} />
                       </div>
                       <div className="flex relative mx-auto lg:mr-0">
                         <div className="flex lg:absolute lg:right-5">
