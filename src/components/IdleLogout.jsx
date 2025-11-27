@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
  * Logs the user out after a period of inactivity to protect their account.
  * Listens to common activity events and resets a timeout while the user is active.
  */
-export default function IdleLogout({ timeoutMs = 0.1 * 60 * 1000 }) {
+export default function IdleLogout({ timeoutMs = 10 * 60 * 1000 }) { // changed to default: 10 minute timeout
   const { user, loading } = useAuth();
   const timerRef = useRef(null);
 
