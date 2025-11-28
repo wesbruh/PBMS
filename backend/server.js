@@ -24,10 +24,11 @@ pool.connect()
 const authRoutes = require("./routes/auth");
 app.use("/api/auth", authRoutes);
 
-// ⭐ ADD THIS
 const adminRoutes = require("./routes/admin");
 app.use("/api/admin", adminRoutes);
-// ⭐ Now /api/admin/send-notification works
+
+const galleryRoutes = require("./routes/galleryRoutes");
+app.use("/api", galleryRoutes);
 
 // Test route
 app.get("/test-db", async (req, res) => {
