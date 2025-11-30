@@ -80,9 +80,14 @@
 <!-- SYNOPSIS -->
 ## About The Project 
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+<div align="center">
+  <img src="public/images/ProductNameSSForREADME.png" alt="PBMS client dashboard screenshot" width="900">
+</div>
 
-Here's a blank template to get started. To avoid retyping too much info, do a search and replace with your text editor for the following: `github_username`, `repo_name`, `twitter_handle`, `linkedin_username`, `email_client`, `email`, `project_title`, `project_description`, `project_license`
+The Photography Business Management System (PBMS) is a full-stack web platform built for our client, Bailey White of Your Roots Photography. The system streamlines the entire client experience by allowing users to create accounts, schedule photography sessions, submit inquiries, make secure payments, and access their final galleries. On the admin side, the platform provides an intuitive dashboard for managing clients, bookings, invoices, contracts, galleries, and notifications—all in one place.
+
+This project was developed as part of the Senior Capstone sequence (CSC 190/191) at California State University, Sacramento.
+
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -147,6 +152,18 @@ This is an example of how to list things you need to use the software and how to
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p> -->
 
+## Entity Relationship Diagram
+
+Below is the Entity Relationship Diagram (ERD) that defines the data structure for the Photography Business Management System.
+
+This diagram outlines the relationships between key components such as clients, sessions, invoices, payments, galleries, and forms.
+
+<div align="center">
+  <img src="public/images/ERD.png" alt="PBMS ERD" width="800">
+</div>
+
+<p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 
 
 <!-- USAGE EXAMPLES -->
@@ -177,7 +194,7 @@ See the [open issues](https://github.com/github_username/repo_name/issues) for a
 <!-- DEVLOPER INSTRUCTIONS -->
 ### DEVLOPER INSTRUCTIONS
 
-Example text in this area.
+Placeholder, will be done in Csc 191.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -185,14 +202,14 @@ Example text in this area.
 <!-- TESTING -->
 ### TESTING
 
-Example text in this area.
+Placeholder, will be done in Csc 191.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 <!-- DELPOYMENT -->
 ### DEPLOYMENT
 
-Example text in this area.
+Placeholder, will be done in Csc 191
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -201,7 +218,9 @@ Example text in this area.
 <!-- UNIVERSITY/TEAM MEMBER CONTACT -->
 # Contact
 
-insert sac state compsci logo image here 
+<div align="center">
+  <img src="public/images/Sac State Computer Science Logo.jpg" alt="CSUS College of Engineering & Computer Science Logo" width="200">
+</div>
 
 <h3 align="center"> College of Engineering and Computer Science
 <br>
