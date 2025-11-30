@@ -254,12 +254,12 @@ export default function SignUp() {
 
           <button
             className="flex justify-center items-center w-1/2 mx-auto mt-6 mb-6 md:mb-8 lg:mb-10
-                        bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-sans border-2 border-black rounded-md transition disabled:opacity-60"
+                        bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-serif border border-black rounded-md transition disabled:opacity-60 cursor-pointer"
             type="submit"
             disabled={isSubmitting}
             aria-label="Create account"
           >
-            {isSubmitting ? "Creating..." : "CREATE ACCOUNT"}
+            {isSubmitting ? "Creating..." : "Create Account"}
           </button>
         </form>
       </div>

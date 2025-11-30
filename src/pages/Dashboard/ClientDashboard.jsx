@@ -495,9 +495,6 @@ export default function ClientDashboard() {
     <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
       {/* header */}
       <header className="flex flex-col gap-1">
-        <p className="text-sm tracking-[0.25em] text-brown uppercase">
-          Client Area
-        </p>
         <h1 className="text-3xl md:text-4xl font-serif text-brown">
           Welcome back{fullName ? `, ${fullName}` : ""}.
         </h1>
@@ -510,7 +507,7 @@ export default function ClientDashboard() {
         <button
           type="button"
           onClick={() => setShowSettings(true)}
-          className="cursor-pointer self-end mt-3 px-4 py-2 bg-off-white text-brown text-sm font-mono border-2 border-black rounded-md hover:opacity-80 transition">
+          className="cursor-pointer self-end mt-3 px-4 py-2 bg-white text-black text-sm font-mono border border-black rounded-md transition hover:bg-gray-200">
           Account Settings
         </button>
       </header>
@@ -763,7 +760,7 @@ export default function ClientDashboard() {
       </p>
       <Link
         to="/dashboard/contracts"
-        className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
+        className="text-xs px-3 py-1 rounded bg-[#446780] hover:bg-[#98c0dc] text-white font-semibold transition border border-black"
       >
         Go to Contracts
       </Link>
@@ -822,7 +819,7 @@ export default function ClientDashboard() {
           </div>
 
           {/* Dialog */}
-          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border-2 border-black rounded-md shadow-lg">
+          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
             <h2 className="text-center text-2xl font-serif font-extralight mb-4">
               Account Settings
             </h2>
@@ -936,7 +933,7 @@ export default function ClientDashboard() {
                   <button
                     type="button"
                     onClick={() => setShowSettings(false)}
-                    className="px-4 py-2 bg-off-white text-brown text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition cursor-pointer"
+                    className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
                   >
                     Close
                   </button>
@@ -945,7 +942,7 @@ export default function ClientDashboard() {
                   <button
                     type="button"
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-off-white text-brown text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition cursor-pointer"
+                    className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
                   >
                     Edit Profile
                   </button>
@@ -954,7 +951,7 @@ export default function ClientDashboard() {
                   <button
                     type="button"
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm border-2 border-black rounded-md transition cursor-pointer"
+                    className="px-4 py-2 bg-[#a00101] hover:bg-[#870000] text-white text-sm border border-black rounded-md transition cursor-pointer"
                   >
                     Delete Account
                   </button>
@@ -976,7 +973,7 @@ export default function ClientDashboard() {
                       setSaveError("");
                       setSaveSuccess("");
                     }}
-                    className="px-4 py-2 bg-off-white text-brown text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition cursor-pointer"
+                    className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -984,7 +981,7 @@ export default function ClientDashboard() {
                   <button
                     type="button"
                     onClick={() => setShowPasswordModal(true)}
-                    className="px-4 py-2 bg-off-white text-brown text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition cursor-pointer"
+                    className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
                   >
                     Change Password
                   </button>
@@ -993,7 +990,7 @@ export default function ClientDashboard() {
                   <button
                     type="button"
                     onClick={handleSaveProfile}
-                    className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition cursor-pointer"
+                    className="px-4 py-2 bg-[#5e8738] hover:bg-[#425e28] text-white text-sm font-sans border border-black rounded-md transition cursor-pointer"
                   >
                     Save Changes
                   </button>
@@ -1006,9 +1003,9 @@ export default function ClientDashboard() {
               type="button"
               aria-label="Close"
               onClick={() => setShowSettings(false)}
-              className="absolute top-2 right-2 px-2 py-1 font-sans text-sm border-2 border-black rounded-md bg-white hover:opacity-80 cursor-pointer"
+              className="absolute top-2 right-2 px-2 py-1 font-sans text-lg rounded-md bg-white cursor-pointer"
             >
-              x
+              ×
             </button>
           </div>
         </div>
@@ -1023,7 +1020,7 @@ export default function ClientDashboard() {
         >
           <div className="absolute inset-0 bg-black/50"></div>
 
-          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border-2 border-black rounded-md shadow-lg">
+          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
 
             <h2 className="text-center text-2xl font-serif font-extralight mb-4">
               Change Password
@@ -1090,7 +1087,7 @@ export default function ClientDashboard() {
                     setSaveError("");
                     setSaveSuccess("");
                   }}
-                  className="px-4 py-2 bg-white text-brown text-sm border-2 border-black rounded-md hover:opacity-80 transition"
+                  className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1103,7 +1100,7 @@ export default function ClientDashboard() {
                       setShowPasswordModal(false);
                     }
                   }}
-                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm border-2 border-black rounded-md transition"
+                  className="px-4 py-2 bg-[#5e8738] hover:bg-[#425e28] text-white text-sm font-sans border border-black rounded-md transition cursor-pointer"
                 >
                   Save Password
                 </button>
@@ -1114,7 +1111,7 @@ export default function ClientDashboard() {
               type="button"
               aria-label="Close"
               onClick={() => setShowPasswordModal(false)}
-              className="absolute top-2 right-2 px-2 py-1 text-sm border-2 border-black rounded-md bg-white hover:opacity-80"
+              className="absolute top-2 right-2 px-2 py-1 text-lg border-0.5 border-black rounded-md bg-white cursor-pointer"
             >
               ×
             </button>
@@ -1133,8 +1130,8 @@ export default function ClientDashboard() {
           <div className="absolute inset-0 bg-black/50"></div>
 
           {/* Dialog */}
-          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border-2 border-black rounded-md shadow-lg">
-            <h2 className="text-center text-2xl font-serif font-extralight mb-4">
+          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
+            <h2 className="text-center text-2xl font-serif  mb-4">
               Delete Account
             </h2>
 
@@ -1146,7 +1143,7 @@ export default function ClientDashboard() {
               <button
                 type="button"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-white text-brown text-sm border-2 border-black rounded-md hover:opacity-80 transition"
+                className="px-4 py-2 bg-white text-black text-sm border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
               >
                 Cancel
               </button>
@@ -1158,7 +1155,7 @@ export default function ClientDashboard() {
                   console.log("Delete account clicked");
                   setShowDeleteConfirm(false);
                 }}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm border-2 border-black rounded-md transition"
+                className="px-4 py-2 bg-[#a00101] hover:bg-[#870000] text-white text-sm border border-black rounded-md transition cursor-pointer"
               >
                 Delete Account
               </button>
@@ -1169,9 +1166,9 @@ export default function ClientDashboard() {
               type="button"
               aria-label="Close"
               onClick={() => setShowDeleteConfirm(false)}
-              className="absolute top-2 right-2 px-2 py-1 text-sm border-2 border-black rounded-md bg-white hover:opacity-80"
+              className="absolute top-2 right-2 px-2 py-1 text-lg rounded-md bg-white cursor-pointer"
             >
-              x
+              ×
             </button>
           </div>
         </div>

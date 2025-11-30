@@ -43,7 +43,7 @@ function Testimonials() {
             <div className='absolute inset-0 flex items-center justify-center'>
               <div className='text-center text-4xl md:text-5xl lg:text-6xl text-shadow-sm font-extralight
                             w-11/12 md:w-7/12 lg:w-10/24'>
-                <p>love Notes from people i&apos;ve photographed</p>
+                <p>Love notes from people I've photographed</p>
               </div>
             </div>
           </div>
@@ -74,11 +74,11 @@ function Testimonials() {
         <div className='flex flex-col md:flex-row lg:flex-row mx-5'>
           <div className='flex flex-col w-full md:h-80 lg:h-120 md:w-3/8 lg:w-3/8 md:mx-5 lg:mx-10'>
             <div className='font-mono font-extralight flex flex-col justify-between'>
-              <p className='flex text-sm mt-5 md:mt-10 lg:mt-20 mb-5 md:mb-12 lg:mb-20'>
+              <p className='flex text-sm md:text-lg mt-5 md:mt-10 lg:mt-20 mb-5 md:mb-12 lg:mb-20'>
                 TESTIMONIALS
               </p>
               <div className='flex md:h-44 lg:h-47 items-center'>
-                <p className='flex text-xs md:text-xs lg:text-sm my-10 md:my-15 lg:my-25 w-4/5 md:w-full lg:w-full'>
+                <p className='flex text-xs md:text-lg my-10 md:my-15 lg:my-25 w-4/5 md:w-full lg:w-full'>
                   &quot;{temp_list[itr].test}&quot;
                 </p>
               </div>
@@ -115,7 +115,7 @@ function Testimonials() {
           src={temp_booking} />
         <div className='absolute flex flex-col my-25 w-full justify-between'>
           <div className='flex pl-10 md:pl-13 lg:pl-15 h-1/3'>
-            <p className='text-white text-2xl md:text-3xl lg:text-4xl font-serif'>lets get you booked!</p>
+            <p className='text-white text-2xl md:text-3xl lg:text-4xl font-serif'>Let's get you booked!</p>
           </div>
           <div className="flow-root my-24">
             <div className='flex flex-col float-left md:float-right lg:float-right pl-10 md:pr-13 lg:pr-15'>

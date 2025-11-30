@@ -188,8 +188,8 @@ export default function InquiryForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="inline-flex items-center rounded-md bg-neutral-900 text-white px-4 py-2
-                   disabled:opacity-40 disabled:cursor-not-allowed hover:bg-neutral-800 transition"
+        className="inline-flex items-center rounded-md bg-[#446780] hover:bg-[#98c0dc] text-white border border-black px-4 py-2
+                   disabled:opacity-40 disabled:cursor-not-allowed transition"
       >
         {isSubmitting ? "Checking..." : "Submit Inquiry"}
       </button>
