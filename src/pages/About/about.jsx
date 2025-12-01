@@ -35,17 +35,17 @@ export default function About() {
 
             {/* Pre-title*/}
             <p className="font-mono text-[14px] tracking-[0.25em] text-brown mb-14">
-              BEFORE YOU SHARE YOUR STORY..
+              BEFORE YOU SHARE YOUR STORY...
             </p>
 
             {/* Title:  */}
             <h1 className="font-serif font-light text-4xl md:text-5xl lg:text-6xl text-brown mb-14 -ml-2 md:-ml-6 lg:ml-0 xl:-ml-10
                            lg:whitespace-nowrap">
-              let me tell you mine..
+              let me tell you mine!
             </h1>
 
             {/* Body*/}
-            <div className="max-w-[560px] font-mono text-[15px] md:text-[16px] leading-8 text-neutral-600 space-y-6">
+            <div className="max-w-[560px] font-mono text-[15px] md:text-[16px] leading-8 text-neutral-600 space-y-6 z-10">
               <p>
                 My name is Bailey White. I'm a 24 year old self-taught photographer, wife, mom,
                 proud dog mom and a crazy plant lady.

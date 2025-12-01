@@ -86,13 +86,13 @@ function Navbar() {
         <>
           <Link
             to="/dashboard"
-            className="ml-12 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-lg leading-tight hover:bg-[#AB8C4B] transition border-2 border-black rounded-lg"
+            className="ml-12 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
           >
             Dashboard
           </Link>
           <button
             onClick={handleLogout}
-            className="ml-4 shrink-0 inline-block px-4 py-1.5 bg-white text-[#7E4C3C] text-lg leading-tight hover:bg-neutral-100 transition border-2 border-black rounded-lg"
+            className="ml-4 shrink-0 inline-block px-4 py-1.5 bg-white text-[#7E4C3C] text-sm leading-tight hover:bg-gray-200 cursor-pointer transition border border-black rounded-lg"
           >
             Log out
           </button>
@@ -182,19 +182,19 @@ function Navbar() {
           <div className="mt-8 space-y-3 px-4">
             {user ? (
               <>
-                <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="block w-full text-center px-4 py-2.5 bg-[#7E4C3C] text-white rounded-lg hover:bg-[#AB8C4B] transition border-2 border-black">
+                <Link to="/dashboard" onClick={() => setIsMenuOpen(false)} className="block w-full text-center px-4 py-1.5 bg-[#7E4C3C] text-white rounded-lg hover:bg-[#AB8C4B] transition border border-black">
                   Dashboard
                 </Link>
-                <button onClick={handleLogout} className="block w-full text-center px-4 py-2.5 bg-white text-[#7E4C3C] rounded-lg hover:bg-neutral-100 transition border-2 border-black">
+                <button onClick={handleLogout} className="block w-full text-center px-4 py-1.5 bg-white text-[#7E4C3C] rounded-lg hover:bg-neutral-100 transition border border-black">
                   Log out
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" onClick={() => setIsMenuOpen(false)} className="block w-full text-center px-4 py-2.5 bg-[#7E4C3C] text-white rounded-lg hover:bg-[#AB8C4B] transition border border-black">
+                <Link to="/login" onClick={() => setIsMenuOpen(false)} className="block w-full text-center px-4 py-1.5 bg-[#7E4C3C] text-white rounded-lg hover:bg-[#AB8C4B] transition border border-black">
                   Log in
                 </Link>
-                <Link to="/signup" onClick={() => setIsMenuOpen(false)} className="block w-full text-center px-4 py-2.5 bg-[#7E4C3C] text-white rounded-lg hover:bg-[#AB8C4B] transition border border-black">
+                <Link to="/signup" onClick={() => setIsMenuOpen(false)} className="block w-full text-center px-4 py-1.5 bg-[#7E4C3C] text-white rounded-lg hover:bg-[#AB8C4B] transition border border-black">
                   Create account
                 </Link>
               </>

@@ -148,10 +148,10 @@ export default function Login(){
                     {error && <p className="text-center text-red-600 text-xs mt-3 mb-1">{error}</p>}
 
                     <button className ='flex justify-center items-center w-1/2 mx-auto mt-6 mb-6 md:mb-8 lg:mb-10
-                                        bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font sans border-2 border-black rounded-md transition'
+                                        bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font sans border border-black rounded-md transition cursor-pointer'
                             type="submit"
                             aria-label="login-button">
-                             LOG IN
+                             Log In
                     </button>
                 </form>
             </div>
