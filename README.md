@@ -92,15 +92,6 @@ This project was developed as part of the Senior Capstone sequence (CSC 190/191)
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-### Built With
-
-* [![Vite]][Vite-url]
-* [![React]][React-url]
-* [![Tailwind]][Tailwind-url]
-* [![Supabase]][Supabase-url]
-* [![Node.js]][Node.js-url]
-
 ### Technologies and Collaborative Tools 
 
 * [![vscode]][vscode-url]
@@ -109,48 +100,49 @@ This project was developed as part of the Senior Capstone sequence (CSC 190/191)
 * [![Discord]][Discord-url]
 
 
+<!-- BACKGROUND  -->
+
+### Background
+
+Your Roots Photography is a modern photography brand based in Northern California that is dedicated to capturing real, emotional, and artisitc imagery. With a focus on lifestyle, wedding, and maternity photography, the business combines a documentary approach with creative editing to produce stunning visuals that clients can treasure for years. The brand's mission is to create an effortless client experience, from booking to final gallery delivery completely. The business emphasizes professionalism, creativity, and strong client relationships. However, all of these tasks are being completed manually and by just one person. 
+
+Our team recognized the need for a centralized, automated platform that would streamline these processes. 
+
+* Client dashbaord
+* Automated invoice generation
+* Online galleries
+* Contract management
+* Notifications and reminders
+* Secure session tracking
+
+Using a modern full-stack architecture
+
+ [![Vite]][Vite-url]
+ [![React]][React-url]
+ [![Tailwind]][Tailwind-url]
+ [![Supabase]][Supabase-url]
+ [![Node.js]][Node.js-url]
+ [![Express.js]][Express-url]
+
+Your Roots Photography allows users to create an account and log in to securely access their personal dashboard and content.  
+
+<div align="center">
+  <img src="public/images/login.png" alt="PBMS client dashboard screenshot" width="900">
+</div>
+
+The Client Dashboard offers users a clean, organized, and personalized overview of all their photography-related information.
+
+<div align="center">
+  <img src="public/images/westdash.png" alt="PBMS client dashboard screenshot" width="900">
+</div>
+
+
 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-<!-- 
 
 
-<!-- GETTING STARTED 
-## Getting Started
 
-This is an example of how you may give instructions on setting up your project locally.
-To get a local copy up and running follow these simple example steps.
-
-### Prerequisites
-
-This is an example of how to list things you need to use the software and how to install them.
-* npm
-  ```sh
-  npm install npm@latest -g
-  ```
-
-### Installation
-
-1. Get a free API Key at [https://example.com](https://example.com)
-2. Clone the repo
-   ```sh
-   git clone https://github.com/github_username/repo_name.git
-   ```
-3. Install NPM packages
-   ```sh
-   npm install
-   ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
-   ```
-5. Change git remote url to avoid accidental pushes to base project
-   ```sh
-   git remote set-url origin github_username/repo_name
-   git remote -v # confirm the changes
-   ```
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p> -->
 
 ## Entity Relationship Diagram
 
@@ -309,3 +301,5 @@ Gaurav Shergill - gauravshergill@csus.edu
 [Discord]: https://img.shields.io/badge/Discord-%235865F2.svg?&logo=discord&logoColor=white
 [Discord-url]: https://discord.com/
 
+[Express.js]: https://img.shields.io/badge/Express.js-%23404d59.svg?logo=express&logoColor=%2361DAFB
+[Express-url]: https://expressjs.com/ 
