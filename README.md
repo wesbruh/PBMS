@@ -1,14 +1,4 @@
-<!-- Improved compatibility of back to top link: See: https://github.com/othneildrew/Best-README-Template/pull/73 -->
 <a id="readme-top"></a>
-<!--
-*** Thanks for checking out the Best-README-Template. If you have a suggestion
-*** that would make this better, please fork the repo and create a pull request
-*** or simply open an issue with the tag "enhancement".
-*** Don't forget to give the project a star!
-*** Thanks again! Now go create something AMAZING! :D
--->
-
-
 
 <!-- PROJECT SHIELDS -->
 <!--
@@ -48,10 +38,11 @@
   <ol>
     <li>
       <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-        <li><a href="#technologies-and-collaborative-tools">Technologies and Collaborative Tools</a></li>
-      </ul>
+    </li>
+    <li>
+      <a href="#background">Background</a>
+      <li><a href="#entity-relationship-diagram">Entity Relationship Diagram</a>
+      </li>
     </li>
     <li><a href="#CSC-191-roadmap">CSC 191 Roadmap</a></li>
     <ul>
@@ -125,12 +116,7 @@ The Client Dashboard offers users a clean, organized, and personalized overview 
   <img src="public/images/westdash.png" alt="PBMS client dashboard screenshot" width="900">
 </div>
 
-
-
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
 
 
 # Entity Relationship Diagram
@@ -225,9 +211,6 @@ Campus Main Phone: (916) 278-6011
 </h3>
 
 
-
-
-
 ## Project Members:
 
 Westley Valentin - wvalentin@csus.edu  
@@ -253,7 +236,7 @@ Gaurav Shergill - gauravshergill@csus.edu
 
 [product-screenshot]: images/screenshot.png
 
-<!-- Shields.io badges. You can a comprehensive list with many more badges at: https://github.com/inttter/md-badges -->
+<!-- Shields.io badges. Found at: https://github.com/inttter/md-badges -->
 [Vite]: https://img.shields.io/badge/Vite-646CFF?logo=vite&logoColor=fff
 [Vite-url]: https://vite.dev/
 
