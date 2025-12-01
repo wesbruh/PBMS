@@ -21,7 +21,7 @@
 [![Contributors][contributors-shield]][contributors-url]
 
 
-
+> Your Roots Photography is powered by a custom Photography Business Management System (PBMS)
 
 <!-- PROJECT LOGO -->
 <br />
@@ -30,19 +30,13 @@
     <img src="public/logo1.png" alt="Logo" width="300" height="300">
   </a>
 
-<h1 align="center">Photography Business Management System</h1>
+<h1 align="center">Your Roots Photography</h1>
+
 
   <p align="center">
-    project_description
-    <br />
     <a href="https://github.com/wesbruh/PBMS"><strong>Explore the docs »</strong></a>
     <br />
-    <br />
-    <!-- <a href="https://github.com/github_username/repo_name">View Demo</a>
-    &middot;
-    <a href="https://github.com/github_username/repo_name/issues/new?labels=bug&template=bug-report---.md">Report Bug</a>
-    &middot;
-    <a href="https://github.com/github_username/repo_name/issues/new?labels=enhancement&template=feature-request---.md">Request Feature</a> -->
+    <br /> 
   </p>
 </div>
 
@@ -76,24 +70,21 @@
 
 
 <!-- SYNOPSIS -->
-## About The Project 
+# About The Project 
+The Photography Business Management System (PBMS) is a full-stack web platform built for our client, Bailey White of Your Roots Photography. The system streamlines the entire client experience by allowing users to create accounts, schedule photography sessions, submit inquiries, make secure payments, and access their final galleries. On the admin side, the platform provides an intuitive dashboard for managing clients, bookings, invoices, contracts, galleries, and notifications all in one place.
+
+This project was developed as part of the Senior Capstone sequence (CSC 190/191) at California State University, Sacramento.
 
 <div align="center">
   <img src="public/images/ProductNameSSForREADME.png" alt="PBMS client dashboard screenshot" width="900">
 </div>
 
-The Photography Business Management System (PBMS) is a full-stack web platform built for our client, Bailey White of Your Roots Photography. The system streamlines the entire client experience by allowing users to create accounts, schedule photography sessions, submit inquiries, make secure payments, and access their final galleries. On the admin side, the platform provides an intuitive dashboard for managing clients, bookings, invoices, contracts, galleries, and notifications—all in one place.
-
-This project was developed as part of the Senior Capstone sequence (CSC 190/191) at California State University, Sacramento.
-
-
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- BACKGROUND  -->
 
-### Background
+# Background
 
 Your Roots Photography is a modern photography brand based in Northern California that is dedicated to capturing real, emotional, and artistic imagery. With a focus on lifestyle, wedding, and maternity photography, the business combines a documentary approach with creative editing to produce stunning visuals that clients can treasure for years. The brand's mission is to create an effortless client experience, from booking to final gallery delivery completely. The business emphasizes professionalism, creativity, and strong client relationships. However, all of these tasks are being completed manually and by just one person. 
 
@@ -149,7 +140,7 @@ Below is the Entity Relationship Diagram (ERD) that defines the data structure f
 This diagram outlines the relationships between key components such as clients, sessions, invoices, payments, galleries, and forms.
 
 <div align="center">
-  <img src="public/images/ERD.png" alt="PBMS ERD" width="800">
+  <img src="public/images/ERD_PBMS.png" alt="PBMS ERD" width="800">
 </div>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
