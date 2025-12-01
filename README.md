@@ -59,8 +59,7 @@
         <li><a href="#technologies-and-collaborative-tools">Technologies and Collaborative Tools</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#csc-191-roadmap">CSC 191 Roadmap</a></li>
+    <li><a href="#CSC-191-roadmap">CSC 191 Roadmap</a></li>
     <ul>
         <li><a href="#developer-instructions">Developer Instructions</a></li>
         <li><a href="#testing">Testing</a></li>
@@ -71,7 +70,6 @@
         <li><a href="#project-members">Project Members</a></li></li>
         </li>
       </ul></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
 
@@ -92,37 +90,37 @@ This project was developed as part of the Senior Capstone sequence (CSC 190/191)
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-### Technologies and Collaborative Tools 
-
-* [![vscode]][vscode-url]
-* [![Jira]][Jira-url]
-* [![Figma]][Figma-url]
-* [![Discord]][Discord-url]
-
 
 <!-- BACKGROUND  -->
 
 ### Background
 
-Your Roots Photography is a modern photography brand based in Northern California that is dedicated to capturing real, emotional, and artisitc imagery. With a focus on lifestyle, wedding, and maternity photography, the business combines a documentary approach with creative editing to produce stunning visuals that clients can treasure for years. The brand's mission is to create an effortless client experience, from booking to final gallery delivery completely. The business emphasizes professionalism, creativity, and strong client relationships. However, all of these tasks are being completed manually and by just one person. 
+Your Roots Photography is a modern photography brand based in Northern California that is dedicated to capturing real, emotional, and artistic imagery. With a focus on lifestyle, wedding, and maternity photography, the business combines a documentary approach with creative editing to produce stunning visuals that clients can treasure for years. The brand's mission is to create an effortless client experience, from booking to final gallery delivery completely. The business emphasizes professionalism, creativity, and strong client relationships. However, all of these tasks are being completed manually and by just one person. 
 
 Our team recognized the need for a centralized, automated platform that would streamline these processes. 
 
-* Client dashbaord
+* Client dashboard
 * Automated invoice generation
 * Online galleries
 * Contract management
 * Notifications and reminders
 * Secure session tracking
 
-Using a modern full-stack architecture
+### Using a modern full-stack architecture:
 
  [![Vite]][Vite-url]
  [![React]][React-url]
  [![Tailwind]][Tailwind-url]
  [![Supabase]][Supabase-url]
  [![Node.js]][Node.js-url]
- [![Express.js]][Express-url]
+ [![Express.js]][Express-url]  
+
+ ### and collaborative tools such as:
+
+ [![vscode]][vscode-url]
+ [![Jira]][Jira-url]
+ [![Figma]][Figma-url]
+ [![Discord]][Discord-url]
 
 Your Roots Photography allows users to create an account and log in to securely access their personal dashboard and content.  
 
@@ -144,7 +142,7 @@ The Client Dashboard offers users a clean, organized, and personalized overview 
 
 
 
-## Entity Relationship Diagram
+# Entity Relationship Diagram
 
 Below is the Entity Relationship Diagram (ERD) that defines the data structure for the Photography Business Management System.
 
@@ -158,50 +156,59 @@ This diagram outlines the relationships between key components such as clients, 
 
 
 
-<!-- USAGE EXAMPLES -->
-## Usage
-
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
-
-_For more examples, please refer to the [Documentation](https://example.com)_
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
 <!-- CSC 191 ROADMAP -->
 # CSC 191 Roadmap
 
-- [ ] Feature 1
-- [ ] Feature 2
-- [ ] Feature 3
-    - [ ] Nested Feature
+Based on the current state of the project, a general timeline for functionalities to be developed during CSC 191 include  
 
-See the [open issues](https://github.com/github_username/repo_name/issues) for a full list of proposed features (and known issues). <- EXAMPLE REMOVE IF NOT NEEDED
+### Sprint 5 (Jan 25 - Feb 7)
+- Integrate role-based access to secure role-specific dashboards
+- Create/update all admin UI and have it match previous for consistency
+
+### Sprint 6 (Feb 8 - Feb 21)
+- Implement inquiry review functionality
+- Develop customizable questionnaire functionality
+- Generate an audit log of notifications for admin to view
+
+### Sprint 7 (Feb 22 - Mar 7)
+- Create dynamic calendar for admin
+- Implement session scheduling functionality
+- Develop Contacts viewing to show per-client information 
+
+### Sprint 8 (Mar 8 - Mar 22)
+- Implement gallery upload, generation, and publishing, with additional (optional) password protection
+- Incorporate gallery previews on client's side
+- Create analytical reports for business transactions
+
+### Sprint 9 (Mar 23 - April 5)
+- Integrate a trusted and secure third-party payment service to handle transactions
+- Design and display updated portfolio
+- Generate thank-you responses and photo-delivery reminders
+- Ensure notifications are sent per task assigned to each user
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 
-<!-- DEVLOPER INSTRUCTIONS -->
-### DEVLOPER INSTRUCTIONS
+<!-- DEVELOPER INSTRUCTIONS -->
+## DEVELOPER INSTRUCTIONS
 
-Placeholder, will be done in Csc 191.
+Placeholder, will be done in CSC 191.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
 <!-- TESTING -->
-### TESTING
+## TESTING
 
-Placeholder, will be done in Csc 191.
+Placeholder, will be done in CSC 191.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- DELPOYMENT -->
-### DEPLOYMENT
+<!-- DEPLOYMENT -->
+## DEPLOYMENT
 
-Placeholder, will be done in Csc 191
+Placeholder, will be done in CSC 191
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -232,34 +239,16 @@ Campus Main Phone: (916) 278-6011
 
 ## Project Members:
 
-Westley Valentin - wvalentin@csus.edu
-
-Munir Omar - muniromar@csus.edu
-
-Erds Mabilog - emabilog@csus.edu
-
-Luis De Santiago - lpdesantiago@csus.edu
-
-Ritchie Martinez - ritchiemartinez@csus.edu 
-
-Frank Kutsar - fkutsar@csus.edu
-
-Abhijit Singh Ubhi - abhijitsinghubhi@csus.edu
-
-Gaurav Shergill - gauravshergill@csus.edu
+Westley Valentin - wvalentin@csus.edu  
+Munir Omar - muniromar@csus.edu  
+Erds Mabilog - emabilog@csus.edu  
+Luis De Santiago - lpdesantiago@csus.edu  
+Ritchie Martinez - ritchiemartinez@csus.edu  
+Frank Kutsar - fkutsar@csus.edu  
+Abhijit Singh Ubhi - abhijitsinghubhi@csus.edu  
+Gaurav Shergill - gauravshergill@csus.edu  
 
 #### Project Link: [PBMS](https://github.com/wesbruh/PBMS)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-* []()
-* []()
-* []()
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
