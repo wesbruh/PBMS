@@ -1,0 +1,261 @@
+/* Container - wraps the table with styling */
+.table-container {
+  width: 100%;
+  height: 100%;
+  max-height: 500px;
+  overflow: auto; /* Allows scroll if content is too large */
+  overflow-y:auto;
+  overflow-x: auto;
+  background: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  border: 1px solid #E5E7EB;
+}
+
+/* The actual table element */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px; /* Ensures table doesn't get too cramped */
+}
+
+/* TABLE HEADER */
+
+.table__head {
+  background-color: #F9FAFB;
+  border-bottom: 2px solid #E5E7EB;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.table__header {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* Sortable headers get a pointer cursor */
+.table__header--sortable {
+  cursor: pointer;
+  user-select: none;
+  transition: color 150ms ease-in-out;
+}
+
+.table__header--sortable:hover {
+  color: #AB8C4B; /* color */
+}
+
+/* Container for header text + sort icon */
+.table__header-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Sort arrow icon */
+.table__sort-icon {
+  display: flex;
+  align-items: center;
+  color: #AB8C4B; /*  color */
+}
+
+/* TABLE BODY */
+
+.table__body {
+  background-color: white;
+}
+
+.table__row {
+  border-bottom: 1px solid #F3F4F6;
+  transition: background-color 150ms ease-in-out;
+}
+
+/* Remove border from last row */
+.table__row:last-child {
+  border-bottom: none;
+}
+
+/* Hover effect on rows */
+.table__row:hover {
+  background-color: #FAFAF9;
+}
+
+/* Clickable rows get pointer cursor */
+.table__row--clickable {
+  cursor: pointer;
+}
+
+/* Clickable rows have stronger hover effect */
+.table__row--clickable:hover {
+  background-color: #FEF3C7; /* Light cream color on hover */
+}
+
+/* Table cells */
+.table__cell {
+  padding: 1rem;
+  font-size: 0.875rem;
+  color: #1F2937;
+}
+
+/* EMPTY STATE */
+
+.table__empty {
+  padding: 3rem 2rem;
+  text-align: center;
+  color: #9CA3AF;
+  font-style: italic;
+}
+
+
+/* SEARCH BAR */
+.table-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.table-search {
+  position: relative;
+  width: 100%;
+  max-width: 400px;
+}
+
+.table-search-icon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9CA3AF;
+  pointer-events: none;
+}
+
+.table-search-input {
+  width: 100%;
+  padding: 0.75rem 1rem 0.75rem 2.75rem; /* Extra left padding for icon */
+  border: 1px solid #D1D5DB;
+  border-radius: 0.875rem;
+  font-size: 0.875rem;
+  color: #374151;
+  transition: border-color 150ms ease-in-out;
+}
+
+.table-search-input:focus {
+  border-color: #AB8C4B; /* color */
+  box-shadow: 0 0 0 3px rgba(171, 140, 75, 0.1); /* Subtle shadow on focus */
+}
+
+.table-search-input::placeholder {
+  color: #9CA3AF;
+}
+
+/* PAGINATION */
+.table-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .2rem 0;
+  flex-wrap: wrap;
+  border-top: 1px solid #E5E7EB;
+}
+
+.table-pagination__info {
+  font-size: 0.875rem;
+  color: #6B7280;
+}
+
+.table-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.table-pagination__button {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  background-color: white;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 150ms ease-in-out;
+}
+
+.table-pagination__button:hover:not(:disabled) {
+  background-color: #F9FAFB;
+  border-color: #AB8C4B;
+  color: #AB8C4B;
+}
+
+.table-pagination__button:disabled {
+  opacity: 0.5;
+}
+
+.table-pagination__pages {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.table-pagination__page {
+  min-width: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  background-color: white;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 150ms ease-in-out;
+}
+
+
+/* Empty filler rows to preserve table height */
+.table__row--empty {
+  background-color: white;
+}
+
+.table__row--empty:hover {
+  background-color: white;
+  cursor: default;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 768px) {
+  .table__cell {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8125rem;
+  }
+  
+  .table__header {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.6875rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .table-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .table-pagination__info {
+    text-align: center;
+  }
+  
+  .table-pagination__controls {
+    flex-direction: column;
+  }
+}
