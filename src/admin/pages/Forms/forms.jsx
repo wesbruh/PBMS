@@ -1,5 +1,5 @@
-import Sidebar from "../../components/Sidebar/sidebar";
-import Frame from "../../components/Frame/frame";
+import Sidebar from "../../components/shared/Sidebar/sidebar";
+import Frame from "../../components/shared/Frame/frame";
 
 function Admin() {
   return (

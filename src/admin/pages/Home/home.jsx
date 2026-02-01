@@ -1,5 +1,5 @@
-import Sidebar from "../../components/Sidebar/sidebar";
-import Frame from "../../components/Frame/frame";
+import Sidebar from "../../components/shared/Sidebar/sidebar";
+import Frame from "../../components/shared/Frame/frame";
 
 function Admin() {
   // place-holder store admin user name
@@ -11,10 +11,11 @@ function Admin() {
         <Sidebar />
       </div>
       <div className='flex w-2/3'>
-        <Frame />
-        <div className='relative m-10 font-bold text-brown  text-2xl'>
-          <h2>Welcome, {username}</h2>
-        </div>
+        <Frame>
+          <div className='relative m-10 font-bold text-brown  text-2xl'>
+            <h2>Welcome, {username}</h2>
+          </div>
+        </Frame>
       </div>
     </div>
   );

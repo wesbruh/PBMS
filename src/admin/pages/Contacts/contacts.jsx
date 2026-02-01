@@ -1,17 +1,67 @@
-import Sidebar from "../../components/Sidebar/sidebar";
-import Frame from "../../components/Frame/frame";
+import Sidebar from "../../components/shared/Sidebar/sidebar";
+import Frame from "../../components/shared/Frame/frame";
+import Table from "../../components/shared/Table/Table.jsx";
+import { mockSessions } from "../../../mockData/mockData.js";
 
 function Admin() {
-  return (
-    <div className='flex my-10 md:my-14 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-white rounded-lg'>
-      <div className='flex w-1/3'>
+  // const tableContactsColumns = [
+  //   { key: "clientName", label: "Client", sortable: true },
+  //   { key: "type", label: "Session Type", sortable: true },
+  //   { key: "date", label: "Date", sortable: true },
+  //   { key: "time", label: "Time", sortable: false },
+  //   { key: "location", label: "Location", sortable: false },
+  //   {
+  //     key: "status",
+  //     label: "Status",
+  //     render: (value) => (
+  //       <span
+  //         className={`px-3 py-1 rounded-md text-sm font-medium ${
+  //           value === "Upcoming"
+  //             ? "bg-blue-100 text-blue-800"
+  //             : value === "Completed"
+  //               ? "bg-green-100 text-green-800"
+  //               : "bg-gray-100 text-gray-800"
+  //         }`}
+  //       >
+  //         {value}
+  //       </span>
+  //     ),
+  //   },
+  // ];
+
+ return (
+    <div className="flex my-10 md:my-14 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-white rounded-lg">
+      <div className="flex w-1/5 min-w-[200px]">
         <Sidebar />
       </div>
-      <div className='flex w-2/3'>
-        <Frame />
+
+      {/* Main Content Area */}
+      <div className="flex w-full shadow-inner rounded-lg">
+        <Frame>
+        {/* <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner">
+          <div className="mb-6 "> */}
+            {/* Page Header */}
+            {/* <h1 className="text-3xl font-bold text-gray-900 mb-2">Sessions</h1>
+            <p className="text-gray-600">
+              View and manage all photography sessions.
+            </p>
+          </div> */}
+          
+          {/* Table Container
+          <div>
+            <Table columns={tableContactsColumns} 
+            data={mockContact}
+            // onRowClick={handleRowClick}     This is commented out for now, can be used later to handle row clicks to display information about specific session or contact (LUIS)
+            searchable={true}
+            searchPlaceholder={"Search Contacts..."}
+            rowsPerPage={5}
+            />
+          </div> */}
+        {/* </div> */}
+        </Frame>
       </div>
     </div>
   );
 }
 
-export default Admin
+export default Admin;

@@ -20,7 +20,7 @@ import IdleLogout from './components/IdleLogout.jsx';
 
 // temp admin entrance
 import AdminRoutes from './admin/routes'
-import AdminNavbar from './admin/components/Navbar/navbar';
+import AdminNavbar from './admin/components/shared/Navbar/navbar';
 
 function App() {
   return (
