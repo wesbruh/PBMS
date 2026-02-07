@@ -209,22 +209,30 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
         error: userError,
       } = await supabase.auth.getUser();
 
-      // TESTING WITH NO AUTH. UNCOMMENT THIS BLOCK ONCE AUTH IS SET UP FOR ADMINS 
-      // AS OF RIGHT NOW ONLY TESTING FOR UNAUTH 
-    //   if (userError || !user) {
-    //     throw new Error("You must be logged in to upload galleries.");
-    //   }
+      
+       if (userError) {
+         throw new Error("You must be logged in to upload galleries.");
+       }
 
-      // 2) Check if user is admin (might need to adjust this based on auth setup that is in progress from ERDS)
-    //   const { data: profile, error: profileError } = await supabase
-    //     .from("User")
-    //     .select("role")
-    //     .eq("id", user.id)
-    //     .single();
+      // 2) Check if user is admin (adjusted with Erds 2/7/26)
+       const { data: profile, error: profileError } = await supabase
+         .from("UserRole")
+         .select("role_id")
+         .eq("user_id", user.id)
+         .single();
 
-    //   if (profileError || profile?.role !== "admin") {
-    //     throw new Error("Only admins can upload galleries.");
-    //   }
+       const RoleId = userRoleData[0]?.role_id ?? null;
+       const { data: roleData, error: roleError } = await supabase
+         .from("Role")
+         .select("id")
+         .eq("name", "Admin")
+         .single();
+      
+       const AdminId = roleData[0]?.id ?? null;
+
+      if (profileError || AdminId !== RoleId) {
+        throw new Error("Only admins can upload galleries.");
+      }
 
       // 3) Create or get the gallery for this session
       let galleryId;
