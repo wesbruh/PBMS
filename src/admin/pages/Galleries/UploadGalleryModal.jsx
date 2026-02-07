@@ -1,0 +1,646 @@
+import { useState, useRef } from "react";
+import { X, Upload, ImagePlus, Image as ImageIcon, Trash2, CheckCircle, FolderOpen } from "lucide-react";
+import { supabase } from "../../../lib/supabaseClient";
+import "./UploadGalleryModal.css";
+
+const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [previews, setPreviews] = useState([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [currentFile, setCurrentFile] = useState(null);
+  const [error, setError] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("idle"); // idle, uploading, cancelled, completed
+  const fileInputRef = useRef(null);
+  const folderInputRef = useRef(null);
+  const cancelUploadRef = useRef(false); // Ref to track if upload has been cancelled while uploading
+
+
+  // Accepted file types
+  const ACCEPTED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/heic"];
+  const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB max per image for high resolution photos
+  const MAX_TOTAL_SIZE = 300 * 1024 * 1024; // 300MB total for all files
+
+  // Validate file
+  const validateFile = (file) => {
+    if (!ACCEPTED_TYPES.includes(file.type.toLowerCase())) {
+      return `${file.name}: Invalid file type. Only JPG, PNG, and HEIC are allowed.`;
+    }
+    if (file.size > MAX_FILE_SIZE) {
+      return `${file.name}: File too large. Maximum size per image is 50MB.`;
+    }
+    return null;
+  };
+
+  // Handle file selection
+  const handleFileSelect = (files) => {
+    const fileArray = Array.from(files);
+    const errors = [];
+    const validFiles = [];
+
+    const imageFiles = fileArray.filter((file) => {
+      const error = validateFile(file);
+      if (error) {
+        errors.push(error);
+        return false;
+      }
+      return true;
+    });
+
+    const currentTotalSize = selectedFiles.reduce((sum, file) => sum + file.size,0,);
+    const newTotalSize = imageFiles.reduce((sum, file) => sum + file.size, 0);
+
+    if (currentTotalSize + newTotalSize > MAX_TOTAL_SIZE) {
+      errors.push(`Total file size exceeds the 300MB limit. Please select fewer or smaller files.`,);
+      return;
+    }
+
+    const MAX_PREVIEWS = 50; // Limit number of previews to prevent any performance issues
+    const filesToPreview = imageFiles.slice(0, MAX_PREVIEWS);
+    const newPreviews = [];
+
+    let loadedPreviews = 0;
+
+    filesToPreview.forEach((file) => {
+      validFiles.push(file);
+      const reader = new FileReader();
+      reader.onloadedn = () => {
+        newPreviews.push({
+          file,
+          preview: reader.result,
+          name: file.name,
+          size: file.size,
+        });
+        loadedPreviews++;
+        if (loadedPreviews === filesToPreview.length) {
+          setPreviews((prev) => [...prev, ...newPreviews]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // add remaining files without previews if over limit
+    if (imageFiles.length > MAX_PREVIEWS) {
+      const filesWithoutPreview = imageFiles.files.slice(MAX_PREVIEWS);
+      validFiles.push(...filesWithoutPreview);
+
+      // add placeholder previews
+      const placeholderPreviews = filesWithoutPreview.map((file) => ({
+        file,
+        preview: null, // no previews
+        name: file.name,
+        size: file.size,
+      }));
+      setPreviews((prev) => [...prev, ...placeholderPreviews]);
+    }
+
+    if (errors.length > 0) {
+      setError(
+        errors.slice(0, 10).join("\n") +
+          (errors.length > 10
+            ? `\n... and ${errors.length - 10} more errors`
+            : ""),
+      );
+    } else {
+      setError(null);
+    }
+    setSelectedFiles((prev) => [...prev, ...validFiles]);
+  };
+
+  // Handle drag and drop of single photos or folders
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const items = e.dataTransfer.items;
+    const files = [];
+
+    // Handle folders drop
+    if (items) {
+      const promises = [];
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i].webkitGetAsEntry();
+        if (item) {
+          promises.push(traverseFileTree(item));
+        }
+      }
+
+      Promise.all(promises).then(() => {
+        if (files.length > 0) {
+          handleFileSelect(files);
+        }
+      });
+    } else if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileSelect(e.dataTransfer.files);
+    }
+  };
+
+  // RECURSIVE function to traverse dropped folders and extract files
+  const traverseFileTree = (item, files) => {
+    return new Promise((resolve) => {
+      if (item.isFile) {
+        item.file((file) => {
+          files.push(file);
+          resolve();
+        });
+      } else if (item.isDirectory) {
+        const dirReader = item.createReader();
+        dirReader.readEntries((entries) => {
+          const promises = entries.map((entry) =>
+            traverseFileTree(entry, files),
+          );
+          Promise.all(promises).then(resolve);
+        });
+      }
+    });
+  };
+
+  // handle folder selection
+  const handleFolderSelect = (e) => {
+    const files = Array.from(e.target.files);
+    handleFileSelect(files);
+  };
+
+  // Remove file from selection
+  const removeFile = (index) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Format file size
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  };
+
+  // Handle upload
+  const handleUpload = async () => {
+    setUploadStatus("uploading");
+    cancelUploadRef.current = false; // Reset cancel flag at start of upload
+
+    if (selectedFiles.length === 0) {
+      setError("Please select at least one image to upload.");
+      return;
+    }
+
+    setUploading(true);
+    setUploadProgress(0);
+    setError(null);
+
+    try {
+      // 1) Get the current user (admin)
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
+
+      // TESTING WITH NO AUTH. UNCOMMENT THIS BLOCK ONCE AUTH IS SET UP FOR ADMINS 
+      // AS OF RIGHT NOW ONLY TESTING FOR UNAUTH 
+    //   if (userError || !user) {
+    //     throw new Error("You must be logged in to upload galleries.");
+    //   }
+
+      // 2) Check if user is admin (might need to adjust this based on auth setup that is in progress from ERDS)
+    //   const { data: profile, error: profileError } = await supabase
+    //     .from("User")
+    //     .select("role")
+    //     .eq("id", user.id)
+    //     .single();
+
+    //   if (profileError || profile?.role !== "admin") {
+    //     throw new Error("Only admins can upload galleries.");
+    //   }
+
+      // 3) Create or get the gallery for this session
+      let galleryId;
+
+      // Check if gallery already exists for this session
+      const { data: existingGallery, error: galleryFetchError } = await supabase
+        .from("Gallery")
+        .select("id")
+        .eq("session_id", session.id)
+        .single();
+
+      if (galleryFetchError && galleryFetchError.code !== "PGRST116") {
+        // PGRST116 means no rows returned, which is fine
+        throw galleryFetchError;
+      }
+
+      if (existingGallery) {
+        galleryId = existingGallery.id;
+      } else {
+        // Create new gallery
+        const { data: newGallery, error: galleryCreateError } = await supabase
+          .from("Gallery")
+          .insert({
+            session_id: session.id,
+            title: `${session.clientName} - ${session.type}`,
+            published_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (galleryCreateError) throw galleryCreateError;
+        galleryId = newGallery.id;
+      }
+
+      // 4) Upload each photo to Supabase Storage bucket with progress tracking
+      const uploadedPhotos = [];
+      const failedPhotos = [];
+      const totalFiles = selectedFiles.length;
+
+       for (let i = 0; i < selectedFiles.length; i++) {
+        
+        // cancel upload
+        if (cancelUploadRef.current) {
+            console.log("Upload cancelled by admin");
+            setUploading(false);
+            setCurrentFile(null);
+            return;
+      }
+        const file = selectedFiles[i];
+        setCurrentFile(file.name);
+
+        try {
+          // Generate unique filename
+          const fileExt = file.name.split(".").pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+          const filePath = `galleries/${galleryId}/${fileName}`;
+
+          // Upload to Supabase Storage Bucket
+          const maxRetries = 3;
+          let uploadSuccess = false;
+          let uploadError = null;
+
+          for (let retry = 0; retry < maxRetries && !uploadSuccess; retry++) {
+                  if (cancelUploadRef.current) {
+                    console.log("Upload cancelled during retry");
+                    setUploading(false);
+                    setCurrentFile(null);
+                    return;
+                }
+                const { data: uploadData, error: uploadError } =
+                await supabase.storage.from("photos").upload(filePath, file, {
+                cacheControl: "3600",
+                upsert: false,
+              });
+
+            if (!error) {
+              uploadSuccess = true;
+
+              // get image dimension if possible
+              let width = null;
+              let height = null;
+
+              if (previews[i].preview) {
+                try {
+                  const img = new Image();
+                  img.src = previews[i].preview;
+                  await new Promise((resolve) => {
+                    img.onload = () => {
+                      width = img.width;
+                      height = img.height;
+                      resolve();
+                    };
+                    img.onerror = resolve; // resolve even if image fails to load to prevent blocking
+                  });
+                } catch (err) {
+                  console.warn(
+                    `Could not get dimensions for ${file.name}:`,
+                    err,
+                  );
+                }
+              }
+              if (!photoError) {
+                uploadedPhotos.push(photoData);
+              } else {
+                console.error(
+                  `Error creating Photo record for ${file.name}:`,
+                  photoError,
+                );
+                failedPhotos.push(file.name);
+              }
+            } else {
+              if (retry < maxRetries - 1) {
+                // wait before retrying
+                await new Promise((resolve) => setTimeout(resolve, 1000 * Math.pow(2, retry)));
+              }
+            }
+          }
+          if (!uploadSuccess) {
+            console.error(
+              ~`Failed to upload ${file.name} after ${maxRetries} attempts:`,
+              uploadError,
+            );
+            failedPhotos.push(file.name);
+          }
+        } catch (err) {
+          console.error("Error processing:", err);
+          failedPhotos.push(file.name);
+        }
+        if (uploadedPhotos.length === 0) {
+          throw new Error("Failed to upload any photos. Please try again.");
+        }
+
+        // 5) Update gallery with notification info
+        const { data: sessionData } = await supabase
+          .from("Session")
+          .select("User(email)")
+          .eq("id", session.id)
+          .single();
+
+        if (sessionData?.User?.email) {
+          await supabase
+            .from("Gallery")
+            .update({
+              published_email: sessionData.User.email,
+              published_link: `${window.location.origin}/client/galleries/${galleryId}`,
+            })
+            .eq("id", galleryId);
+        }
+        // show summary message after successful upload
+        let summaryMessage = `Successfully uploaded ${uploadedPhotos.length} photo${uploadedPhotos.length !== 1 ? "s" : ""}.`;
+        if (failedPhotos.length > 0) {
+          summaryMessage += ` Failed to upload: ${failedPhotos.join(", ")}.`;
+        }
+
+        // Success!
+        setTimeout(() => {
+        // Upload finished successfully
+        setUploadStatus("completed");
+        setUploading(false);
+        setCurrentFile(null);
+        setUploadProgress(100);
+
+          onUploadSuccess({
+            galleryId,
+            photoCount: uploadedPhotos.length,
+            failedCount: failedPhotos.length,
+            clientEmail: sessionData?.User?.email,
+          });
+          handleClose();
+          if (failedPhotos.length > 0) {
+            console.warn("Failed photos:", failedPhotos);
+          }
+        }, 1000);
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      setError(err.message || "An error occurred during upload. Please try again.");
+      setUploading(false);
+      setCurrentFile(null);
+    }
+   };
+
+  // Handle upload cancellation
+  const handleCancelUpload = () => {
+    // Set cancel flag to true to stop upload if in progress
+    if (uploadStatus === "uploading") {
+        cancelUploadRef.current = true;
+        setUploadStatus("cancelled");
+        setUploading(false);
+        setCurrentFile(null);
+    }
+  };
+
+  // Handle modal close
+  const handleCloseModal = () => {
+    cancelUploadRef.current = false; // Reset cancel flag when closing modal
+    setSelectedFiles([]);
+    setPreviews([]);
+    setError(null);
+    setUploadProgress(0);
+    setUploadStatus("idle");
+    onClose();
+  }
+
+  if (!isOpen) return null;
+
+  const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
+  const sizePercentage = (totalSize / MAX_TOTAL_SIZE) * 100;
+
+  return (
+    <div className="modal-overlay" onClick={handleCloseModal}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="modal-header">
+          <div> 
+            <h2 className="modal-title">Upload Gallery</h2>
+            <p className="modal-subtitle">
+              {session.clientName} - {session.type} ({session.date})
+            </p>
+          </div>
+          <button
+            className="modal-close-button"
+            onClick={handleCloseModal}
+            disabled={uploading}
+          >
+            <X size={24} />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="modal-body">
+          {/* Info Message */}
+          <div className="info-message">
+            <p>Client will be automatically notified once upload is complete</p>
+          </div>
+          {/* Upload Options */}
+          <div className="upload-options">
+            <button
+              className="upload-option-btn"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <ImagePlus size={24} />
+              <span>Select Individual Photos</span>
+            </button>
+            <button
+              className="upload-option-btn upload-option-btn--primary"
+              onClick={() => folderInputRef.current?.click()}
+              disabled={uploading}
+            >
+              <FolderOpen size={24} />
+              <span>Select Folder</span>
+            </button>
+          </div>
+
+          {/* Drag and Drop Zone */}
+          <div
+            className={`upload-zone ${dragActive ? "upload-zone--active" : ""}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            <Upload size={48} className="upload-icon" />
+            <p className="upload-text">
+              Or drag and drop images here
+            </p>
+            <p className="upload-subtext">
+              Accepted formats: JPG, PNG, HEIC (Max 50MB each)
+            </p>
+            {/* Hidden File Inputs */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept=".jpg,.jpeg,.png,.heic"
+              onChange={(e) => handleFileSelect(e.target.files)}
+              className="file-input-hidden"
+            />
+            <input
+              ref={folderInputRef}
+              type="file"
+              webkitdirectory="true"
+              directory="true"
+              multiple
+              onChange={handleFolderSelect}
+              className="file-input-hidden"
+            />
+          </div>
+          {/* Size Indicator */}
+          {selectedFiles.length > 0 && (
+            <div className="size-indicator">
+              <div className="size-indicator-bar">
+                <div
+                  className={`size-indicator-fill ${sizePercentage > 90 ? "size-indicator-fill--warning" : ""}`}
+                  style={{ width: `${Math.min(sizePercentage, 100)}%` }}
+                />
+              </div>
+              <p className="size-indicator-text">
+                {formatFileSize(totalSize)} / {formatFileSize(MAX_TOTAL_SIZE)} (
+                {sizePercentage.toFixed(1)}%)
+              </p>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {error && <div className="error-message">{error}</div>}
+
+          {/* Selected Files Preview */}
+          {previews.length > 0 && (
+            <div className="preview-section">
+              <div className="preview-header">
+                <h3>Selected Images ({selectedFiles.length})</h3>
+                <p className="preview-total-size">
+                  Total: {formatFileSize(totalSize)}
+                </p>
+              </div>
+              <div className="preview-grid">
+                {previews.slice(0, 20).map((preview, index) => (
+                  <div key={index} className="preview-item">
+                    <div className="preview-image-container">
+                      {preview.preview ? (
+                        <img
+                          src={preview.preview}
+                          alt={preview.name}
+                          className="preview-image"
+                        />
+                      ) : (
+                        <div className="preview-placeholder">
+                          <ImageIcon size={32} />
+                        </div>
+                      )}
+                      {!uploading && (
+                        <button
+                          className="preview-remove-btn"
+                          onClick={() => removeFile(index)}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                    <div className="preview-info">
+                      <p className="preview-filename">{preview.name}</p>
+                      <p className="preview-filesize">
+                        {formatFileSize(preview.size)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {previews.length > 20 && (
+                <p className="preview-more">
+                  ...and {previews.length - 20} more images
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Upload Progress */}
+          {uploadStatus === "uploading" && (
+            <div className="upload-progress">
+              <p className="upload-current-file">Uploading: {currentFile}</p>
+              <div className="progress-bar-container">
+                <div
+                  className="progress-bar-fill"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+              <p className="progress-text">
+                {uploadProgress}% Complete (
+                {Math.floor((uploadProgress / 100) * selectedFiles.length)} of {selectedFiles.length} files
+                )
+              </p>
+            </div>
+          )}
+
+          {/* Cancelled Message */}
+          {uploadStatus === "cancelled" && (
+            <div className="cancelled-message">
+              <p>Upload cancelled. No files were uploaded.</p>
+            </div>
+          )}
+
+          {/* Success Message */}
+          {uploadStatus === "completed" && (
+            <div className="success-message">
+              <CheckCircle size={20} />
+              <span>
+                Gallery uploaded successfully! Notification sent to {session.clientName}
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="modal-footer">
+          <button
+            className="btn btn-secondary"
+            onClick={handleCancelUpload}
+          >
+            {uploading ? "Cancel Upload" : "Cancel"}
+          </button>
+          <button
+            className="btn btn-primary"
+            onClick={handleUpload}
+            disabled={uploading || selectedFiles.length === 0}
+          >
+            {uploading
+              ? `Uploading... ${uploadProgress}%`
+              : `Upload ${selectedFiles.length} Image${selectedFiles.length !== 1 ? "s" : ""}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default UploadGalleryModal;

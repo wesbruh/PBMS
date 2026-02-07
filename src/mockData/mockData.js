@@ -81,7 +81,7 @@ export const mockGalleries = [
     date: '2024-04-25',
     time: '10:00',
     location: 'Studio',
-    status: 'Completed'
+    status: 'Gallery Uploaded'
   },
   {
     id: 4,
