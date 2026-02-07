@@ -36,7 +36,7 @@ function Sidebar() {
               <Link to="/admin/payments" className={`${linkStyles} ${isActive('/payments') ? activeLinkStyles : ''}`}>Payments and Invoices</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/forms" className={`${linkStyles} ${isActive('/forms') ? activeLinkStyles : ''}`}>Forms and Contracts</Link>
+              <Link to="/admin/forms/questionnaires" className={`${linkStyles} ${isActive('/forms') ? activeLinkStyles : ''}`}>Forms and Contracts</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
               <Link to="/admin/settings" className={`${linkStyles} ${isActive('/settings') ? activeLinkStyles : ''}`}>Settings</Link>
