@@ -9,6 +9,7 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null); // row from "User" table
+  const [roleId, setRoleId] = useState(null); // roleId from "UserRole" table
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +25,7 @@ export function AuthProvider({ children }) {
         setSession(session ?? null);
       }
 
-      // if logged in, try to load the row from "User" (your custom table)
+      // if logged in, try to load the row from "User" and roleId from "UserRole"
       if (session?.user?.id && !ignore) {
         const { data, error } = await supabase
           .from("User")
@@ -44,6 +45,27 @@ export function AuthProvider({ children }) {
         setProfile(null);
       }
 
+      // if logged in, try to load the roleId from "UserRole"
+      if (session?.user?.id && !ignore) {
+
+        const { data, error } = await supabase
+          .from("UserRole")
+          .select("role_id")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (!ignore) {
+          if (!error) {
+            setRoleId(data?.role_id);
+          }
+          else {
+            setRoleId(null);
+          }
+        }
+      } else if (!ignore) {
+        setRoleId(null);
+      }
+
       if (!ignore) setLoading(false);
     }
 
@@ -56,6 +78,7 @@ export function AuthProvider({ children }) {
       setSession(newSession);
       if (!newSession) {
         setProfile(null);
+        setRoleId(null);
       } else {
         // reload profile when session changes
         (async () => {
@@ -65,6 +88,15 @@ export function AuthProvider({ children }) {
             .eq("id", newSession.user.id)
             .maybeSingle();
           setProfile(data ?? null);
+        })();
+
+        (async () => {
+          const { data } = await supabase
+            .from("UserRole")
+            .select("role_id")
+            .eq("user_id", newSession.user.id)
+            .maybeSingle();
+          setRoleId(data?.role_id ?? null);
         })();
       }
     });
@@ -79,6 +111,7 @@ export function AuthProvider({ children }) {
     session,
     user: session?.user ?? null,
     profile,
+    roleId,
     // Ensure profile information can be updated
     setProfile,
     loading,

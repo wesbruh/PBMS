@@ -6,6 +6,9 @@ import { supabase } from "../../lib/supabaseClient";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// default role init
+const { data: defaultRoleArr, error: roleError } = await supabase.from("Role").select("id").eq("name", "User");
+
 // password rules
 const passwordSchema = z
   .string()
@@ -91,8 +94,8 @@ export default function SignUp() {
       setInfoMsg("");
       return;
     }
-
-    // upsert in your "User" table
+    
+    // upsert in your "User" and "UserRole" table
     if (authUser?.id) {
       const profilePayload = {
         id: authUser.id,
@@ -103,21 +106,38 @@ export default function SignUp() {
         is_active: !!authUser.email_confirmed_at,
       };
 
+      if (roleError || !defaultRoleArr) {
+        console.error("Role not found or error fetching role: ", roleError);
+      }
+      
+      const defaultRole = defaultRoleArr[0]
+      const rolePayload = {
+        user_id: profilePayload.id,
+        role_id: defaultRole.id
+      };
+
       if (data?.session) {
-        profilePayload.last_login_at = new Date().toISOString();
+        profilePayload.last_login_at = rolePayload.assigned_at = new Date().toISOString();
         profilePayload.is_active = true;
       }
 
       const { error: userTableErr } = await supabase.from("User").upsert(profilePayload);
+      const { error: userRoleTableErr } = await supabase.from("UserRole").upsert(rolePayload);
+
+      // Upsert Errors
       if (userTableErr) {
         console.error("User upsert error:", userTableErr);
+      }
+
+      if (userRoleTableErr) {
+        console.error("UserRole upsert error:", userRoleTableErr);
       }
     }
 
     // if no session was returned, it's confirmation mode
     if (!data.session) {
         setInfoMsg(
-        "We’ve sent you a confirmation link. Please check your email to finish creating your account."
+          "We’ve sent you a confirmation link. Please check your email to finish creating your account."
         );
         return;
     }
@@ -125,7 +145,6 @@ export default function SignUp() {
     // otherwise go straight to dashboard
     navigate("/dashboard", { replace: true });
     };
-
 
   return (
     <div>
