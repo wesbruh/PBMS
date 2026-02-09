@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { format, addDays, addMinutes, startOfDay, isBefore, parseISO } from 'date-fns';
+import { format, addDays, addMinutes, startOfDay, isBefore, isSameDay, parseISO } from 'date-fns';
 
 const Availability = () => {
-    // State
-    const [viewDate, setViewDate] = useState(new Date());
+    // Start viewDate at the beginning of today to prevent time mismatches
+    const [viewDate, setViewDate] = useState(startOfDay(new Date()));
     const [workDay, setWorkDay] = useState({ start: "09:00", end: "17:00" });
-    const [selection, setSelection] = useState(new Set()); // Stores "yyyy-MM-dd_HH:mm" keys
-    const [isDragging, setIsDragging] = useState(false);
+    const [selection, setSelection] = useState(new Set()); 
     const [loading, setLoading] = useState(true);
+    const [isDragging, setIsDragging] = useState(false);
 
-    // 1. LOAD DATA ON MOUNT
     useEffect(() => {
         fetchAvailability();
     }, []);
@@ -19,21 +18,16 @@ const Availability = () => {
         try {
             const res = await axios.get('http://localhost:5001/api/availability');
             
-            // A. Apply Settings if they exist
             if (res.data.settings) {
                 setWorkDay({
-                    start: res.data.settings.work_start_time.slice(0, 5), // "09:00:00" -> "09:00"
+                    start: res.data.settings.work_start_time.slice(0, 5),
                     end: res.data.settings.work_end_time.slice(0, 5)
                 });
             }
 
-            // B. Apply Red Boxes (Convert DB timestamps to UI keys)
             if (res.data.blocks && res.data.blocks.length > 0) {
                 const loadedSelection = new Set();
                 res.data.blocks.forEach(block => {
-                    // Extract Date and Time from UTC timestamp
-                    // Note: This assumes you are storing local time or handling UTC consistent 
-                    // For simplicity, we parse the ISO string
                     const dateObj = parseISO(block.start_time);
                     const dateKey = format(dateObj, 'yyyy-MM-dd');
                     const timeKey = format(dateObj, 'HH:mm');
@@ -48,15 +42,11 @@ const Availability = () => {
         }
     };
 
-    // Generate time slots based on DYNAMIC settings
     const getTimeSlots = () => {
         const slots = [];
         let current = new Date(`2000-01-01T${workDay.start}:00`);
         const end = new Date(`2000-01-01T${workDay.end}:00`);
-        
-        // Safety check to prevent infinite loops if times are weird
         if (current >= end) return [];
-
         while (current < end) {
             slots.push(format(current, 'HH:mm'));
             current = addMinutes(current, 15);
@@ -65,12 +55,32 @@ const Availability = () => {
     };
 
     const timeSlots = getTimeSlots();
-    const days = [...Array(14)].map((_, i) => addDays(viewDate, i)); // 2 weeks view
+    const daysToShow = 14;
+    const days = [...Array(daysToShow)].map((_, i) => addDays(viewDate, i));
 
-    // --- Interaction Handlers ---
+    // --- Navigation Logic ---
+    const handlePrev = () => {
+        const today = startOfDay(new Date());
+        const newDate = addDays(viewDate, -daysToShow);
+        
+        // Prevent going back before today
+        if (isBefore(newDate, today)) {
+            setViewDate(today);
+        } else {
+            setViewDate(newDate);
+        }
+    };
 
+    const handleNext = () => {
+        setViewDate(addDays(viewDate, daysToShow));
+    };
+
+    // Disable Prev button if we are already at today
+    const isAtStart = isSameDay(viewDate, startOfDay(new Date()));
+
+    // --- Interaction ---
     const handleMouseDown = (day, slot) => {
-        if (isPastDate(day)) return; // Block interaction
+        if (isPastDate(day)) return;
         setIsDragging(true);
         toggleSlot(day, slot);
     };
@@ -83,21 +93,43 @@ const Availability = () => {
         const key = `${format(day, 'yyyy-MM-dd')}_${slot}`;
         setSelection(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(key)) {
-                newSet.delete(key);
-            } else {
-                newSet.add(key);
-            }
+            newSet.has(key) ? newSet.delete(key) : newSet.add(key);
             return newSet;
         });
     };
 
-    // Helper to check if a day is in the past
-    const isPastDate = (day) => {
-        return isBefore(day, startOfDay(new Date()));
-    };
+    const isPastDate = (day) => isBefore(day, startOfDay(new Date()));
 
     // --- Save Logic ---
+    const saveChanges = async () => {
+        // 1. Prepare the RED blocks
+        const blocksToSave = Array.from(selection).map(key => {
+            const [date, time] = key.split('_');
+            return {
+                start_time: `${date}T${time}:00`,
+                end_time: `${date}T${time}:15`,   
+                is_available: false
+            };
+        });
+
+        // 2. Define the date range we are currently viewing/editing
+        // The backend needs this to know which old records to delete.
+        // We scan the visible days (e.g. Feb 8 to Feb 22)
+        const rangeStart = format(days[0], 'yyyy-MM-dd');
+        const rangeEnd = format(days[days.length - 1], 'yyyy-MM-dd');
+
+        try {
+            await axios.post('http://localhost:5001/api/availability/blocks', { 
+                blocks: blocksToSave,
+                rangeStart: `${rangeStart}T00:00:00`,
+                rangeEnd: `${rangeEnd}T23:59:59`
+            });
+            alert("Schedule saved successfully!");
+        } catch (err) {
+            console.error(err);
+            alert("Error saving schedule");
+        }
+    };
 
     const saveSettings = async () => {
         try {
@@ -105,68 +137,40 @@ const Availability = () => {
                 start: workDay.start,
                 end: workDay.end
             });
-            alert("Settings Saved! (Page will reload to redraw grid)");
-            window.location.reload(); // Simple reload to re-calculate grid
+            window.location.reload(); 
         } catch (err) {
             alert("Error saving settings");
         }
     };
 
-    const saveBlocks = async () => {
-        // Convert Set to Array of Objects
-        const blocksToSave = Array.from(selection).map(key => {
-            const [date, time] = key.split('_');
-            return {
-                start_time: `${date}T${time}:00`, // ISO Format ish
-                end_time: `${date}T${time}:15`,   
-                is_available: false
-            };
-        });
-
-        try {
-            // Note: We are sending the full list of RED boxes. 
-            // Ideally, the backend should clear old ones for this range and insert new ones.
-            // For now, we are just upserting (adding/updating).
-            await axios.post('http://localhost:5001/api/availability/blocks', { blocks: blocksToSave });
-            alert("Availability Saved!");
-        } catch (err) {
-            console.error(err);
-            alert("Error saving blocks");
-        }
-    };
-
-    if (loading) return <div className="p-10">Loading schedule...</div>;
+    if (loading) return <div className="p-10">Loading...</div>;
 
     return (
         <div className="p-6 font-sans">
-            {/* Header & Settings */}
+            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
                     <h1 className="text-2xl font-serif text-brown mb-2">Admin Availability</h1>
                     <div className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded border">
-                        <span className="font-bold text-gray-600">Default Hours:</span>
-                        <input 
-                            type="time" 
-                            value={workDay.start} 
-                            onChange={(e) => setWorkDay({...workDay, start: e.target.value})}
-                            className="border rounded p-1"
-                        />
-                        <span>to</span>
-                        <input 
-                            type="time" 
-                            value={workDay.end} 
-                            onChange={(e) => setWorkDay({...workDay, end: e.target.value})}
-                            className="border rounded p-1"
-                        />
-                        <button onClick={saveSettings} className="text-blue-600 hover:underline ml-2">Update Hours</button>
+                        <span className="font-bold text-gray-600">Hours:</span>
+                        <input type="time" value={workDay.start} onChange={(e) => setWorkDay({...workDay, start: e.target.value})} className="border rounded p-1"/>
+                        <span>-</span>
+                        <input type="time" value={workDay.end} onChange={(e) => setWorkDay({...workDay, end: e.target.value})} className="border rounded p-1"/>
+                        <button onClick={saveSettings} className="text-blue-600 hover:underline ml-2">Set Default</button>
                     </div>
                 </div>
 
                 <div className="flex gap-2">
-                    <button onClick={() => setViewDate(addDays(viewDate, -14))} className="px-3 py-2 border rounded hover:bg-gray-50">← Prev</button>
-                    <button onClick={() => setViewDate(addDays(viewDate, 14))} className="px-3 py-2 border rounded hover:bg-gray-50">Next →</button>
-                    <button onClick={saveBlocks} className="bg-red-600 text-white px-6 py-2 rounded shadow hover:bg-red-700">
-                        Save Red Blocks
+                    <button 
+                        onClick={handlePrev} 
+                        disabled={isAtStart}
+                        className={`px-3 py-2 border rounded ${isAtStart ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+                    >
+                        ← Prev
+                    </button>
+                    <button onClick={handleNext} className="px-3 py-2 border rounded hover:bg-gray-50">Next →</button>
+                    <button onClick={saveChanges} className="bg-brown text-white px-6 py-2 rounded shadow hover:bg-opacity-90">
+                        Save Changes
                     </button>
                 </div>
             </div>
@@ -189,7 +193,6 @@ const Availability = () => {
                                 <tr key={day.toString()} className={isPast ? "opacity-50 bg-gray-100" : ""}>
                                     <td className="p-2 border font-medium text-sm sticky left-0 bg-white z-10 whitespace-nowrap">
                                         {format(day, 'EEE, MMM d')}
-                                        {isPast && <span className="block text-xs text-gray-400">(Past)</span>}
                                     </td>
                                     {timeSlots.map(slot => {
                                         const key = `${format(day, 'yyyy-MM-dd')}_${slot}`;
@@ -201,14 +204,16 @@ const Availability = () => {
                                                 onMouseDown={() => handleMouseDown(day, slot)}
                                                 onMouseEnter={() => handleMouseEnter(day, slot)}
                                                 className={`
-                                                    border border-gray-100 p-0 transition-all duration-75 relative
+                                                    border border-gray-200 p-0 transition-all duration-75 relative
                                                     ${isPast ? 'cursor-not-allowed bg-gray-200' : 'cursor-pointer'}
-                                                    ${!isPast && isSelected ? 'bg-red-500' : (!isPast ? 'bg-green-100 hover:bg-green-200' : '')}
+                                                    ${
+                                                        !isPast && isSelected 
+                                                            ? 'bg-red-500' // Red for Unavailable
+                                                            : (!isPast ? 'bg-emerald-500 hover:bg-emerald-600' : '') // Darker Green for Available
+                                                    }
                                                 `}
-                                                title={isPast ? "Cannot edit past dates" : `${format(day, 'MMM d')} ${slot}`}
-                                            >
-                                                {/* Optional: Add X icon if red */}
-                                            </td>
+                                                title={isSelected ? "Unavailable" : "Available"}
+                                            />
                                         );
                                     })}
                                 </tr>
@@ -217,10 +222,17 @@ const Availability = () => {
                     </tbody>
                 </table>
             </div>
-            <p className="mt-4 text-sm text-gray-500">
-                * Click and drag to mark times as <span className="text-red-600 font-bold">Unavailable (Red)</span>. 
-                Past dates are disabled.
-            </p>
+            
+            <div className="mt-4 flex gap-4 text-sm text-gray-600">
+                <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-emerald-500 border"></div>
+                    <span>Available</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-500 border"></div>
+                    <span>Unavailable (Drag to select)</span>
+                </div>
+            </div>
         </div>
     );
 };

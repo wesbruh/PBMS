@@ -132,24 +132,39 @@ app.post("/api/availability/settings", async (req, res) => {
     res.json(data);
 });
 
-// 3. POST: Save Red Blocks
+
+//3.  Bulk update blocks (The Sync Logic)
 app.post("/api/availability/blocks", async (req, res) => {
-    const { blocks } = req.body;
-    
-    if (!blocks || blocks.length === 0) return res.json({ message: "No blocks to save" });
+    const { blocks, rangeStart, rangeEnd } = req.body;
 
-    // Will have to delete blocks turned green
-    
-    const { error } = await supabase
-        .from("AvailabilityBlocks")
-        .upsert(blocks, { onConflict: 'start_time' }); // Ensure unique start_times prevent duplicates if you set unique constraints in SQL
+    try {
+        // 1. DELETE existing blocks within the visible range 
+        // (This effectively "deletes" the green ones by removing the old red records)
+        const { error: deleteError } = await supabase
+            .from("AvailabilityBlocks")
+            .delete()
+            .gte("start_time", rangeStart)   // Greater than or equal to start of view
+            .lte("start_time", rangeEnd);    // Less than or equal to end of view
 
-    if (error) {
-        console.error(error);
-        return res.status(400).json(error);
+        if (deleteError) throw deleteError;
+
+        // 2. INSERT the new Red blocks (if any exist)
+        // We filter the blocks to ensure we only insert ones that fall in the range 
+        // (just a safety check, though frontend should handle this)
+        if (blocks && blocks.length > 0) {
+            const { error: insertError } = await supabase
+                .from("AvailabilityBlocks")
+                .insert(blocks);
+            
+            if (insertError) throw insertError;
+        }
+
+        res.json({ message: "Schedule synced successfully" });
+
+    } catch (error) {
+        console.error("Error syncing schedule:", error.message);
+        res.status(500).json({ error: error.message });
     }
-    
-    res.json({ message: "Schedule saved successfully" });
 });
 
 
