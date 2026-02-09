@@ -7,8 +7,6 @@ import { saveAs } from "file-saver";
 import { Link } from "react-router-dom";
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
 
-
-
 export default function ClientDashboard() {
   const { user, profile, setProfile } = useAuth();
   const [sessions, setSessions] = useState([]);
@@ -167,7 +165,6 @@ export default function ClientDashboard() {
     }
   }, [showSettings]);
 
-
   // Used in the welcome message if no first or last name is set fallback to email
   const fullName =
     profile?.first_name || profile?.last_name
@@ -221,8 +218,8 @@ export default function ClientDashboard() {
         setSaveError("That email is already in use. Please choose another.");
         return;
       }
-
     }
+
     // Update fields in the "User" table
     const updates = {
       first_name: newFirstName,
@@ -334,7 +331,7 @@ export default function ClientDashboard() {
       return;
     }
 
-    //Delete user from the User table in the database
+    // Delete user from the User table in the database
     const { error: deleteErr } = await supabase
       .from("User")
       .delete()
@@ -622,7 +619,7 @@ export default function ClientDashboard() {
                           className='text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5'
                           aria-label="Preview"
                         >
-                          <i class="fa-solid fa-eye"></i>
+                          <i className="fa-solid fa-eye"></i>
                         </a>
                         <DownloadInvoiceButton invoiceId={inv.id} />
                       </div>

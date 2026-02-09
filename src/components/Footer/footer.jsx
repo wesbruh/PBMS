@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
           
           {/* logo and copyright */}
           <div className='flex items-center gap-3'>
-            <img src="public/logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12' />
+            <img src="logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12' />
             <span className='text-[#7E4C3C] font-serif text-sm'> &copy;2025 Your Roots Photography</span>
           </div>
   
@@ -53,7 +53,7 @@ import { Link } from "react-router-dom";
           
           {/* logo and copyright */}
           <div className='flex items-center gap-3'>
-            <img src="public/logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12' />
+            <img src="logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12' />
             <span className='text-[#7E4C3C] font-serif text-md'> &copy;2025 Your Roots Photography</span>
           </div>
   
