@@ -2,6 +2,7 @@
 import { Outlet, Route } from 'react-router-dom';
 import AdminHome from './pages/Home/home';
 import Sessions from './pages/Sessions/sessions';
+import Availability from './pages/Availability/availability';
 import Contacts from './pages/Contacts/contacts';
 import Galleries from './pages/Galleries/galleries';
 import Notifications from './pages/Notifications/notifications';
@@ -17,6 +18,7 @@ export default function AdminRoutes() {
     <Route path="admin" element={<Outlet />}>
       <Route index element={<AdminHome />} />
       <Route path="sessions" element={<Sessions />} />
+      <Route path="availability" element={<Availability />} />
       <Route path="contacts" element={<Contacts />} />
       <Route path="galleries" element={<Galleries />} />
       <Route path="notifications" element={<Notifications />} />

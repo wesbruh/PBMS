@@ -24,6 +24,9 @@ function Sidebar() {
               <Link to="/admin/sessions" className={`${linkStyles} ${isActive('/sessions') ? activeLinkStyles : ''}`}>Sessions</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
+              <Link to="/admin/availability" className={`${linkStyles} ${isActive('/availability') ? activeLinkStyles : ''}`}>Availability</Link>
+            </div>
+            <div className='flex mt-3 mb-3 ml-3'>
               <Link to="/admin/contacts" className={`${linkStyles} ${isActive('/contacts') ? activeLinkStyles : ''}`}>Contacts</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
