@@ -19,10 +19,13 @@ function Sidebar() {
         <nav className=''>
           <div className='flex flex-col w-full my-4'>
             <div className='flex mt-3 mb-3 ml-3'> 
-              <Link to="/admin" className={`${linkStyles} ${isActive('') ? activeLinkStyles : ''}`}><Home size={32} />Home</Link>
+              <Link to="/admin" className={`${linkStyles} ${isActive('') ? activeLinkStyles : ''}`}>Home</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/sessions" className={`${linkStyles} ${isActive('/sessions') ? activeLinkStyles : ''}`}><Camera size={32} />Sessions</Link>
+              <Link to="/admin/sessions" className={`${linkStyles} ${isActive('/sessions') ? activeLinkStyles : ''}`}>Sessions</Link>
+            </div>
+            <div className='flex mt-3 mb-3 ml-3'>
+              <Link to="/admin/availability" className={`${linkStyles} ${isActive('/availability') ? activeLinkStyles : ''}`}>Availability</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
               <Link to="/admin/contacts" className={`${linkStyles} ${isActive('/contacts') ? activeLinkStyles : ''}`}><Contact2 size={32} />Contacts</Link>

@@ -76,6 +76,40 @@ app.patch("/api/sessions/:id", async (req, res) => {
     }
 });
 
+// Admin availability routes
+
+// --- Availability Routes ---
+
+// Get everything needed for the grid
+app.get("/api/availability", async (req, res) => {
+    try {
+        const { data: settings } = await supabase.from("AvailabilitySettings").select("*").single();
+        const { data: blocks } = await supabase.from("AvailabilityBlocks").select("*");
+        res.json({ settings, blocks });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Update settings (start/end work day)
+app.post("/api/availability/settings", async (req, res) => {
+    const { start, end } = req.body;
+    const { data, error } = await supabase
+        .from("AvailabilitySettings")
+        .upsert({ work_start_time: start, work_end_time: end, id: req.body.id }) // Simplified for demo
+        .select();
+    if (error) return res.status(400).json(error);
+    res.json(data);
+});
+
+// Bulk update blocks (The Save Button logic)
+app.post("/api/availability/blocks", async (req, res) => {
+    const { blocks } = req.body; // Array of blocks to upsert
+    const { error } = await supabase.from("AvailabilityBlocks").upsert(blocks);
+    if (error) return res.status(400).json(error);
+    res.json({ message: "Schedule saved successfully" });
+});
+
 
 
 app.use("/api/invoice", invoiceRoutes);
