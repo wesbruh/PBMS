@@ -52,7 +52,7 @@ const Availability = () => {
                 is_available: false
             };
         });
-        await axios.post('/api/availability/blocks', { blocks: blocksToSave });
+        await axios.post('http://localhost:5001/api/availability/blocks', { blocks: blocksToSave });
         alert("Availability Updated!");
     };
 
