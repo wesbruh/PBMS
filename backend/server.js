@@ -80,36 +80,77 @@ app.patch("/api/sessions/:id", async (req, res) => {
 
 // --- Availability Routes ---
 
-// Get everything needed for the grid
+// --- Availability Routes ---
+
+// 1. GET: Fetch settings and existing red blocks
 app.get("/api/availability", async (req, res) => {
     try {
-        const { data: settings } = await supabase.from("AvailabilitySettings").select("*").single();
-        const { data: blocks } = await supabase.from("AvailabilityBlocks").select("*");
-        res.json({ settings, blocks });
+        // Fetch Settings
+        let { data: settings, error: settingsError } = await supabase
+            .from("AvailabilitySettings")
+            .select("*")
+            .maybeSingle(); // Use maybeSingle to avoid error if empty
+
+        // Fetch Red Blocks
+        const { data: blocks, error: blocksError } = await supabase
+            .from("AvailabilityBlocks")
+            .select("*");
+
+        if (settingsError) console.error("Settings Error:", settingsError);
+        if (blocksError) console.error("Blocks Error:", blocksError);
+
+        res.json({ 
+            settings: settings || null, 
+            blocks: blocks || [] 
+        });
     } catch (error) {
+        console.error("Server Error:", error);
         res.status(500).json({ error: error.message });
     }
 });
 
-// Update settings (start/end work day)
+// 2. POST: Save/Update Global Settings (Start/End Time)
 app.post("/api/availability/settings", async (req, res) => {
     const { start, end } = req.body;
+    
+    // Check if a settings row exists first to get the ID, or just insert new
+    // For simplicity, we assume one admin user or just update the first row found
+    // Ideally, I will have to pass the admin_user_id
+    
     const { data, error } = await supabase
         .from("AvailabilitySettings")
-        .upsert({ work_start_time: start, work_end_time: end, id: req.body.id }) // Simplified for demo
+        .upsert({ 
+            // If you have a specific ID you want to enforce, put it here, 
+            // otherwise we need to find the existing one or create one.
+            // For now, let's just create/update a generic one.
+            work_start_time: start, 
+            work_end_time: end 
+        }, { onConflict: 'id' }) // Handling conficts can be adjusted
         .select();
+
     if (error) return res.status(400).json(error);
     res.json(data);
 });
 
-// Bulk update blocks (The Save Button logic)
+// 3. POST: Save Red Blocks
 app.post("/api/availability/blocks", async (req, res) => {
-    const { blocks } = req.body; // Array of blocks to upsert
-    const { error } = await supabase.from("AvailabilityBlocks").upsert(blocks);
-    if (error) return res.status(400).json(error);
+    const { blocks } = req.body;
+    
+    if (!blocks || blocks.length === 0) return res.json({ message: "No blocks to save" });
+
+    // Will have to delete blocks turned green
+    
+    const { error } = await supabase
+        .from("AvailabilityBlocks")
+        .upsert(blocks, { onConflict: 'start_time' }); // Ensure unique start_times prevent duplicates if you set unique constraints in SQL
+
+    if (error) {
+        console.error(error);
+        return res.status(400).json(error);
+    }
+    
     res.json({ message: "Schedule saved successfully" });
 });
-
 
 
 app.use("/api/invoice", invoiceRoutes);
