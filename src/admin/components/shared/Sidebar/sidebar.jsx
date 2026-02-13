@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Camera, Contact2 ,Image as ImageIcon, Bell, Banknote, ReceiptText, Settings, } from "lucide-react";
+import { Home, Camera, Calendar, Contact2 ,Image as ImageIcon, Bell, Banknote, ReceiptText, Settings, } from "lucide-react";
 
 function Sidebar() {
   // determines location of user based on current page
@@ -19,31 +19,31 @@ function Sidebar() {
         <nav className=''>
           <div className='flex flex-col w-full my-4'>
             <div className='flex mt-3 mb-3 ml-3'> 
-              <Link to="/admin" className={`${linkStyles} ${isActive('') ? activeLinkStyles : ''}`}>Home</Link>
+              <Link to="/admin" className={`${linkStyles} ${isActive('') ? activeLinkStyles : ''}`}><Home size={24} />Home</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/sessions" className={`${linkStyles} ${isActive('/sessions') ? activeLinkStyles : ''}`}>Sessions</Link>
+              <Link to="/admin/sessions" className={`${linkStyles} ${isActive('/sessions') ? activeLinkStyles : ''}`}><Camera size={24} />Sessions</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/availability" className={`${linkStyles} ${isActive('/availability') ? activeLinkStyles : ''}`}>Availability</Link>
+              <Link to="/admin/availability" className={`${linkStyles} ${isActive('/availability') ? activeLinkStyles : ''}`}><Calendar size={24} />Availability</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/contacts" className={`${linkStyles} ${isActive('/contacts') ? activeLinkStyles : ''}`}><Contact2 size={32} />Contacts</Link>
+              <Link to="/admin/contacts" className={`${linkStyles} ${isActive('/contacts') ? activeLinkStyles : ''}`}><Contact2 size={24} />Contacts</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/galleries" className={`${linkStyles} ${isActive('/galleries') ? activeLinkStyles : ''}`}><ImageIcon size={32} />Galleries</Link>
+              <Link to="/admin/galleries" className={`${linkStyles} ${isActive('/galleries') ? activeLinkStyles : ''}`}><ImageIcon size={24} />Galleries</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/notifications" className={`${linkStyles} ${isActive('/notifications') ? activeLinkStyles : ''}`}><Bell size={32} />Notifications</Link>
+              <Link to="/admin/notifications" className={`${linkStyles} ${isActive('/notifications') ? activeLinkStyles : ''}`}><Bell size={24} />Notifications</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/payments" className={`${linkStyles} ${isActive('/payments') ? activeLinkStyles : ''}`}><Banknote size={32} />Payments and Invoices</Link>
+              <Link to="/admin/payments" className={`${linkStyles} ${isActive('/payments') ? activeLinkStyles : ''}`}><Banknote size={24} />Payments and Invoices</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/forms/questionnaires" className={`${linkStyles} ${isActive('/forms') ? activeLinkStyles : ''}`}><ReceiptText size={32} />Forms and Contracts</Link>
+              <Link to="/admin/forms/questionnaires" className={`${linkStyles} ${isActive('/forms') ? activeLinkStyles : ''}`}><ReceiptText size={24} />Forms and Contracts</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/settings" className={`${linkStyles} ${isActive('/settings') ? activeLinkStyles : ''}`}><Settings size={32} />Settings</Link>
+              <Link to="/admin/settings" className={`${linkStyles} ${isActive('/settings') ? activeLinkStyles : ''}`}><Settings size={24} />Settings</Link>
             </div>
           </div>
         </nav>

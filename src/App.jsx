@@ -25,6 +25,7 @@ import IdleLogout from './components/IdleLogout.jsx';
 import AdminRoute from './admin/components/shared/ProtectedRoute.jsx'
 import AdminHome from './admin/pages/Home/home';
 import Sessions from './admin/pages/Sessions/sessions';
+import Availability from './admin/pages/Availability/availability';
 import Contacts from './admin/pages/Contacts/contacts';
 import Galleries from './admin/pages/Galleries/galleries';
 import Notifications from './admin/pages/Notifications/notifications';
@@ -85,6 +86,7 @@ function AppContent() {
             <Route path="admin" element={<AdminRoute><Outlet /></AdminRoute>}>
               <Route index element={<AdminHome />} />
               <Route path="sessions" element={<Sessions />} />
+              <Route path="availability" element={<Availability />} />
               <Route path="contacts" element={<Contacts />} />
               <Route path="galleries" element={<Galleries />} />
               <Route path="notifications" element={<Notifications />} />
