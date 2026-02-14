@@ -367,12 +367,16 @@ export default function ClientDashboard() {
       // mark as downloading
       setDownloadingGalleries(prev => ({ ...prev, [galleryId]: true }));
 
+      //const filePath = `photos/galleries/${galleryId}`;
+
       // 1) Fetch photos for this gallery
-      const {data: photos, error: photosError} = await supabase
-      .from("Photo")
-      .select("id, storage_path, filename")
-      .eq("gallery_id", galleryId)
-      .order("uploaded_at", { ascending: true });
+      const {data: photoList, error: photosError} = await supabase.storage
+      .from('photos')
+      .list('galleries/' + galleryId);
+
+      console.log(photoList)
+
+      // console.error("stop");
 
       // CONSOLE DEBUG 
       // console.log('fetched photos:', photos);
@@ -386,10 +390,22 @@ export default function ClientDashboard() {
       }
       
       // no photos found in gallery message
-      if (!photos || photos.length === 0) {
+      if (!photoList || photoList.length === 0) {
         alert ("This gallery has no photos.");
         return;
       }
+      
+      // load photos first before heading into next part  
+      let photos = [];
+      
+      photoList.forEach(async (photo) => {
+        const { data: photoData, error: photoError } = await supabase.storage.from(`photos/galleries/${galleryId}`).download(photo.name);
+        
+        if (!photoError) {
+          photos.push(photoData);
+        }
+      });
+      console.log(photos);
       
       // 2) Create a new ZIP file
       const zip = new JSZip();
