@@ -90,10 +90,20 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:local": "npx supabase start",
+    "db:stop": "npx supabase stop --all || docker-compose down || docker container rm -f supabase_vector_backend",
+    "functions:serve": "npx supabase functions serve",
+    "functions:deploy": "npx supabase functions deploy",
+    "functions:new": "npx supabase functions new",
+    "db:link": "npx supabase link",
+    "db:init": "npx supabase init"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": ""
+  "description": "",
+  "devDependencies": {
+    "supabase": "^2.76.9"
+  }
 }
