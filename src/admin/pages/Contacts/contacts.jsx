@@ -211,7 +211,7 @@ function Contacts() {
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="relative flex flex-col bg-[#fdfbf7] p-5 md:p-6 w-screen rounded-2xl shadow-inner">
+          <div className="relative flex flex-col bg-[#fdfbf7] p-5 md:p-6 w-screen rounded-2xl shadow-inner overflow-scroll">
             {/* Header */}
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
