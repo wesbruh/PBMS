@@ -68,9 +68,9 @@ function Contacts() {
             setSelectedContact(row);
             setShowDeleteModal(true);
           }}
-          className="text-sm text-blue-400 hover:underline cursor-pointer"
+          className="text-sm text-red-500 hover:underline cursor-pointer"
         >
-          Edit
+          Delete
         </button>
       ),
     },
