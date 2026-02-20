@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import Sidebar from "../../components/shared/Sidebar/sidebar";
-import Frame from "../../components/shared/Frame/frame";
+import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
+import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 
 function Sessions() {
@@ -59,33 +59,33 @@ function Sessions() {
   };
 
   const tableSessionColumns = [
-    { 
-      key: 'client_name', 
-      label: 'Client', 
+    {
+      key: 'client_name',
+      label: 'Client',
       sortable: true,
       render: (_, row) => `${row.User?.first_name || ''} ${row.User?.last_name || ''}`
     },
-    { 
-      key: 'session_type', 
-      label: 'Type', 
-      render: (_, row) => row.SessionType?.name || 'N/A' 
+    {
+      key: 'session_type',
+      label: 'Type',
+      render: (_, row) => row.SessionType?.name || 'N/A'
     },
-    { 
-      key: 'location_text', 
+    {
+      key: 'location_text',
       label: 'Location',
       render: (val, row) => (
-        <input 
+        <input
           className="border rounded px-2 py-1 w-full text-sm"
           defaultValue={val}
           onBlur={(e) => handleUpdate(row.id, 'location_text', e.target.value)}
         />
       )
     },
-    { 
-      key: 'start_at', 
-      label: 'Start Time', 
+    {
+      key: 'start_at',
+      label: 'Start Time',
       render: (val, row) => (
-        <input 
+        <input
           type="datetime-local"
           className="border rounded px-1 text-sm"
           defaultValue={val ? new Date(val).toISOString().slice(0, 16) : ""}
@@ -93,11 +93,11 @@ function Sessions() {
         />
       )
     },
-    { 
-      key: 'end_at', 
-      label: 'End Time', 
+    {
+      key: 'end_at',
+      label: 'End Time',
       render: (val, row) => (
-        <input 
+        <input
           type="datetime-local"
           className="border rounded px-1 text-sm"
           defaultValue={val ? new Date(val).toISOString().slice(0, 16) : ""}
@@ -105,11 +105,11 @@ function Sessions() {
         />
       )
     },
-    { 
-      key: 'status', 
+    {
+      key: 'status',
       label: 'Status',
       render: (value, row) => (
-        <select 
+        <select
           value={value}
           onChange={(e) => handleUpdate(row.id, 'status', e.target.value)}
           className={`px-2 py-1 rounded-md text-sm font-semibold border ${getStatusStyle(value)}`}
@@ -124,30 +124,32 @@ function Sessions() {
   ];
 
   return (
-    <div className="flex my-10 md:my-14 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-white rounded-lg shadow-xl">
-      <div className="flex w-1/5 min-w-[200px]">
+    <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+      <div className="flex w-1/5 min-w-50">
         <Sidebar />
       </div>
 
-      <div className="flex w-full shadow-inner rounded-lg overflow-hidden">
+      <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="flex flex-col bg-white p-6 w-full h-full">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">Admin Sessions</h1>
-              <p className="text-gray-500">Live-sync management of client bookings.</p>
-            </div>
-            
-            <div className="flex-grow">
-              {loading ? (
-                <div className="animate-pulse flex space-x-4">Loading...</div>
-              ) : (
-                <Table 
-                  columns={tableSessionColumns} 
-                  data={sessions}
-                  searchable={true}
-                  rowsPerPage={6}
-                />
-              )}
+          <div className="flex w-full shadow-inner rounded-lg overflow-y-scroll">
+            <div className="flex flex-col bg-white p-6 w-full h-full">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900">Admin Sessions</h1>
+                <p className="text-gray-500">Live-sync management of client bookings.</p>
+              </div>
+
+              <div className="flex-grow">
+                {loading ? (
+                  <div className="animate-pulse flex space-x-4">Loading...</div>
+                ) : (
+                  <Table
+                    columns={tableSessionColumns}
+                    data={sessions}
+                    searchable={true}
+                    rowsPerPage={6}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </Frame>

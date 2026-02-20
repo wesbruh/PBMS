@@ -32,7 +32,7 @@ export default function QuestionnairesList() {
   }, []);
 
   return (
-    <div className="w-full">
+    <div className="w-full overflow-y-scroll">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Questionnaires</h1>
         <Link
