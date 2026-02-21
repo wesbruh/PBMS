@@ -5,6 +5,7 @@ import Footer from './components/Footer/footer';
 
 import Home from './pages/Home/home';
 import About from './pages/About/about';
+import Portfolio from "./pages/Portfolio/portfolio.jsx";
 import Testimonials from './pages/Testimonials/testimonials';
 import SignUp from './pages/SignUp/SignUp.jsx';
 import Login from './pages/Login/login';
@@ -12,7 +13,6 @@ import InquiryPage from "./pages/Inquiry/index.jsx";
 import Services from './pages/Services/services.jsx';
 import Weddings from './pages/Special/Weddings.jsx';
 import Labor from './pages/Special/Labor.jsx';
-import Portfolio from "./pages/Portfolio/portfolio.jsx";
 
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import ClientDashboard from "./pages/Dashboard/ClientDashboard.jsx";
@@ -52,7 +52,11 @@ function AppContent() {
     <div className='min-h-screen flex flex-col'>
       <IdleLogout />
 
-      {isAdminPage ? <AdminNavbar /> : <Navbar />}
+      { /* temp dynamic navbar */}
+      {
+        isAdminPage ?
+          <AdminNavbar /> : <Navbar />
+      }
 
       <main className='grow'>
         <AuthHashRouter>
@@ -97,13 +101,14 @@ function AppContent() {
               </Route>
               <Route path="settings" element={<Settings />} />
             </Route>
+
           </Routes>
         </AuthHashRouter>
       </main>
 
       <Footer />
-    </div>
+    </div >
   );
 }
 
-export default App;
+export default App

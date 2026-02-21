@@ -5,8 +5,6 @@ import { useAuth } from "../../context/AuthContext";
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
 import { saveAs } from "file-saver";
 import { Link } from "react-router-dom";
-
-
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
 
 export default function ClientDashboard() {
