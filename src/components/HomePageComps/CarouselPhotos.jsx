@@ -5,11 +5,11 @@ function CarouselSection() {
     const [currentIndex, setCurrentIndex] = useState(0);
     // horizontal photos
     const images = [
-      "public/images/temp_b.jpg",
-      "public/images/temp_cb.jpg",
-      "public/images/temp_gr.jpg",
-      "public/images/temp_img.jpg",
-      "public/images/temp_t.jpg"
+      "images/temp_b.jpg",
+      "images/temp_cb.jpg",
+      "images/temp_gr.jpg",
+      "images/temp_img.jpg",
+      "images/temp_t.jpg"
     ];
   
     // auto-slide effect changes shown image every 5 seconds
@@ -52,7 +52,7 @@ function CarouselSection() {
               {/* contact button */}
         <div className='flex justify-center mt-12'>
           <Link
-            to="/contact"
+            to="/inquiry"
             className='inline-block px-8 py-3 bg-[#7E4C3C] text-white text-lg font-serif hover:bg-[#AB8C4B] transition'
           >
             Book With Me!

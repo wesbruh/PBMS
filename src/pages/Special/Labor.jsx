@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import GoToTop from '../../GoToTop';
 
 function Labor() {
   const heroImg = "/images/temp_mother.jpg";
@@ -95,12 +96,11 @@ function Labor() {
         </div>
 
         <div className="absolute right-10 bottom-10">
-          <Link
-            to="/contact"
+          <a
             className="bg-brown px-6 py-3 text-white text-sm hover:bg-[#AB8C4B]"
-          >
+            href="mailto:Your.rootsphotography@gmail.com">
             INQUIRE HERE
-          </Link>
+          </a>
         </div>
       </div>
 
@@ -142,6 +142,7 @@ function Labor() {
           </div>
         ))}
       </div>
+      <GoToTop />
     </div>
   );
 }

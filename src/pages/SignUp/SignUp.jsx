@@ -6,6 +6,9 @@ import { supabase } from "../../lib/supabaseClient";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
+// default role init
+const { data: defaultRoleArr, error: roleError } = await supabase.from("Role").select("id").eq("name", "User");
+
 // password rules
 const passwordSchema = z
   .string()
@@ -56,15 +59,15 @@ export default function SignUp() {
     const redirectUrl = `${window.location.origin}/auth/callback`;
 
     const { data, error } = await supabase.auth.signUp({
-        email: values.email,
-        password: values.password,
-        options: {
+      email: values.email,
+      password: values.password,
+      options: {
         data: {
-            first_name: values.firstName,
-            last_name: values.lastName,
+          first_name: values.firstName,
+          last_name: values.lastName,
         },
         emailRedirectTo: redirectUrl,
-        },
+      },
     });
 
     // error path
@@ -81,26 +84,60 @@ export default function SignUp() {
     }
 
     const authUser = data.user;
+    const duplicateSignup =
+      authUser &&
+      Array.isArray(authUser.identities) &&
+      authUser.identities.length === 0;
 
-    // upsert in your "User" table
+    if (duplicateSignup) {
+      setSubmitError("That email is already in use. Please log in instead.");
+      setInfoMsg("");
+      return;
+    }
+    
+    // upsert in your "User" and "UserRole" table
     if (authUser?.id) {
-        const { error: userTableErr } = await supabase.from("User").upsert({
+      const profilePayload = {
         id: authUser.id,
         email: values.email,
         first_name: values.firstName,
         last_name: values.lastName,
         // if email is NOT confirmed yet, mark inactive
         is_active: !!authUser.email_confirmed_at,
-        });
-        if (userTableErr) {
+      };
+
+      if (roleError || !defaultRoleArr) {
+        console.error("Role not found or error fetching role: ", roleError);
+      }
+      
+      const defaultRole = defaultRoleArr[0]
+      const rolePayload = {
+        user_id: profilePayload.id,
+        role_id: defaultRole.id
+      };
+
+      if (data?.session) {
+        profilePayload.last_login_at = rolePayload.assigned_at = new Date().toISOString();
+        profilePayload.is_active = true;
+      }
+
+      const { error: userTableErr } = await supabase.from("User").upsert(profilePayload);
+      const { error: userRoleTableErr } = await supabase.from("UserRole").upsert(rolePayload);
+
+      // Upsert Errors
+      if (userTableErr) {
         console.error("User upsert error:", userTableErr);
-        }
+      }
+
+      if (userRoleTableErr) {
+        console.error("UserRole upsert error:", userRoleTableErr);
+      }
     }
 
     // if no session was returned, it's confirmation mode
     if (!data.session) {
         setInfoMsg(
-        "We’ve sent you a confirmation link. Please check your email to finish creating your account."
+          "We’ve sent you a confirmation link. Please check your email to finish creating your account."
         );
         return;
     }
@@ -108,7 +145,6 @@ export default function SignUp() {
     // otherwise go straight to dashboard
     navigate("/dashboard", { replace: true });
     };
-
 
   return (
     <div>
@@ -237,12 +273,12 @@ export default function SignUp() {
 
           <button
             className="flex justify-center items-center w-1/2 mx-auto mt-6 mb-6 md:mb-8 lg:mb-10
-                        bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-sans border-2 border-black rounded-md transition disabled:opacity-60"
+                        bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-serif border border-black rounded-md transition disabled:opacity-60 cursor-pointer"
             type="submit"
             disabled={isSubmitting}
             aria-label="Create account"
           >
-            {isSubmitting ? "Creating..." : "CREATE ACCOUNT"}
+            {isSubmitting ? "Creating..." : "Create Account"}
           </button>
         </form>
       </div>
