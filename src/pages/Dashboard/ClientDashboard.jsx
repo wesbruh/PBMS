@@ -238,12 +238,29 @@ export default function ClientDashboard() {
 
     // If there was a problem show error message and stop
     if (error) {
-      setSaveError("Could not save changes.");
+      console.error("User table update error:", error);
+      setSaveError(error.message ||"Could not save changes.");
       return;
     }
 
     // Update global profile in AuthContext so the whole website has the latest info
     setProfile(data);
+
+    // Also update auth metadata so auth stays in sync with profile fields
+    // Auth doesn't have first_name/last_name columns like the public user table
+    const { error: metaErr } = await supabase.auth.updateUser({
+      data: {
+        first_name: newFirstName,
+        last_name: newLastName,
+        phone: newPhone, // optional if wanted it in auth metadata too
+      },
+    });
+
+    if (metaErr) {
+      console.error("updateUser metadata error:", metaErr);
+      setSaveError("Saved profile, but could not sync Auth profile data.");
+      return;
+    }
 
     // If email was changed ask Supabase to send a verification link to that email
     if (emailChanged) {
