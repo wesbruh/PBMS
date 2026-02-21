@@ -331,17 +331,38 @@ export default function ClientDashboard() {
       return;
     }
 
-    // Delete user from the User table in the database
-    const { error: deleteErr } = await supabase
-      .from("User")
-      .delete()
-      .eq("id", user.id);
-
-    if (deleteErr) {
-      console.error("Error deleting user account:", deleteErr);
-      setSaveError("Could not delete account. Please try again later.");
+    // Get the current session to retrieve the access token for authentication(JWT)
+    const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+    // If we cannot get a valid token, stop and show error
+    if (sessionErr || !sessionData?.session?.access_token) {
+      setSaveError("No valid session token found. Please log in again.");
       return;
-    }
+  }
+    // Extract the Bearer token from the session
+    const token = sessionData.session.access_token;
+
+    // Constructing the full URL to the supabase edge function for user deletion
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`;
+
+    // Call the edge function using fetch and include the bearer token
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // Required for authentication
+    },
+    body: JSON.stringify({ userId: user.id }), // Send user id in request body
+  });
+
+  // For debugging
+  const text = await res.text();
+  console.log("user-delete raw status:", res.status);
+  console.log("user-delete raw body:", text);
+
+  if (!res.ok) {
+    setSaveError(text || "Could not delete account.");
+    return;
+  }
 
     //Clear profile, log user out, and redirect to homepage
     setProfile(null);
