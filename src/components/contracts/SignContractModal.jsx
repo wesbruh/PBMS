@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import SignatureCanvas from "react-signature-canvas";
 import { supabase } from "../../lib/supabaseClient";
- 
+
 function dataUrlToBlob(dataUrl) {
   const [meta, b64] = dataUrl.split(",");
   const mime = meta.match(/data:(.*);base64/)[1];
@@ -49,17 +49,17 @@ export default function SignContractModal({ open, onClose, contract, onSigned })
 
       // 4) Mark contract as signed
       const { error: updErr } = await supabase
-        .from("contract")
-        .update({ status: "signed", signed_pdf_url: signedUrl })
+        .from("Contract")
+        .update({ status: "Signed", signed_pdf_url: signedUrl })
         .eq("id", contract.id);
-      if (updErr) throw updErr;
+        if (updErr) throw updErr;
 
       onSigned?.({
-  id: contract.id,
-  signedUrl,                           // the public URL we just saved
-  status: "Signed",                    // normalize to title-case if your DB uses that
-  updatedAt: new Date().toISOString(),
-});
+        id: contract.id,
+        signedUrl,                           // the public URL we just saved
+        status: "Signed",                    // normalize to title-case if your DB uses that
+        updatedAt: new Date().toISOString(),
+      });
       onClose();
       alert("Contract signed!");
     } catch (e) {

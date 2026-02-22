@@ -3,12 +3,16 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 
+
+
 function Sessions() {
   const [sessions, setSessions] = useState([]);
+  const [defaultContract, setDefaultContract] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchSessions();
+    loadDefaultContract();
   }, []);
 
   const fetchSessions = async () => {
@@ -20,6 +24,28 @@ function Sessions() {
     } catch (error) {
       console.error("Error fetching sessions:", error);
       setLoading(false);
+    }
+  };
+
+  const loadDefaultContract = async () => {
+    try {
+      const response = await fetch("http://localhost:5001/api/contract/template/default");
+      const data = await response.json();
+      setDefaultContract(data);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    }
+  };
+
+  const generateContract = async (session_id) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/contract/generate/${session_id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ["template_id"]: defaultContract.id})});
+      // DEBUGGING const data = await response.json();
+    } catch (error) {
+      console.error("Error generating contract:", error);
     }
   };
 
@@ -119,6 +145,21 @@ function Sessions() {
           <option value="Completed">Completed</option>
           <option value="Cancelled">Cancelled</option>
         </select>
+      )
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      render: (_, row) => (
+        (row.status === "Confirmed") ? 
+        <button 
+          type={"button"} 
+          onClick={() => generateContract(row.id)} 
+          className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border ${getStatusStyle(row.status)}`}
+        >
+          Generate Contract 
+        </button> :
+        <div></div>
       )
     }
   ];
