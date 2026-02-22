@@ -2,9 +2,10 @@ import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar/Navbar.jsx';
 import Footer from './components/Footer/Footer.jsx';
 
-import Home from './pages/Home/Home.jsx';
-import About from './pages/About/About.jsx';
-import Testimonials from './pages/Testimonials/Testimonials.jsx';
+import Home from './pages/Home/home';
+import About from './pages/About/about';
+import Portfolio from "./pages/Portfolio/portfolio.jsx";
+import Testimonials from './pages/Testimonials/testimonials';
 import SignUp from './pages/SignUp/SignUp.jsx';
 import Login from './pages/Login/Login.jsx';
 import InquiryPage from "./pages/Inquiry/Inquiry.jsx";
@@ -57,6 +58,7 @@ function AppContent() {
             <Route index element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/testimonials" element={<Testimonials />} />
+            <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/signup" element={<SignUp />} />
             <Route path="/login" element={<Login />} />
             <Route path="/inquiry" element={<InquiryPage />} />
