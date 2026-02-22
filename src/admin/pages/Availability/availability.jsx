@@ -28,22 +28,22 @@ const Availability = () => {
         });
       }
 
-      if (res.data.blocks && res.data.blocks.length > 0) {
-        const loadedSelection = new Set();
-        res.data.blocks.forEach(block => {
-          const dateObj = parseISO(block.start_time);
-          const dateKey = format(dateObj, 'yyyy-MM-dd');
-          const timeKey = format(dateObj, 'HH:mm');
-          loadedSelection.add(`${dateKey}_${timeKey}`);
-        });
-        setSelection(loadedSelection);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error("Error loading availability:", error);
-      setLoading(false);
-    }
-  };
+            if (res.data.blocks && res.data.blocks.length > 0) {
+                const loadedSelection = new Set();
+                res.data.blocks.forEach(block => {
+                    const dateObj = new Date(block.start_time);
+                    const dateKey = format(dateObj, 'yyyy-MM-dd');
+                    const timeKey = format(dateObj, 'HH:mm');
+                    loadedSelection.add(`${dateKey}_${timeKey}`);
+                });
+                setSelection(loadedSelection);
+            }
+            setLoading(false);
+        } catch (error) {
+            console.error("Error loading availability:", error);
+            setLoading(false);
+        }
+    };
 
   const getTimeSlots = () => {
     const slots = [];
@@ -103,17 +103,17 @@ const Availability = () => {
 
   const isPastDate = (day) => isBefore(day, startOfDay(new Date()));
 
-  // --- Save Logic ---
-  const saveChanges = async () => {
-    // 1. Prepare the RED blocks
-    const blocksToSave = Array.from(selection).map(key => {
-      const [date, time] = key.split('_');
-      return {
-        start_time: `${date}T${time}:00`,
-        end_time: `${date}T${time}:15`,
-        is_available: false
-      };
-    });
+    // --- Save Logic ---
+    const saveChanges = async () => {
+        // 1. Prepare the RED blocks
+        const blocksToSave = Array.from(selection).map(key => {
+            const [date, time] = key.split('_');
+            return {
+                start_time: new Date(`${date}T${time}:00`),
+                end_time: new Date(`${date}T${time}:15`),   
+                is_available: false
+            };
+        });
 
     // 2. Define the date range we are currently viewing/editing
     // The backend needs this to know which old records to delete.
