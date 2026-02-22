@@ -1,16 +1,15 @@
-import { BrowserRouter, Routes, Route, useLocation, Outlet } from 'react-router-dom';
-import AdminNavbar from './admin/components/shared/Navbar/navbar';
-import Navbar from './components/Navbar/navbar';
-import Footer from './components/Footer/footer';
+import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
+import Navbar from './components/Navbar/Navbar.jsx';
+import Footer from './components/Footer/Footer.jsx';
 
 import Home from './pages/Home/home';
 import About from './pages/About/about';
 import Portfolio from "./pages/Portfolio/portfolio.jsx";
 import Testimonials from './pages/Testimonials/testimonials';
 import SignUp from './pages/SignUp/SignUp.jsx';
-import Login from './pages/Login/login';
-import InquiryPage from "./pages/Inquiry/index.jsx";
-import Services from './pages/Services/services.jsx';
+import Login from './pages/Login/Login.jsx';
+import InquiryPage from "./pages/Inquiry/Inquiry.jsx";
+import Services from './pages/Services/Services.jsx';
 import Weddings from './pages/Special/Weddings.jsx';
 import Labor from './pages/Special/Labor.jsx';
 
@@ -24,15 +23,16 @@ import IdleLogout from './components/IdleLogout.jsx';
 
 // Protected Admin Routes
 import AdminRoute from './admin/components/shared/ProtectedRoute.jsx'
-import AdminHome from './admin/pages/Home/home';
-import Sessions from './admin/pages/Sessions/sessions';
-import Availability from './admin/pages/Availability/availability';
-import Contacts from './admin/pages/Contacts/contacts';
-import Galleries from './admin/pages/Galleries/galleries';
-import Notifications from './admin/pages/Notifications/notifications';
-import Payments from './admin/pages/Payments/payments';
-import Forms from './admin/pages/Forms/forms';
-import Settings from './admin/pages/Settings/settings';
+import AdminHome from './admin/pages/Home/Home.jsx';
+import Sessions from './admin/pages/Sessions/Sessions.jsx';
+import Availability from './admin/pages/Availability/Availability.jsx';
+import Contacts from './admin/pages/Contacts/Contacts.jsx';
+import ContactView from './admin/pages/Contacts/ContactView.jsx';
+import Galleries from './admin/pages/Galleries/Galleries.jsx';
+import Notifications from './admin/pages/Notifications/Notifications.jsx';
+import Payments from './admin/pages/Payments/Payments.jsx';
+import Forms from './admin/pages/Forms/Forms.jsx';
+import Settings from './admin/pages/Settings/Settings.jsx';
 import QuestionnairesList from './admin/pages/Forms/Questionnaires/QuestionnairesList';
 import QuestionnaireEditor from './admin/pages/Forms/Questionnaires/QuestionnairesEditor';
 
@@ -45,18 +45,12 @@ function App() {
 }
 
 function AppContent() {
-  const loc = useLocation();
-  const isAdminPage = loc.pathname.startsWith('/admin');
-
   return (
     <div className='min-h-screen flex flex-col'>
       <IdleLogout />
 
       { /* temp dynamic navbar */}
-      {
-        isAdminPage ?
-          <AdminNavbar /> : <Navbar />
-      }
+      <Navbar />
 
       <main className='grow'>
         <AuthHashRouter>
@@ -90,6 +84,7 @@ function AppContent() {
               <Route path="sessions" element={<Sessions />} />
               <Route path="availability" element={<Availability />} />
               <Route path="contacts" element={<Contacts />} />
+              <Route path="contacts/:id" element={<ContactView />} />
               <Route path="galleries" element={<Galleries />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="payments" element={<Payments />} />
