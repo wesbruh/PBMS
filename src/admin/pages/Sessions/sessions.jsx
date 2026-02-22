@@ -3,12 +3,16 @@ import Sidebar from "../../components/shared/Sidebar/sidebar";
 import Frame from "../../components/shared/Frame/frame";
 import Table from "../../components/shared/Table/Table.jsx";
 
+
+
 function Sessions() {
   const [sessions, setSessions] = useState([]);
+  const [defaultContract, setDefaultContract] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchSessions();
+    loadDefaultContract();
   }, []);
 
   const fetchSessions = async () => {
@@ -20,6 +24,28 @@ function Sessions() {
     } catch (error) {
       console.error("Error fetching sessions:", error);
       setLoading(false);
+    }
+  };
+
+  const loadDefaultContract = async () => {
+    try {
+      const response = await fetch("http://localhost:5001/api/contract/template/default");
+      const data = await response.json();
+      setDefaultContract(data);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+    }
+  };
+
+  const generateContract = async (session_id) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/contract/generate/${session_id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ["template_id"]: defaultContract.id})});
+      // DEBUGGING const data = await response.json();
+    } catch (error) {
+      console.error("Error generating contract:", error);
     }
   };
 
@@ -59,33 +85,33 @@ function Sessions() {
   };
 
   const tableSessionColumns = [
-    { 
-      key: 'client_name', 
-      label: 'Client', 
+    {
+      key: 'client_name',
+      label: 'Client',
       sortable: true,
       render: (_, row) => `${row.User?.first_name || ''} ${row.User?.last_name || ''}`
     },
-    { 
-      key: 'session_type', 
-      label: 'Type', 
-      render: (_, row) => row.SessionType?.name || 'N/A' 
+    {
+      key: 'session_type',
+      label: 'Type',
+      render: (_, row) => row.SessionType?.name || 'N/A'
     },
-    { 
-      key: 'location_text', 
+    {
+      key: 'location_text',
       label: 'Location',
       render: (val, row) => (
-        <input 
+        <input
           className="border rounded px-2 py-1 w-full text-sm"
           defaultValue={val}
           onBlur={(e) => handleUpdate(row.id, 'location_text', e.target.value)}
         />
       )
     },
-    { 
-      key: 'start_at', 
-      label: 'Start Time', 
+    {
+      key: 'start_at',
+      label: 'Start Time',
       render: (val, row) => (
-        <input 
+        <input
           type="datetime-local"
           className="border rounded px-1 text-sm"
           defaultValue={val ? new Date(val).toISOString().slice(0, 16) : ""}
@@ -93,11 +119,11 @@ function Sessions() {
         />
       )
     },
-    { 
-      key: 'end_at', 
-      label: 'End Time', 
+    {
+      key: 'end_at',
+      label: 'End Time',
       render: (val, row) => (
-        <input 
+        <input
           type="datetime-local"
           className="border rounded px-1 text-sm"
           defaultValue={val ? new Date(val).toISOString().slice(0, 16) : ""}
@@ -105,11 +131,11 @@ function Sessions() {
         />
       )
     },
-    { 
-      key: 'status', 
+    {
+      key: 'status',
       label: 'Status',
       render: (value, row) => (
-        <select 
+        <select
           value={value}
           onChange={(e) => handleUpdate(row.id, 'status', e.target.value)}
           className={`px-2 py-1 rounded-md text-sm font-semibold border ${getStatusStyle(value)}`}
@@ -119,6 +145,21 @@ function Sessions() {
           <option value="Completed">Completed</option>
           <option value="Cancelled">Cancelled</option>
         </select>
+      )
+    },
+    {
+      key: 'action',
+      label: 'Action',
+      render: (_, row) => (
+        (row.status === "Confirmed") ? 
+        <button 
+          type={"button"} 
+          onClick={() => generateContract(row.id)} 
+          className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border ${getStatusStyle(row.status)}`}
+        >
+          Generate Contract 
+        </button> :
+        <div></div>
       )
     }
   ];
@@ -136,13 +177,13 @@ function Sessions() {
               <h1 className="text-3xl font-bold text-gray-900">Admin Sessions</h1>
               <p className="text-gray-500">Live-sync management of client bookings.</p>
             </div>
-            
+
             <div className="flex-grow">
               {loading ? (
                 <div className="animate-pulse flex space-x-4">Loading...</div>
               ) : (
-                <Table 
-                  columns={tableSessionColumns} 
+                <Table
+                  columns={tableSessionColumns}
                   data={sessions}
                   searchable={true}
                   rowsPerPage={6}
