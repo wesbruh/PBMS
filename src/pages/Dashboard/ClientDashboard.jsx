@@ -1,10 +1,12 @@
 // src/pages/Dashboard/ClientDashboard.jsx
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
+
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
 import { saveAs } from "file-saver";
-import { Link } from "react-router-dom";
+
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
 
 export default function ClientDashboard() {
@@ -114,35 +116,34 @@ export default function ClientDashboard() {
       if (sessionIds.length > 0) {
         const { data, error } = await supabase
           .from("Contract")
-          .select(
-            "id, session_id, status, signed_at, pdf_url"
-          )
+          .select("id, ContractTemplate ( name, body )")
           .in("session_id", sessionIds)
-          .order("signed_at", { ascending: false });
+          .neq("status", "Signed");
         if (!error) {
           contractRows = data ?? [];
         } else {
           console.error(error);
         }
+
+        setContracts(contractRows);
+
+        // 5) notifications / reminders for this user (most recent first)
+        const { data: notificationRows, error: notifErr } = await supabase
+          .from("Notification")
+          .select("id, subject, body, status, sent_at, created_at, session_id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(10);
+
+        if (notifErr) {
+          console.error("Notification fetch error:", notifErr);
+          setNotifications([]);
+        } else {
+          setNotifications(notificationRows ?? []);
+        }
+
+        setLoading(false);
       }
-      setContracts(contractRows);
-
-      // 5) notifications / reminders for this user (most recent first)
-      const { data: notificationRows, error: notifErr } = await supabase
-        .from("Notification")
-        .select("id, subject, body, status, sent_at, created_at, session_id")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(10);
-
-      if (notifErr) {
-        console.error("Notification fetch error:", notifErr);
-        setNotifications([]);
-      } else {
-        setNotifications(notificationRows ?? []);
-      }
-
-      setLoading(false);
     }
 
     loadData();
@@ -395,7 +396,7 @@ export default function ClientDashboard() {
     );
   }
 
-// GALLERY DOWNLOAD FUNCTION //
+  // GALLERY DOWNLOAD FUNCTION //
   // download entire gallery as a ZIP file, ensured its with the authenticate client's own gallery
   const handleDownloadGallery = async (galleryId, galleryTitle) => {
     try {
@@ -420,7 +421,7 @@ export default function ClientDashboard() {
         alert("Failed to fetch gallery photos. Please try again later.");
         return;
       }
-      
+
       // no photos found in gallery message
       if (!photoList || photoList.length === 0) {
         alert ("This gallery has no photos.");
@@ -442,7 +443,7 @@ export default function ClientDashboard() {
       // 2) Create a new ZIP file
       const zip = new JSZip();
       const folder = zip.folder(galleryTitle || "Gallery");
-      
+
       // 3) Download each photo and add to ZIP
       let successCount = 0; //let i = 0; i < photos.length; i++
       for (const photo of photoList) {
@@ -473,7 +474,7 @@ export default function ClientDashboard() {
             console.error(`Error downloading ${photo.name}`);
             continue;
           }
-          
+
           const blob = await response.blob();
           // add to zip folder
           folder.file(photo.name, blob);
@@ -485,10 +486,10 @@ export default function ClientDashboard() {
       }
 
       if (successCount === 0) {
-        alert ("Failed to download any photos from this gallery.");
+        alert("Failed to download any photos from this gallery.");
         return;
       }
-      
+
       // 4) generate the ZIP file and trigger download
       // CONSOLE DEBUG (keep)
       console.log('Generating ZIP...');
@@ -500,14 +501,14 @@ export default function ClientDashboard() {
       if (successCount < photoList.length) {
         alert (`Downloaded ${successCount} out of ${photoList.length} photos. Some files failed.`);
       }
-    
+
     } catch (error) {
       console.error("Error downloading gallery:", error);
-      alert ("An error occurred while downloading the gallery. Please try again later.");
+      alert("An error occurred while downloading the gallery. Please try again later.");
     } finally {
       // remove downloading state
       setDownloadingGalleries(prev => {
-        const next = {...prev};
+        const next = { ...prev };
         delete next[galleryId];
         return next;
       });
@@ -564,11 +565,10 @@ export default function ClientDashboard() {
                     </p>
                   </div>
                   <span
-                    className={`text-[11px] px-2 py-1 rounded border ${
-                      n.status === "sent"
-                        ? "bg-neutral-100 border-neutral-200 text-neutral-700"
-                        : "bg-amber-50 border-amber-200 text-amber-700"
-                    }`}
+                    className={`text-[11px] px-2 py-1 rounded border ${n.status === "sent"
+                      ? "bg-neutral-100 border-neutral-200 text-neutral-700"
+                      : "bg-amber-50 border-amber-200 text-amber-700"
+                      }`}
                   >
                     {n.status || "pending"}
                   </span>
@@ -732,266 +732,374 @@ export default function ClientDashboard() {
                 // download button shows loading state if downloading
                 const isDownloading = downloadingGalleries[g.id];
                 return (
-                <li
-                  key={g.id}
-                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                >
-                  <div>
-                    <p className="text-sm text-brown font-semibold">
-                      {g.title || "Gallery"}
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      Published{" "}
-                      {g.published_at
-                        ? new Date(g.published_at).toLocaleDateString()
-                        : "—"}
-                    </p>
-                  </div>
-                  {g.is_password_protected ? (
-                    <span className="text-xs px-2 py-1 rounded bg-neutral-100 border text-neutral-700">
-                      Protected
-                    </span>
-                  ) : null}
-                {/* Download Gallery Button */}
-                <button
-                  type="button"
-                  onClick={() => handleDownloadGallery(g.id, g.title)}
-                  disabled={isDownloading}
-                  className={`text-xs px-3 py-1 rounded border border-black font-semibold transition ${
-                    isDownloading
-                      ? "bg-neutral-200 text-neutral-500 cursor-wait"
-                      : "bg-[#446780] hover:bg-[#98c0dc] cursor-pointer text-white" 
-                  }`}
+                  <li
+                    key={g.id}
+                    className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
                   >
-                    {isDownloading ? "Downloading..." : "Download"}
-                  </button>
-                </li>
-              );
-            })}
+                    <div>
+                      <p className="text-sm text-brown font-semibold">
+                        {g.title || "Gallery"}
+                      </p>
+                      <p className="text-xs text-neutral-500">
+                        Published{" "}
+                        {g.published_at
+                          ? new Date(g.published_at).toLocaleDateString()
+                          : "—"}
+                      </p>
+                    </div>
+                    {g.is_password_protected ? (
+                      <span className="text-xs px-2 py-1 rounded bg-neutral-100 border text-neutral-700">
+                        Protected
+                      </span>
+                    ) : null}
+                    {/* Download Gallery Button */}
+                    <button
+                      type="button"
+                      onClick={() => handleDownloadGallery(g.id, g.title)}
+                      disabled={isDownloading}
+                      className={`text-xs px-3 py-1 rounded border border-black font-semibold transition ${isDownloading
+                        ? "bg-neutral-200 text-neutral-500 cursor-wait"
+                        : "bg-[#446780] hover:bg-[#98c0dc] cursor-pointer text-white"
+                        }`}
+                    >
+                      {isDownloading ? "Downloading..." : "Download"}
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
           )}
         </section>
 
- {/* Forms / Contracts */}
-<section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-  <h2 className="text-lg font-serif text-brown mb-3">Forms & Contracts</h2>
-
-  {contracts.length === 0 ? (
-    <div className="flex items-center justify-between">
-      <p className="text-sm text-neutral-500">
-        No contracts have been issued to you yet.
-      </p>
-      <Link
-        to="/dashboard/contracts"
-        className="text-xs px-3 py-1 rounded bg-[#446780] hover:bg-[#98c0dc] text-white font-semibold transition border border-black"
-      >
-        Go to Contracts
-      </Link>
-    </div>
-  ) : (
-    <ul className="space-y-3">
-      {contracts.map((c) => (
-        <li
-          key={c.id}
-          className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-        >
-          <div>
-            <p className="text-sm text-brown font-semibold">
-              {c.title || "Contract"}
-            </p>
-            <p className="text-xs text-neutral-500">
-              {c.status === "signed"
-                ? `Signed ${c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}`
-                : `Status: ${c.status || "draft"}`}
-            </p>
+        {/* Forms / Contracts */}
+        <section className="flex flex-col bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
+          <h2 className=" text-lg font-serif text-brown mb-3">Forms & Contracts</h2>
+          <div className="flex-col w-full space-y-2">
+            <div className="relative">
+            {contracts.length === 0 ? (
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-neutral-500">
+                  No new contracts have been issued to you yet.
+                </p>
+              </div>
+            ) : (
+              <ul className="space-y-3">
+                {contracts.map((c) => (
+                  <li
+                    key={c.id}
+                    className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+                  >
+                    <div>
+                      <p className="text-sm text-brown font-semibold">
+                        {c.ContractTemplate.name || "Contract"}
+                      </p>
+                    </div>
+                    {
+                      <Link
+                        to={`/dashboard/contracts/${c.id}`}
+                        className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
+                      >
+                        Review &amp; Sign
+                      </Link>
+                    }
+                  </li>
+                ))}
+              </ul>
+            )}
+            </div>
+            <div className="flex flex-row-reverse relative">
+              <div className="flex relative">
+                  <Link
+                    to="/dashboard/contracts"
+                    className="text-xs px-2 py-1 rounded bg-[#446780] hover:bg-[#98c0dc] text-white font-semibold transition border border-black text-center"
+                  >
+                    Go to Contracts
+                  </Link>
+              </div>
+            </div>
           </div>
-
-          {c.status === "signed" && c.signed_pdf_url ? (
-            <a
-              href={c.signed_pdf_url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
-            >
-              View Signed PDF
-            </a>
-          ) : (
-            <Link
-              to={`/dashboard/contracts?focus=${c.id}`}
-              className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
-            >
-              Review &amp; Sign
-            </Link>
-          )}
-        </li>
-      ))}
-    </ul>
-  )}
-</section>
-</div>
+        </section>
+      </div >
 
       {/*Settings Modal*/}
-      {showSettings && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center"
-          role="dialog"
-          aria-modal="true"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowSettings(false); }}>
+      {
+        showSettings && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center"
+            role="dialog"
+            aria-modal="true"
+            onClick={(e) => { if (e.target === e.currentTarget) setShowSettings(false); }}>
 
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50">
-          </div>
-
-          {/* Dialog */}
-          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
-            <h2 className="text-center text-2xl font-serif font-extralight mb-4">
-              Account Settings
-            </h2>
-            {saveError && (
-              <p className="text-center text-xs text-red-600 mb-2">{saveError}</p>
-            )}
-            {saveSuccess && (
-              <p className="text-center text-xs text-green-700 mb-2">{saveSuccess}</p>
-            )}
-
-            {/* Modal Content */}
-            <div className="flex flex-col font-mono text-xs">
-              <label className="mb-4">
-                <p className="text-center text-brown py-3">FIRST NAME *</p>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    name="first_name"
-                    value={editForm.first_name}
-                    onChange={handleEditChange}
-                    className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none" />
-                ) : (
-                  <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
-                    {profile?.first_name || "Not set"}
-                  </div>
-                )}
-              </label>
-
-              <label className="mb-4">
-                <p className="text-center text-brown py-3">LAST NAME *</p>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    name="last_name"
-                    value={editForm.last_name}
-                    onChange={handleEditChange}
-                    className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none" />
-                ) : (
-                  <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
-                    {profile?.last_name || "Not set"}
-                  </div>
-                )}
-              </label>
-
-              <label className="mb-4">
-                <p className="text-center text-brown py-3">EMAIL *</p>
-                {isEditing ? (
-                  <input
-                    type="email"
-                    name="email"
-                    value={editForm.email}
-                    onChange={handleEditChange}
-                    className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none" />
-                ) : (
-                  <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
-                    {user?.email || "N/A"}
-                  </div>
-                )}
-              </label>
-
-              <label className="mb-4">
-                <p className="text-center text-brown py-3">PHONE NUMBER *</p>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    name="phone"
-                    value={editForm.phone}
-                    onChange={handleEditChange}
-                    className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none" />
-                ) : (
-                  <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
-                    {profile?.phone || "N/A"}
-                  </div>
-                )}
-              </label>
-
-              <label className="mb-4">
-                <p className="text-center text-brown py-3">PASSWORD *</p>
-
-                {/* View mode for password */}
-                {!isEditing && (
-                  <input
-                    type="password"
-                    value="********"
-                    readOnly
-                    disabled
-                    className="w-full text-center border-neutral-200 border-b py-3 text-sm bg-transparent cursor-default"
-                  />
-                )}
-
-                {/* Edit mode for password */}
-                {isEditing && (
-                  <input
-                    type="password"
-                    value="********"
-                    readOnly
-                    disabled
-                    className="w-full text-center border-neutral-200 border-b py-3 text-sm bg-off-white cursor-default"
-                  />
-                )}
-              </label>
-
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/50">
             </div>
 
-            {/* Footer actions – change depending on whether the user is editing */}
-            <div className="flex items-center justify-center gap-3 mt-6">
-              {/* View mode, not editing yet*/}
-              {!isEditing ? (
-                <>
-                  {/* Just close the modal */}
-                  <button
-                    type="button"
-                    onClick={() => setShowSettings(false)}
-                    className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
-                  >
-                    Close
-                  </button>
+            {/* Dialog */}
+            <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
+              <h2 className="text-center text-2xl font-serif font-extralight mb-4">
+                Account Settings
+              </h2>
+              {saveError && (
+                <p className="text-center text-xs text-red-600 mb-2">{saveError}</p>
+              )}
+              {saveSuccess && (
+                <p className="text-center text-xs text-green-700 mb-2">{saveSuccess}</p>
+              )}
 
-                  {/* Switch into edit mode – turns labels into inputs */}
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
-                  >
-                    Edit Profile
-                  </button>
+              {/* Modal Content */}
+              <div className="flex flex-col font-mono text-xs">
+                <label className="mb-4">
+                  <p className="text-center text-brown py-3">FIRST NAME *</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="first_name"
+                      value={editForm.first_name}
+                      onChange={handleEditChange}
+                      className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none" />
+                  ) : (
+                    <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
+                      {profile?.first_name || "Not set"}
+                    </div>
+                  )}
+                </label>
 
-                  {/* Placeholder for delete account, will be implemented later*/}
-                  <button
-                    type="button"
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="px-4 py-2 bg-[#a00101] hover:bg-[#870000] text-white text-sm border border-black rounded-md transition cursor-pointer"
-                  >
-                    Delete Account
-                  </button>
-                </>
-              ) : (
-                /* Edit mode, user is changing their info */
-                <>
-                  {/* Cancel editing: exit edit mode and reset fields back to profile data */}
+                <label className="mb-4">
+                  <p className="text-center text-brown py-3">LAST NAME *</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="last_name"
+                      value={editForm.last_name}
+                      onChange={handleEditChange}
+                      className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none" />
+                  ) : (
+                    <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
+                      {profile?.last_name || "Not set"}
+                    </div>
+                  )}
+                </label>
+
+                <label className="mb-4">
+                  <p className="text-center text-brown py-3">EMAIL *</p>
+                  {isEditing ? (
+                    <input
+                      type="email"
+                      name="email"
+                      value={editForm.email}
+                      onChange={handleEditChange}
+                      className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none" />
+                  ) : (
+                    <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
+                      {user?.email || "N/A"}
+                    </div>
+                  )}
+                </label>
+
+                <label className="mb-4">
+                  <p className="text-center text-brown py-3">PHONE NUMBER *</p>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="phone"
+                      value={editForm.phone}
+                      onChange={handleEditChange}
+                      className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none" />
+                  ) : (
+                    <div className="w-full text-center border-neutral-200 border-b py-3 text-sm">
+                      {profile?.phone || "N/A"}
+                    </div>
+                  )}
+                </label>
+
+                <label className="mb-4">
+                  <p className="text-center text-brown py-3">PASSWORD *</p>
+
+                  {/* View mode for password */}
+                  {!isEditing && (
+                    <input
+                      type="password"
+                      value="********"
+                      readOnly
+                      disabled
+                      className="w-full text-center border-neutral-200 border-b py-3 text-sm bg-transparent cursor-default"
+                    />
+                  )}
+
+                  {/* Edit mode for password */}
+                  {isEditing && (
+                    <input
+                      type="password"
+                      value="********"
+                      readOnly
+                      disabled
+                      className="w-full text-center border-neutral-200 border-b py-3 text-sm bg-off-white cursor-default"
+                    />
+                  )}
+                </label>
+
+              </div>
+
+              {/* Footer actions – change depending on whether the user is editing */}
+              <div className="flex items-center justify-center gap-3 mt-6">
+                {/* View mode, not editing yet*/}
+                {!isEditing ? (
+                  <>
+                    {/* Just close the modal */}
+                    <button
+                      type="button"
+                      onClick={() => setShowSettings(false)}
+                      className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
+                    >
+                      Close
+                    </button>
+
+                    {/* Switch into edit mode – turns labels into inputs */}
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(true)}
+                      className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
+                    >
+                      Edit Profile
+                    </button>
+
+                    {/* Placeholder for delete account, will be implemented later*/}
+                    <button
+                      type="button"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="px-4 py-2 bg-[#a00101] hover:bg-[#870000] text-white text-sm border border-black rounded-md transition cursor-pointer"
+                    >
+                      Delete Account
+                    </button>
+                  </>
+                ) : (
+                  /* Edit mode, user is changing their info */
+                  <>
+                    {/* Cancel editing: exit edit mode and reset fields back to profile data */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsEditing(false);
+                        setEditForm({
+                          first_name: profile?.first_name ?? "",
+                          last_name: profile?.last_name ?? "",
+                          phone: profile?.phone ?? "",
+                          email: user?.email ?? "",
+                        });
+                        setSaveError("");
+                        setSaveSuccess("");
+                      }}
+                      className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    {/* Change password button, opens password change modal */}
+                    <button
+                      type="button"
+                      onClick={() => setShowPasswordModal(true)}
+                      className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
+                    >
+                      Change Password
+                    </button>
+
+                    {/* Save changes: calls handleSaveProfile that updates Supabase */}
+                    <button
+                      type="button"
+                      onClick={handleSaveProfile}
+                      className="px-4 py-2 bg-[#5e8738] hover:bg-[#425e28] text-white text-sm font-sans border border-black rounded-md transition cursor-pointer"
+                    >
+                      Save Changes
+                    </button>
+                  </>
+                )}
+              </div>
+
+              {/* “X” button in the top-right corner of the modal to exit*/}
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowSettings(false)}
+                className="absolute top-2 right-2 px-2 py-1 font-sans text-lg rounded-md bg-white cursor-pointer"
+              >
+                ×
+              </button>
+            </div>
+          </div>
+        )
+      }
+      {/* Password change modal */}
+      {
+        showPasswordModal && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowPasswordModal(false);
+            }}
+          >
+            <div className="absolute inset-0 bg-black/50"></div>
+
+            <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
+
+              <h2 className="text-center text-2xl font-serif font-extralight mb-4">
+                Change Password
+              </h2>
+
+              {saveError && (
+                <p className="text-center text-xs text-red-600 mb-2">{saveError}</p>
+              )}
+
+              {saveSuccess && (
+                <p className="text-center text-xs text-green-700 mb-2">{saveSuccess}</p>
+              )}
+
+              <div className="flex flex-col font-mono text-xs space-y-3">
+                <input
+                  type="password"
+                  placeholder="Current Password"
+                  value={passwordForm.currentPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      currentPassword: e.target.value,
+                    }))
+                  }
+                  className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
+                />
+
+                <input
+                  type="password"
+                  placeholder="New Password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                    }))
+                  }
+                  className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
+                />
+
+                <input
+                  type="password"
+                  placeholder="Confirm New Password"
+                  value={passwordForm.confirmNewPassword}
+                  onChange={(e) =>
+                    setPasswordForm((prev) => ({
+                      ...prev,
+                      confirmNewPassword: e.target.value,
+                    }))
+                  }
+                  className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
+                />
+
+                <div className="flex justify-center gap-3 pt-3">
                   <button
                     type="button"
                     onClick={() => {
-                      setIsEditing(false);
-                      setEditForm({
-                        first_name: profile?.first_name ?? "",
-                        last_name: profile?.last_name ?? "",
-                        phone: profile?.phone ?? "",
-                        email: user?.email ?? "",
+                      setShowPasswordModal(false);
+                      setPasswordForm({
+                        currentPassword: "",
+                        newPassword: "",
+                        confirmNewPassword: "",
                       });
                       setSaveError("");
                       setSaveSuccess("");
@@ -1000,117 +1108,61 @@ export default function ClientDashboard() {
                   >
                     Cancel
                   </button>
-                  {/* Change password button, opens password change modal */}
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswordModal(true)}
-                    className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
-                  >
-                    Change Password
-                  </button>
 
-                  {/* Save changes: calls handleSaveProfile that updates Supabase */}
                   <button
                     type="button"
-                    onClick={handleSaveProfile}
+                    onClick={async () => {
+                      await handleChangePassword();
+                      if (!saveError) {
+                        setShowPasswordModal(false);
+                      }
+                    }}
                     className="px-4 py-2 bg-[#5e8738] hover:bg-[#425e28] text-white text-sm font-sans border border-black rounded-md transition cursor-pointer"
                   >
-                    Save Changes
+                    Save Password
                   </button>
-                </>
-              )}
+                </div>
+              </div>
+
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowPasswordModal(false)}
+                className="absolute top-2 right-2 px-2 py-1 text-lg border-0.5 border-black rounded-md bg-white cursor-pointer"
+              >
+                ×
+              </button>
             </div>
-
-            {/* “X” button in the top-right corner of the modal to exit*/}
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setShowSettings(false)}
-              className="absolute top-2 right-2 px-2 py-1 font-sans text-lg rounded-md bg-white cursor-pointer"
-            >
-              ×
-            </button>
           </div>
-        </div>
-      )}
-      {/* Password change modal */}
-      {showPasswordModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowPasswordModal(false);
-          }}
-        >
-          <div className="absolute inset-0 bg-black/50"></div>
+        )
+      }
+      {/* Delete account confirmation modal */}
+      {
+        showDeleteConfirm && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setShowDeleteConfirm(false);
+            }}
+          >
+            {/* Backdrop */}
+            <div className="absolute inset-0 bg-black/50"></div>
 
-          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
+            {/* Dialog */}
+            <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
+              <h2 className="text-center text-2xl font-serif  mb-4">
+                Delete Account
+              </h2>
 
-            <h2 className="text-center text-2xl font-serif font-extralight mb-4">
-              Change Password
-            </h2>
+              <p className="text-center text-sm text-neutral-700 mb-4 font-bold">
+                Are you sure you want to delete your account? This action cannot be undone.
+              </p>
 
-            {saveError && (
-              <p className="text-center text-xs text-red-600 mb-2">{saveError}</p>
-            )}
-
-            {saveSuccess && (
-              <p className="text-center text-xs text-green-700 mb-2">{saveSuccess}</p>
-            )}
-
-            <div className="flex flex-col font-mono text-xs space-y-3">
-              <input
-                type="password"
-                placeholder="Current Password"
-                value={passwordForm.currentPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({
-                    ...prev,
-                    currentPassword: e.target.value,
-                  }))
-                }
-                className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
-              />
-
-              <input
-                type="password"
-                placeholder="New Password"
-                value={passwordForm.newPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({
-                    ...prev,
-                    newPassword: e.target.value,
-                  }))
-                }
-                className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
-              />
-
-              <input
-                type="password"
-                placeholder="Confirm New Password"
-                value={passwordForm.confirmNewPassword}
-                onChange={(e) =>
-                  setPasswordForm((prev) => ({
-                    ...prev,
-                    confirmNewPassword: e.target.value,
-                  }))
-                }
-                className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
-              />
-
-              <div className="flex justify-center gap-3 pt-3">
+              <div className="flex justify-center gap-3 pt-2">
                 <button
                   type="button"
-                  onClick={() => {
-                    setShowPasswordModal(false);
-                    setPasswordForm({
-                      currentPassword: "",
-                      newPassword: "",
-                      confirmNewPassword: "",
-                    });
-                    setSaveError("");
-                    setSaveSuccess("");
-                  }}
-                  className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 bg-white text-black text-sm border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
                 >
                   Cancel
                 </button>
@@ -1118,85 +1170,30 @@ export default function ClientDashboard() {
                 <button
                   type="button"
                   onClick={async () => {
-                    await handleChangePassword();
-                    if (!saveError) {
-                      setShowPasswordModal(false);
-                    }
+                    await handleDeleteAccount();
+                    console.log("Delete account clicked");
+                    setShowDeleteConfirm(false);
                   }}
-                  className="px-4 py-2 bg-[#5e8738] hover:bg-[#425e28] text-white text-sm font-sans border border-black rounded-md transition cursor-pointer"
+                  className="px-4 py-2 bg-[#a00101] hover:bg-[#870000] text-white text-sm border border-black rounded-md transition cursor-pointer"
                 >
-                  Save Password
+                  Delete Account
                 </button>
               </div>
-            </div>
 
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setShowPasswordModal(false)}
-              className="absolute top-2 right-2 px-2 py-1 text-lg border-0.5 border-black rounded-md bg-white cursor-pointer"
-            >
-              ×
-            </button>
-          </div>
-        </div>
-      )}
-      {/* Delete account confirmation modal */}
-      {showDeleteConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowDeleteConfirm(false);
-          }}
-        >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50"></div>
-
-          {/* Dialog */}
-          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
-            <h2 className="text-center text-2xl font-serif  mb-4">
-              Delete Account
-            </h2>
-
-            <p className="text-center text-sm text-neutral-700 mb-4 font-bold">
-              Are you sure you want to delete your account? This action cannot be undone.
-            </p>
-
-            <div className="flex justify-center gap-3 pt-2">
+              {/* X button on the top right to exit */}
               <button
                 type="button"
+                aria-label="Close"
                 onClick={() => setShowDeleteConfirm(false)}
-                className="px-4 py-2 bg-white text-black text-sm border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
+                className="absolute top-2 right-2 px-2 py-1 text-lg rounded-md bg-white cursor-pointer"
               >
-                Cancel
-              </button>
-
-              <button
-                type="button"
-                onClick={async () => {
-                  await handleDeleteAccount();
-                  console.log("Delete account clicked");
-                  setShowDeleteConfirm(false);
-                }}
-                className="px-4 py-2 bg-[#a00101] hover:bg-[#870000] text-white text-sm border border-black rounded-md transition cursor-pointer"
-              >
-                Delete Account
+                ×
               </button>
             </div>
-
-            {/* X button on the top right to exit */}
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setShowDeleteConfirm(false)}
-              className="absolute top-2 right-2 px-2 py-1 text-lg rounded-md bg-white cursor-pointer"
-            >
-              ×
-            </button>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+    </div >
   );
 }
-    
+
