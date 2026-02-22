@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { format, addDays, addMinutes, startOfDay, isBefore, isSameDay, parseISO } from 'date-fns';
+import { format, addDays, addMinutes, startOfDay, isBefore, isSameDay } from 'date-fns';
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
