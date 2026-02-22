@@ -200,7 +200,7 @@ function AdminGalleries() {
   // OVERALL ADMIN PAGE
   return (
     <div className="flex my-10 md:my-14 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-white rounded-lg">
-      <div className="flex w-1/5 min-w-[200px]">
+      <div className="flex w-1/5 min-w-50">
         <Sidebar />
       </div>
 

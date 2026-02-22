@@ -1,6 +1,11 @@
 import { Resend } from "resend";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL") ?? "",
+  Deno.env.get("SERVICE_ROLE_KEY") ?? ""
+)
 
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
@@ -42,6 +47,15 @@ Deno.serve(async (req: Request) => {
     if (error) {
       return new Response(JSON.stringify({ error }), { status: 500 });
     }
+
+    // log successful email send to user_email_log table
+    await supabase.from("user_email_log").insert({
+      email_address: email,
+      email_type: "gallery_upload",
+      status: "Sent",
+      sent_at: new Date().toISOString(),
+      error_message: null,
+    });
 
     return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: { "Content-Type": "application/json" } });
 
