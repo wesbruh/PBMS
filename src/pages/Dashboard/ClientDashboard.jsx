@@ -411,16 +411,10 @@ export default function ClientDashboard() {
       // 1) Fetch photos for this gallery
       const {data: photoList, error: photosError} = await supabase.storage
       .from('photos')
-      .list('galleries/' + galleryId);
+      .list(`galleries/${galleryId}`);
 
-      console.log(photoList)
-
-      // console.error("stop");
-
-      // CONSOLE DEBUG 
-      // console.log('fetched photos:', photos);
-      // console.log('Photos Error:', photosError);
-
+      console.log(photoList);
+    
       // error in fetching photos
       if (photosError) {
         console.error("Error fetching photos:", photosError);
@@ -451,62 +445,45 @@ export default function ClientDashboard() {
       const folder = zip.folder(galleryTitle || "Gallery");
 
       // 3) Download each photo and add to ZIP
-      let successCount = 0;
-      for (let i = 0; i < photos.length; i++) {
-        const photo = photos[i];
+      let successCount = 0; //let i = 0; i < photos.length; i++
+      for (const photo of photoList) {
+        //const photo = photos[i];
 
         // CONSOLE DEBUG 
         // console.log(`Processing photo ${i + 1}:`, photo.filename);
         // console.log('Path:', photo.storage_path);
 
         try {
-
+          const filePath = `galleries/${galleryId}/${photo.name}`;
           // get signed URL for secure access from Supabase Storage
           const { data: urlData, error: urlError } = await supabase.storage
-            .from("photos") // assuming 'photos' is the bucket name
-            .createSignedUrl(photo.storage_path, 3600); // URL valid for 1 hour
-
+          .from("photos") // assuming 'photos' is the bucket name
+          .createSignedUrl(filePath, 3600); // URL valid for 1 hour
+          
           // CONSOLE DEBUG 
           // console.log( 'URL result:', {urlData, urlError});
 
           if (urlError) {
-            console.error(`Error getting URL for ${photo.filename}:`, urlError);
+            console.error(`Error getting URL for ${photo.name}:`, urlError);
             continue;
           }
-
-          // CONSOLE DEBUG 
-          // console.log('Signed URL obtained.');
-
+          
           // fetch the photo as a blob
           const response = await fetch(urlData.signedUrl);
-
-          // CONSOLE DEBUG 
-          // console.log('Fetch response:', response.status, response.ok);
-
           if (!response.ok) {
-            console.error(`Error downloading ${photo.filename}`);
+            console.error(`Error downloading ${photo.name}`);
             continue;
           }
 
           const blob = await response.blob();
-
-          // CONSOLE DEBUG
-          // console.log('Blob size:', blob.size, 'bytes');
-
           // add to zip folder
-          folder.file(photo.filename, blob);
+          folder.file(photo.name, blob);
           successCount++;
 
-          // CONSOLE DEBUG
-          // console.log('Added to ZIP');
-
         } catch (error) {
-          console.error(`Error processing ${photo.filename}:`, error);
+          console.error(`Error processing ${photo.name}:`, error);
         }
       }
-
-      // CONSOLE DEBUG
-      // console.log('\n Total successful:', successCount, 'out of', photos.length);
 
       if (successCount === 0) {
         alert("Failed to download any photos from this gallery.");
@@ -514,20 +491,15 @@ export default function ClientDashboard() {
       }
 
       // 4) generate the ZIP file and trigger download
-
       // CONSOLE DEBUG (keep)
       console.log('Generating ZIP...');
-
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const zipFilename = `${galleryTitle || "gallery"}_${new Date().getTime()}.zip`;
 
-      // CONSOLE DEBUG (keep)
-      console.log('Saving as:', zipFilename);
-
-      saveAs(zipBlob, zipFilename);
-
-      if (successCount < photos.length) {
-        alert(`Downloaded ${successCount} out of ${photos.length} photos. Some files failed.`);
+      saveAs (zipBlob, zipFilename);
+      
+      if (successCount < photoList.length) {
+        alert (`Downloaded ${successCount} out of ${photoList.length} photos. Some files failed.`);
       }
 
     } catch (error) {

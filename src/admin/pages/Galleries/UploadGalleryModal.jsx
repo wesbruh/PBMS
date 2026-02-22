@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { X, Upload, ImagePlus, Image as ImageIcon, Trash2, CheckCircle, FolderOpen } from "lucide-react";
-import { supabase } from "../../../lib/supabaseClient";
+import { supabase } from "../../../lib/supabaseClient.js";
 import "./UploadGalleryModal.css";
 
 const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
@@ -407,6 +407,8 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
               published_link: `${window.location.origin}/client/galleries/${galleryId}`,
             })
             .eq("id", galleryId);
+            
+            // EMAIL IS SENT AUTOMATICALLY VIA DATABASE TRIGGER AFTER THIS + EDGE FUNCTION
         }
       // Success!
       setTimeout(() => {
