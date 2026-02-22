@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 //import fs from "fs";
 import invoiceRoutes from "./pdf/invoice.js";
 import { supabase } from "./supabaseClient.js"; // <--- Added for Admin Sessions
+import galleryRoutes from "./routes/galleryRoutes.js";
 
 dotenv.config();
 
@@ -173,6 +174,9 @@ app.use("/api/invoice", invoiceRoutes);
 app.get("/test-server", (_req, res) => {
     res.json({ message: "HTTPS server running and Supabase-compatible!" });
 });
+
+// for gallery upload and publish
+app.use("/api/gallery", galleryRoutes);
 
 const PORT = process.env.PORT || 5001;
 

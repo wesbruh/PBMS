@@ -6,6 +6,10 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
+  globalIgnores([                          
+    'backend/supabase/functions/**',
+    'backend/node_modules/**',
+  ]),
   {
     files: ['**/*.{js,jsx}'],
     extends: [
