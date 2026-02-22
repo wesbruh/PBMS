@@ -27,3 +27,7 @@ dist-ssr
 # .env file
 .env
 /backend/.env
+
+#setup files
+/backend/setup.sh
+/backend/setup.bat

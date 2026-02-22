@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  supabase:
+    image: supabase/cli:latest
+    volumes:
+      - .:/workspace
+      - ~/.supabase:/root/.supabase
+    working_dir: /workspace
+    ports:
+    # Expose the default Supabase ports
+      - "54321:54321" 
+    # Expose the database port for external access (this is optional, adjust if needed)
+      - "54322:54322"
+    environment:
+    # Set environment variables for Supabase CLI
+      - SUPABASE_DB_PASSWORD=postgres
