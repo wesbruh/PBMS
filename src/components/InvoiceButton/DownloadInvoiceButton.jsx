@@ -34,7 +34,7 @@ export default function DownloadInvoiceButton({ invoiceId }) {
 
     return (
         <button onClick={handleDownload} aria-label="Download Invoice">
-            <i className="fa-solid fa-download text-sm"></i>
+            <i className="fa-solid fa-download text-sm -translate-0.5"></i>
         </button>
     );
 }
