@@ -240,12 +240,29 @@ export default function ClientDashboard() {
 
     // If there was a problem show error message and stop
     if (error) {
-      setSaveError("Could not save changes.");
+      console.error("User table update error:", error);
+      setSaveError(error.message ||"Could not save changes.");
       return;
     }
 
     // Update global profile in AuthContext so the whole website has the latest info
     setProfile(data);
+
+    // Also update auth metadata so auth stays in sync with profile fields
+    // Auth doesn't have first_name/last_name columns like the public user table
+    const { error: metaErr } = await supabase.auth.updateUser({
+      data: {
+        first_name: newFirstName,
+        last_name: newLastName,
+        phone: newPhone, // optional if wanted it in auth metadata too
+      },
+    });
+
+    if (metaErr) {
+      console.error("updateUser metadata error:", metaErr);
+      setSaveError("Saved profile, but could not sync Auth profile data.");
+      return;
+    }
 
     // If email was changed ask Supabase to send a verification link to that email
     if (emailChanged) {
@@ -333,17 +350,38 @@ export default function ClientDashboard() {
       return;
     }
 
-    // Delete user from the User table in the database
-    const { error: deleteErr } = await supabase
-      .from("User")
-      .delete()
-      .eq("id", user.id);
-
-    if (deleteErr) {
-      console.error("Error deleting user account:", deleteErr);
-      setSaveError("Could not delete account. Please try again later.");
+    // Get the current session to retrieve the access token for authentication(JWT)
+    const { data: sessionData, error: sessionErr } = await supabase.auth.getSession();
+    // If we cannot get a valid token, stop and show error
+    if (sessionErr || !sessionData?.session?.access_token) {
+      setSaveError("No valid session token found. Please log in again.");
       return;
-    }
+  }
+    // Extract the Bearer token from the session
+    const token = sessionData.session.access_token;
+
+    // Constructing the full URL to the supabase edge function for user deletion
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`;
+
+    // Call the edge function using fetch and include the bearer token
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`, // Required for authentication
+    },
+    body: JSON.stringify({ userId: user.id }), // Send user id in request body
+  });
+
+  // For debugging
+  const text = await res.text();
+  console.log("user-delete raw status:", res.status);
+  console.log("user-delete raw body:", text);
+
+  if (!res.ok) {
+    setSaveError(text || "Could not delete account.");
+    return;
+  }
 
     //Clear profile, log user out, and redirect to homepage
     setProfile(null);
@@ -369,12 +407,16 @@ export default function ClientDashboard() {
       // mark as downloading
       setDownloadingGalleries(prev => ({ ...prev, [galleryId]: true }));
 
+      //const filePath = `photos/galleries/${galleryId}`;
+
       // 1) Fetch photos for this gallery
-      const {data: photos, error: photosError} = await supabase
-      .from("Photo")
-      .select("id, storage_path, filename")
-      .eq("gallery_id", galleryId)
-      .order("uploaded_at", { ascending: true });
+      const {data: photoList, error: photosError} = await supabase.storage
+      .from('photos')
+      .list('galleries/' + galleryId);
+
+      console.log(photoList)
+
+      // console.error("stop");
 
       // CONSOLE DEBUG 
       // console.log('fetched photos:', photos);
@@ -388,10 +430,22 @@ export default function ClientDashboard() {
       }
       
       // no photos found in gallery message
-      if (!photos || photos.length === 0) {
+      if (!photoList || photoList.length === 0) {
         alert ("This gallery has no photos.");
         return;
       }
+      
+      // load photos first before heading into next part  
+      let photos = [];
+      
+      photoList.forEach(async (photo) => {
+        const { data: photoData, error: photoError } = await supabase.storage.from(`photos/galleries/${galleryId}`).download(photo.name);
+        
+        if (!photoError) {
+          photos.push(photoData);
+        }
+      });
+      console.log(photos);
       
       // 2) Create a new ZIP file
       const zip = new JSZip();
