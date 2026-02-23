@@ -21,26 +21,25 @@ export default function AddressAutoComplete({ addressData, onChange, onResolved 
         let state = "";
         let zip = "";
 
+        // Safely map through components and use Google's standard 'long_name'
         place.address_components.forEach((comp) => {
-          const type = comp.types[0];
-          if (type === "street_number") streetNumber = comp.longName;
-          if (type === "route") route = comp.longName;
-          if (type === "locality") city = comp.longName;
-          if (type === "administrative_area_level_1") state = comp.shortName;
-          if (type === "postal_code") zip = comp.longName;
+          if (comp.types.includes("street_number")) streetNumber = comp.long_name;
+          if (comp.types.includes("route")) route = comp.long_name;
+          if (comp.types.includes("locality")) city = comp.long_name;
+          if (comp.types.includes("administrative_area_level_1")) state = comp.short_name;
+          if (comp.types.includes("postal_code")) zip = comp.long_name;
         });
 
-        const street1 = streetNumber ? `${streetNumber} ${route}` : route || place.formatted_address;
+        const street1 = streetNumber ? `${streetNumber} ${route}` : route || place.formatted_address.split(',')[0];
 
         const updated = {
           street1: street1 || "",
-          street2: "", // Reset apt on new search
+          street2: "", 
           city: city || "",
           state: state || "",
           zip: zip || "",
         };
 
-        // Pass the updated object directly to both functions
         onChange(updated);
         onResolved(updated); 
       });
