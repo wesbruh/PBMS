@@ -1,22 +1,18 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-//import https from "https";
-//import fs from "fs";
+import crypto from "crypto"; 
 import invoiceRoutes from "./pdf/invoice.js";
-import { supabase } from "./supabaseClient.js"; // <--- Added for Admin Sessions
+import { supabase } from "./supabaseClient.js"; 
 import galleryRoutes from "./routes/galleryRoutes.js";
 
 dotenv.config();
 
 const app = express();
 
-// Supabase CORS
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-    ],
+    origin: ["http://localhost:5173"],
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   })
@@ -24,15 +20,9 @@ app.use(
 
 app.use(express.json());
 
-/* SSL certificate
-const options = {
-    key: fs.readFileSync("server.key"),
-    cert: fs.readFileSync("server.cert"),
-};*/
+// --- Admin Session Routes ---
 
-// Admin session routes
-
-// 1. Fetch all sessions with related User and Type data for the Admin Table
+// Fetch all sessions with related User and Type data
 app.get("/api/sessions", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -57,7 +47,7 @@ app.get("/api/sessions", async (req, res) => {
   }
 });
 
-// 2. Update session details (Status, Location, Time) from Admin Table
+// Update session details
 app.patch("/api/sessions/:id", async (req, res) => {
   const { id } = req.params;
   const updates = req.body;
@@ -77,9 +67,8 @@ app.patch("/api/sessions/:id", async (req, res) => {
   }
 });
 
-// Admin contract
+// --- Admin Contract Routes ---
 
-// Get Default Contract Id
 app.get("/api/contract/template/default", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -94,16 +83,13 @@ app.get("/api/contract/template/default", async (req, res) => {
     console.error("Error fetching contract Id:", error.message);
     res.status(500).json({ error: error.message });
   }
-})
+});
 
-// Generate Contract for User based on session Id
 app.post("/api/contract/generate/:session_id", async (req, res) => {
   const { session_id } = req.params;
   const { template_id } = req.body;
-
   const now = new Date().toISOString();
   try {
-    // Fetch user_id for session
     const { data: userSessionData, error: userSessionError } = await supabase
       .from("Session")
       .select("client_id")
@@ -117,7 +103,7 @@ app.post("/api/contract/generate/:session_id", async (req, res) => {
 
     const { data: contractData, error: contractError } = await supabase
       .from("Contract")
-      .insert({ template_id: template_id, assigned_user_id: user_id, session_id: session_id, status: "Draft", created_at: now, updated_at: now })
+      .insert({ template_id, assigned_user_id: user_id, session_id, status: "Draft", created_at: now, updated_at: now })
       .select();
 
     if (contractError) throw contractError;
@@ -128,20 +114,47 @@ app.post("/api/contract/generate/:session_id", async (req, res) => {
   }
 });
 
-// Admin availability routes
+// --- Booking & Availability Routes ---
 
-// --- Availability Routes ---
+// New Client Booking Route
+app.post("/api/sessions/book", async (req, res) => {
+    const { client_id, session_type_id, date, start_time, end_time, location_text, notes } = req.body;
 
-// 1. GET: Fetch settings and existing red blocks
+    const requestStart = new Date(`${date}T${start_time}:00`).toISOString();
+    const requestEnd = new Date(`${date}T${end_time}:00`).toISOString();
+
+    try {
+        const { data, error } = await supabase
+            .from("Session")
+            .insert([{
+                id: crypto.randomUUID(), 
+                client_id: client_id || null, 
+                session_type_id: session_type_id || null, 
+                start_at: requestStart,
+                end_at: requestEnd,
+                location_text: location_text,
+                status: "pending", 
+                notes: notes || null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            }])
+            .select();
+
+        if (error) throw error;
+        res.status(201).json(data[0]);
+    } catch (err) {
+        console.error("Booking Error:", err.message);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 app.get("/api/availability", async (req, res) => {
   try {
-    // Fetch Settings
     let { data: settings, error: settingsError } = await supabase
       .from("AvailabilitySettings")
       .select("*")
-      .maybeSingle(); // Use maybeSingle to avoid error if empty
+      .maybeSingle();
 
-    // Fetch Red Blocks
     const { data: blocks, error: blocksError } = await supabase
       .from("AvailabilityBlocks")
       .select("*");
@@ -149,88 +162,49 @@ app.get("/api/availability", async (req, res) => {
     if (settingsError) console.error("Settings Error:", settingsError);
     if (blocksError) console.error("Blocks Error:", blocksError);
 
-    res.json({
-      settings: settings || null,
-      blocks: blocks || []
-    });
+    res.json({ settings: settings || null, blocks: blocks || [] });
   } catch (error) {
     console.error("Server Error:", error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// 2. POST: Save/Update Global Settings (Start/End Time)
 app.post("/api/availability/settings", async (req, res) => {
   const { start, end } = req.body;
-
-  // Check if a settings row exists first to get the ID, or just insert new
-  // For simplicity, we assume one admin user or just update the first row found
-  // Ideally, I will have to pass the admin_user_id
-
   const { data, error } = await supabase
     .from("AvailabilitySettings")
-    .upsert({
-      // If you have a specific ID you want to enforce, put it here, 
-      // otherwise we need to find the existing one or create one.
-      // For now, let's just create/update a generic one.
-      work_start_time: start,
-      work_end_time: end
-    }, { onConflict: 'id' }) // Handling conficts can be adjusted
+    .upsert({ work_start_time: start, work_end_time: end }, { onConflict: 'id' })
     .select();
 
   if (error) return res.status(400).json(error);
   res.json(data);
 });
 
-
-//3.  Bulk update blocks (The Sync Logic)
 app.post("/api/availability/blocks", async (req, res) => {
   const { blocks, rangeStart, rangeEnd } = req.body;
-
   try {
-    // 1. DELETE existing blocks within the visible range 
-    // (This effectively "deletes" the green ones by removing the old red records)
-    const { error: deleteError } = await supabase
-      .from("AvailabilityBlocks")
-      .delete()
-      .gte("start_time", rangeStart)   // Greater than or equal to start of view
-      .lte("start_time", rangeEnd);    // Less than or equal to end of view
-
-    if (deleteError) throw deleteError;
-
-    // 2. INSERT the new Red blocks (if any exist)
-    // We filter the blocks to ensure we only insert ones that fall in the range 
-    // (just a safety check, though frontend should handle this)
+    await supabase.from("AvailabilityBlocks").delete().gte("start_time", rangeStart).lte("start_time", rangeEnd);
     if (blocks && blocks.length > 0) {
-      const { error: insertError } = await supabase
-        .from("AvailabilityBlocks")
-        .insert(blocks);
-
+      const { error: insertError } = await supabase.from("AvailabilityBlocks").insert(blocks);
       if (insertError) throw insertError;
     }
-
     res.json({ message: "Schedule synced successfully" });
-
   } catch (error) {
     console.error("Error syncing schedule:", error.message);
     res.status(500).json({ error: error.message });
   }
 });
 
+// --- Miscellaneous Routes ---
 
 app.use("/api/invoice", invoiceRoutes);
-
-app.get("/test-server", (_req, res) => {
-  res.json({ message: "HTTPS server running and Supabase-compatible!" });
-});
-
-// for gallery upload and publish
 app.use("/api/gallery", galleryRoutes);
 
-const PORT = process.env.PORT || 5001;
+app.get("/test-server", (_req, res) => {
+  res.json({ message: "HTTP server running and Supabase-compatible!" });
+});
 
-// Start HTTPS server
-//https.createServer(options, app).listen(PORT, () => {
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`HTTP Server running on http://localhost:${PORT}`);
 });
