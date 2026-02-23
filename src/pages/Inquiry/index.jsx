@@ -7,70 +7,102 @@ export default function SessionPage() {
     date: "",
     startTime: "",
     endTime: "",
+    location_text: "", 
     address: { street1: "", street2: "", city: "", state: "", zip: "" },
     isLocked: true 
   });
 
-  const handleAddressChange = (addr) => setSession({ ...session, address: addr });
+  const handleAddressChange = (newAddr) => {
+    setSession(prev => ({ 
+      ...prev, 
+      address: newAddr,
+      location_text: `${newAddr.street1}, ${newAddr.city}, ${newAddr.state} ${newAddr.zip}`
+    }));
+  };
 
-  // This function allows the user to manually "confirm" if the API isn't working/key is removed
-  const confirmLocation = () => {
-    const { street1, city, state, zip } = session.address;
-    if (street1 && city && state && zip) {
-      setSession({ ...session, isLocked: false });
-    } else {
-      alert("Please ensure the address, city, state, and zip are filled out.");
+  const handleUnlock = (dataToCheck) => {
+    const addr = dataToCheck || session.address;
+    if (addr.street1 && addr.city && addr.state) {
+      setSession(prev => ({ ...prev, isLocked: false }));
+    } else if (!dataToCheck) {
+      alert("Please enter at least Street, City, and State.");
+    }
+  };
+
+  const handleBookingRequest = async () => {
+    if (!session.date || !session.startTime || !session.endTime) {
+      alert("Please select a valid date and time range.");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:5001/api/sessions/book", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          date: session.date,
+          start_time: session.startTime,
+          end_time: session.endTime,
+          location_text: session.location_text,
+        }),
+      });
+
+      if (response.ok) {
+        alert("Success! Your booking request has been submitted.");
+      } else {
+        const errorData = await response.json();
+        alert(errorData.error || "There was an error booking your session.");
+      }
+    } catch (err) {
+      console.error("Submit Error:", err);
+      alert("Failed to connect to the server.");
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12 font-sans">
-      <div className="bg-white rounded-md shadow-sm border border-[#E7DFCF] overflow-hidden">
-        {/* Header - Back to Brown Palette */}
-        <div className="bg-[#FAF9F6] border-b border-[#E7DFCF] p-8 text-center">
-          <h1 className="text-3xl font-serif text-brown">Book Your Session</h1>
-          <p className="text-neutral-500 mt-2 italic">Fill in your details below to request a time.</p>
+    <div className="max-w-5xl mx-auto px-4 py-12">
+      <div className="bg-white rounded-lg shadow-xl border border-[#E7DFCF] overflow-hidden">
+        
+        <div className="bg-brown p-10 text-center border-b border-[#6A4C2C]">
+          <h1 className="text-3xl font-serif text-white tracking-widest uppercase">Book Your Session</h1>
+          <p className="text-[#FDFCF9] opacity-90 mt-2 font-medium italic">Professional Photography Venue & Timing</p>
         </div>
 
-        <div className="p-8 space-y-12">
-          {/* STEP 1: Address Entry */}
+        <div className="p-8 space-y-12 bg-[#FDFCF9]">
+          
           <section className="space-y-6">
-            <h2 className="text-lg font-serif text-brown border-b border-[#E7DFCF] pb-2">1. Venue Location</h2>
-            
+            <h2 className="text-xl font-serif text-brown border-b border-[#E7DFCF] pb-2">1. Venue Location</h2>
             <AddressAutoComplete 
               addressData={session.address} 
               onChange={handleAddressChange} 
-              onResolved={() => setSession(s => ({...s, isLocked: false}))}
+              onResolved={handleUnlock}
             />
-
             {session.isLocked && (
               <div className="flex justify-center pt-4">
                 <button 
-                  onClick={confirmLocation}
-                  className="bg-brown text-white px-8 py-2 rounded-md font-medium hover:bg-[#AB8C4B] transition-colors shadow-sm"
+                  onClick={() => handleUnlock()}
+                  className="bg-brown text-white px-10 py-3 rounded shadow hover:opacity-90 transition-all font-bold uppercase text-sm tracking-widest"
                 >
-                  Confirm Location to See Times
+                  Confirm Location
                 </button>
               </div>
             )}
           </section>
 
-          {/* STEP 2: Date & Time (Unblurs after address is confirmed) */}
-          <section className={`space-y-8 transition-all duration-700 ${session.isLocked ? "opacity-20 blur-sm pointer-events-none" : "opacity-100 blur-0"}`}>
-            <h2 className="text-lg font-serif text-brown border-b border-[#E7DFCF] pb-2">2. Select Date & Time</h2>
-            
+          <section className={`space-y-8 transition-all duration-700 ${session.isLocked ? "opacity-20 blur-md pointer-events-none" : "opacity-100 blur-0"}`}>
+            <h2 className="text-xl font-serif text-brown border-b border-[#E7DFCF] pb-2">2. Pick a Date & Time</h2>
             <div className="max-w-xs">
-              <label className="text-xs font-bold text-neutral-400 mb-1 block uppercase tracking-widest">Pick a Date</label>
+              <label className="text-xs font-bold text-neutral-500 mb-1 block uppercase tracking-widest">Session Date</label>
               <input 
                 type="date" 
-                className="w-full rounded border border-neutral-300 px-3 py-2 outline-none focus:border-brown"
+                className="w-full rounded border border-neutral-300 px-4 py-3 bg-white outline-none focus:border-brown shadow-sm"
                 value={session.date}
                 onChange={(e) => setSession({...session, date: e.target.value})}
               />
             </div>
 
             {session.date && (
-              <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+              <div className="animate-in fade-in duration-500">
                 <TimeSlotGrid 
                   startTime={session.startTime} 
                   endTime={session.endTime} 
@@ -80,10 +112,12 @@ export default function SessionPage() {
             )}
           </section>
 
-          {/* Final Action */}
           {!session.isLocked && session.startTime && session.endTime && (
-            <div className="pt-8 flex justify-center border-t border-[#E7DFCF]">
-              <button className="bg-brown text-white px-12 py-3 rounded-md font-bold text-lg hover:bg-[#AB8C4B] transition-transform active:scale-95 shadow-md">
+            <div className="pt-10 border-t border-[#E7DFCF] text-center">
+              <button 
+                onClick={handleBookingRequest}
+                className="bg-brown text-white px-16 py-4 rounded font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-brown/30"
+              >
                 Send Booking Request
               </button>
             </div>

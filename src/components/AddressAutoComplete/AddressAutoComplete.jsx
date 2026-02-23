@@ -1,70 +1,153 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 export default function AddressAutoComplete({ addressData, onChange, onResolved }) {
   const containerRef = useRef(null);
+  const [apiActive, setApiActive] = useState(true);
+  const initialized = useRef(false);
+
+  const dataRef = useRef(addressData);
+  useEffect(() => {
+    dataRef.current = addressData;
+  }, [addressData]);
 
   useEffect(() => {
+    if (initialized.current) return;
+
     async function initAutocomplete() {
-      // 1. Import the 'places' library using the new loader pattern
-      const { PlaceAutocompleteElement } = await window.google.maps.importLibrary("places");
-
-      // 2. Create the new element
-      const autocompleteElement = new PlaceAutocompleteElement({
-        componentRestrictions: { country: "us" }, // Optional
-      });
-
-      // 3. Append it to your container
-      if (containerRef.current) {
-        containerRef.current.innerHTML = ""; // Clear existing
-        containerRef.current.appendChild(autocompleteElement);
+      if (!window.google || !window.google.maps) {
+        setApiActive(false);
+        return;
       }
 
-      // 4. Listen for the NEW selection event
-      autocompleteElement.addEventListener("gmp-placeselect", async (event) => {
-        const place = event.place; // This is a 'Place' object (New)
-
-        if (!place) return;
-
-        // 5. Fetch specific fields (New API requirement to control costs)
-        await place.fetchFields({
-          fields: ["addressComponents", "formattedAddress"],
+      try {
+        const { PlaceAutocompleteElement } = await window.google.maps.importLibrary("places");
+        
+        const autocompleteElement = new PlaceAutocompleteElement({
+          componentRestrictions: { country: "us" },
         });
 
-        let street = "", city = "", state = "", zip = "";
+        autocompleteElement.style.width = "100%";
 
-        place.addressComponents.forEach((comp) => {
-          const type = comp.types[0];
-          if (type === "street_number") street = comp.longName + " " + street;
-          if (type === "route") street += comp.longName;
-          if (type === "locality") city = comp.longName;
-          if (type === "administrative_area_level_1") state = comp.shortName;
-          if (type === "postal_code") zip = comp.longName;
+        if (containerRef.current) {
+          containerRef.current.innerHTML = "";
+          containerRef.current.appendChild(autocompleteElement);
+          initialized.current = true;
+        }
+
+        autocompleteElement.addEventListener("gmp-input", (e) => {
+          onChange({
+            ...dataRef.current,
+            street1: e.target.inputValue || ""
+          });
         });
 
-        onChange({
-          ...addressData,
-          street1: street || place.formattedAddress,
-          city,
-          state,
-          zip,
+        autocompleteElement.addEventListener("gmp-placeselect", async (event) => {
+          const place = event.place;
+          if (!place) return;
+
+          await place.fetchFields({
+            fields: ["addressComponents", "formattedAddress"],
+          });
+
+          let streetNumber = "", route = "", city = "", state = "", zip = "";
+
+          place.addressComponents.forEach((comp) => {
+            const type = comp.types[0];
+            if (type === "street_number") streetNumber = comp.longName;
+            if (type === "route") route = comp.longName;
+            if (type === "locality") city = comp.longName;
+            if (type === "administrative_area_level_1") state = comp.shortName;
+            if (type === "postal_code") zip = comp.longName;
+          });
+
+          const street1 = streetNumber ? `${streetNumber} ${route}` : route || place.formattedAddress;
+
+          const updated = {
+            ...dataRef.current,
+            street1,
+            city,
+            state,
+            zip,
+          };
+
+          onChange(updated);
+          onResolved(updated);
+          autocompleteElement.inputValue = street1; 
         });
-        onResolved(true);
-      });
+
+      } catch (err) {
+        console.error("New Places API load error:", err);
+        setApiActive(false);
+      }
     }
 
-    if (window.google) initAutocomplete();
-  }, []);
+    initAutocomplete();
+  }, [onChange, onResolved]);
+
+  const inputBase = "w-full rounded border border-neutral-300 px-4 py-3 bg-white outline-none focus:border-brown focus:ring-1 focus:ring-brown transition-all";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-      <div className="md:col-span-8">
-        <label className="text-xs font-bold text-neutral-500 mb-1 block uppercase tracking-tighter">
+    <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-left">
+      <div className="md:col-span-8 text-left">
+        <label className="text-xs font-bold text-neutral-500 mb-1 block uppercase tracking-widest">
           Street Address
         </label>
-        {/* The new Google element will render inside this div */}
-        <div ref={containerRef} className="autocomplete-container"></div>
+        {apiActive ? (
+          <div 
+            ref={containerRef} 
+            className="w-full rounded border border-neutral-300 bg-white shadow-sm focus-within:border-brown focus-within:ring-1 focus-within:ring-brown min-h-[50px]"
+          ></div>
+        ) : (
+          <input
+            type="text"
+            className={inputBase}
+            placeholder="Enter street address"
+            value={addressData.street1 || ""}
+            onChange={(e) => onChange({ ...addressData, street1: e.target.value })}
+          />
+        )}
       </div>
-      {/* Rest of your manual inputs... */}
+
+      <div className="md:col-span-4 text-left">
+        <label className="text-xs font-bold text-neutral-500 mb-1 block uppercase tracking-widest">Apt/Suite</label>
+        <input
+          type="text"
+          className={inputBase}
+          placeholder="Optional"
+          value={addressData.street2 || ""}
+          onChange={(e) => onChange({ ...addressData, street2: e.target.value })}
+        />
+      </div>
+
+      <div className="md:col-span-5 text-left">
+        <label className="text-xs font-bold text-neutral-400 mb-1 block uppercase">City</label>
+        <input 
+          type="text" 
+          className={inputBase} 
+          value={addressData.city || ""} 
+          onChange={(e) => onChange({...addressData, city: e.target.value})} 
+        />
+      </div>
+
+      <div className="md:col-span-3 text-left">
+        <label className="text-xs font-bold text-neutral-400 mb-1 block uppercase">State</label>
+        <input 
+          type="text" 
+          className={inputBase} 
+          value={addressData.state || ""} 
+          onChange={(e) => onChange({...addressData, state: e.target.value})} 
+        />
+      </div>
+
+      <div className="md:col-span-4 text-left">
+        <label className="text-xs font-bold text-neutral-400 mb-1 block uppercase">Zip Code</label>
+        <input 
+          type="text" 
+          className={inputBase} 
+          value={addressData.zip || ""} 
+          onChange={(e) => onChange({...addressData, zip: e.target.value})} 
+        />
+      </div>
     </div>
   );
 }
