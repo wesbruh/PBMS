@@ -1,5 +1,5 @@
 import React from "react";
-import SessionPage from "../../pages/inquiry";
+import SessionPage from "../../pages/inquiry/index.jsx";
 
 export default function SessionRoute() {
   // In the future, this component will handle the logic of 
