@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "server.js",
   "dependencies": {
+    "@react-email/components": "^1.0.8",
     "accepts": "^2.0.0",
     "body-parser": "^2.2.0",
     "bytes": "^3.1.2",
@@ -69,6 +70,7 @@
     "qs": "^6.14.0",
     "range-parser": "^1.2.1",
     "raw-body": "^3.0.1",
+    "resend": "^6.9.2",
     "router": "^2.2.0",
     "safe-buffer": "^5.2.1",
     "safer-buffer": "^2.1.2",

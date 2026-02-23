@@ -2,18 +2,35 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react"; // added for menu mangement when on mobile
+import { useState, useEffect } from "react"; // added for menu mangement when on mobile
+
+async function GetId(roleName) {
+  const { data, error } = await supabase.from("Role").select("id").eq("name", `${roleName}`).single();
+
+  if (error) {
+    console.error(`Error retrieving or finding role "${roleName}"`);
+    return null;
+  }
+
+  const roleId =  data?.id;
+
+  return roleId;
+}
 
 function Navbar() {
   // determines location of user based on current page
   const location = useLocation();
 
-  const { user } = useAuth();
+  const { user, roleId } = useAuth();
   const navigate = useNavigate();
 
   // for mobile menu management and special services accordian
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSpecialServicesOpen, setIsSpecialServicesOpen] = useState(false);
+
+  const [adminRoleId, setAdminId] = useState(null);
+  const [userRoleId, setUserId] = useState(null);
+
 
   const handleLogout = async () => {
     if (user?.id) {
@@ -43,6 +60,24 @@ function Navbar() {
 
   // for mobile view links
   const mobileLinkStyles = "block py-3 px-4 hover:bg-[#AB8C4B] hover:text-white transition-colors rounded";
+
+  useEffect(() => {
+      const loadAdminRole = async () => {
+        const id = await GetId("Admin");
+        setAdminId(id);
+      };
+  
+      loadAdminRole();
+  }, []);
+
+  useEffect(() => {
+      const loadAdminRole = async () => {
+        const id = await GetId("Admin");
+        setAdminId(id);
+      };
+  
+      loadAdminRole();
+  }, []);
 
   return (
     // each link uses the styles according to user indicating hover over a tab and what the active page, navbar is trasnparent on homepage only
@@ -85,7 +120,7 @@ function Navbar() {
       {user ? (
         <>
           <Link
-            to="/dashboard"
+            to={(roleId === userRoleId) ? "/dashboard" : "/admin"}
             className="ml-12 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
           >
             Dashboard
