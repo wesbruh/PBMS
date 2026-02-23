@@ -1,0 +1,1 @@
+## The Supabase Migrations folder is essentially for version control. Think of it like the most recent commit to a branch. If needed you could alwasy reset your local db to a specific migration.
