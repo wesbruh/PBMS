@@ -42,8 +42,8 @@ function Sidebar() {
             <div className='flex m-3'>
               <Link to="/admin/forms/questionnaires" className={`${linkStyles} ${isActive('/forms/questionnaires') ? activeLinkStyles : ''}`}><ReceiptText size={24} />Forms and Contracts</Link>
             </div>
-            <div className='flex m-3'>
-              <Link to="/admin/settings" className={`${linkStyles} ${isActive('/settings') ? activeLinkStyles : ''}`}><Settings size={24} />Settings</Link>
+            <div className='flex mt-3 mb-3 ml-3'>
+              <Link to="/admin/settings" className={`${linkStyles} ${isActive('/settings') ? activeLinkStyles : ''}`}><Settings size={24} />Personal Settings</Link>
             </div>
           </div>
         </nav>
