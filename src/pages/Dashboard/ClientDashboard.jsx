@@ -120,28 +120,32 @@ export default function ClientDashboard() {
             "id, session_id, status, signed_at, pdf_url"
           )
           .in("session_id", sessionIds)
-          .order("signed_at", { ascending: false });
+          .neq("status", "Signed");
+
         if (!error) {
           contractRows = data ?? [];
         } else {
           console.error(error);
         }
+
+        setContracts(contractRows);
       }
-      setContracts(contractRows);
 
       // 5) notifications / reminders for this user (most recent first)
-      const { data: notificationRows, error: notifErr } = await supabase
-        .from("Notification")
-        .select("id, subject, body, status, sent_at, created_at, session_id")
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false })
-        .limit(10);
+      if (sessionIds.length > 0) {
+        const { data: notificationRows, error: notifErr } = await supabase
+          .from("Notification")
+          .select("id, subject, body, status, sent_at, created_at, session_id")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(10);
 
-      if (notifErr) {
-        console.error("Notification fetch error:", notifErr);
-        setNotifications([]);
-      } else {
-        setNotifications(notificationRows ?? []);
+        if (notifErr) {
+          console.error("Notification fetch error:", notifErr);
+          setNotifications([]);
+        } else {
+          setNotifications(notificationRows ?? []);
+        }
       }
 
       setLoading(false);
@@ -241,7 +245,7 @@ export default function ClientDashboard() {
     // If there was a problem show error message and stop
     if (error) {
       console.error("User table update error:", error);
-      setSaveError(error.message ||"Could not save changes.");
+      setSaveError(error.message || "Could not save changes.");
       return;
     }
 
@@ -356,7 +360,7 @@ export default function ClientDashboard() {
     if (sessionErr || !sessionData?.session?.access_token) {
       setSaveError("No valid session token found. Please log in again.");
       return;
-  }
+    }
     // Extract the Bearer token from the session
     const token = sessionData.session.access_token;
 
@@ -369,19 +373,19 @@ export default function ClientDashboard() {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`, // Required for authentication
-    },
-    body: JSON.stringify({ userId: user.id }), // Send user id in request body
-  });
+      },
+      body: JSON.stringify({ userId: user.id }), // Send user id in request body
+    });
 
-  // For debugging
-  const text = await res.text();
-  console.log("user-delete raw status:", res.status);
-  console.log("user-delete raw body:", text);
+    // For debugging
+    const text = await res.text();
+    // console.log("user-delete raw status:", res.status);
+    // console.log("user-delete raw body:", text);
 
-  if (!res.ok) {
-    setSaveError(text || "Could not delete account.");
-    return;
-  }
+    if (!res.ok) {
+      setSaveError(text || "Could not delete account.");
+      return;
+    }
 
     //Clear profile, log user out, and redirect to homepage
     setProfile(null);
@@ -414,14 +418,8 @@ export default function ClientDashboard() {
       .from('photos')
       .list('galleries/' + galleryId);
 
-      console.log(photoList)
-
-      // console.error("stop");
-
-      // CONSOLE DEBUG 
-      // console.log('fetched photos:', photos);
-      // console.log('Photos Error:', photosError);
-      
+      // console.log(photoList);
+    
       // error in fetching photos
       if (photosError) {
         console.error("Error fetching photos:", photosError);
@@ -431,22 +429,22 @@ export default function ClientDashboard() {
       
       // no photos found in gallery message
       if (!photoList || photoList.length === 0) {
-        alert ("This gallery has no photos.");
+        alert("This gallery has no photos.");
         return;
       }
-      
+
       // load photos first before heading into next part  
       let photos = [];
-      
+
       photoList.forEach(async (photo) => {
         const { data: photoData, error: photoError } = await supabase.storage.from(`photos/galleries/${galleryId}`).download(photo.name);
-        
+
         if (!photoError) {
           photos.push(photoData);
         }
       });
-      console.log(photos);
-      
+      // console.log(photos);
+
       // 2) Create a new ZIP file
       const zip = new JSZip();
       const folder = zip.folder(galleryTitle || "Gallery");
@@ -517,8 +515,7 @@ export default function ClientDashboard() {
       // 4) generate the ZIP file and trigger download
 
       // CONSOLE DEBUG (keep)
-      console.log('Generating ZIP...');
-
+      // console.log('Generating ZIP...');
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const zipFilename = `${galleryTitle || "gallery"}_${new Date().getTime()}.zip`;
 
@@ -802,63 +799,55 @@ export default function ClientDashboard() {
           )}
         </section>
 
- {/* Forms / Contracts */}
-<section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-  <h2 className="text-lg font-serif text-brown mb-3">Forms & Contracts</h2>
-
-  {contracts.length === 0 ? (
-    <div className="flex items-center justify-between">
-      <p className="text-sm text-neutral-500">
-        No contracts have been issued to you yet.
-      </p>
-      <Link
-        to="/dashboard/contracts"
-        className="text-xs px-3 py-1 rounded bg-[#446780] hover:bg-[#98c0dc] text-white font-semibold transition border border-black"
-      >
-        Go to Contracts
-      </Link>
-    </div>
-  ) : (
-    <ul className="space-y-3">
-      {contracts.map((c) => (
-        <li
-          key={c.id}
-          className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-        >
-          <div>
-            <p className="text-sm text-brown font-semibold">
-              {c.title || "Contract"}
-            </p>
-            <p className="text-xs text-neutral-500">
-              {c.status === "signed"
-                ? `Signed ${c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}`
-                : `Status: ${c.status || "draft"}`}
-            </p>
+        {/* Forms / Contracts */}
+        <section className="flex flex-col bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
+          <h2 className=" text-lg font-serif text-brown mb-3">Forms & Contracts</h2>
+          <div className="flex-col w-full space-y-2">
+            <div className="relative">
+              {contracts.length === 0 ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-neutral-500">
+                    No new contracts have been issued to you yet.
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {contracts.map((c) => (
+                    <li
+                      key={c.id}
+                      className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="text-sm text-brown font-semibold">
+                          {c.ContractTemplate.name || "Contract"}
+                        </p>
+                      </div>
+                      {
+                        <Link
+                          to={`/dashboard/contracts/${c.id}`}
+                          className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
+                        >
+                          Review &amp; Sign
+                        </Link>
+                      }
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <div className="flex flex-row-reverse relative">
+              <div className="flex relative">
+                <Link
+                  to="/dashboard/contracts"
+                  className="text-xs px-2 py-1 rounded bg-[#446780] hover:bg-[#98c0dc] text-white font-semibold transition border border-black text-center"
+                >
+                  Go to Contracts
+                </Link>
+              </div>
+            </div>
           </div>
-
-          {c.status === "signed" && c.signed_pdf_url ? (
-            <a
-              href={c.signed_pdf_url}
-              target="_blank"
-              rel="noreferrer"
-              className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
-            >
-              View Signed PDF
-            </a>
-          ) : (
-            <Link
-              to={`/dashboard/contracts?focus=${c.id}`}
-              className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
-            >
-              Review &amp; Sign
-            </Link>
-          )}
-        </li>
-      ))}
-    </ul>
-  )}
-</section>
-</div>
+        </section>
+      </div >
 
       {/*Settings Modal*/}
       {showSettings && (
@@ -1201,18 +1190,18 @@ export default function ClientDashboard() {
                 Cancel
               </button>
 
-              <button
-                type="button"
-                onClick={async () => {
-                  await handleDeleteAccount();
-                  console.log("Delete account clicked");
-                  setShowDeleteConfirm(false);
-                }}
-                className="px-4 py-2 bg-[#a00101] hover:bg-[#870000] text-white text-sm border border-black rounded-md transition cursor-pointer"
-              >
-                Delete Account
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await handleDeleteAccount();
+                    // console.log("Delete account clicked");
+                    setShowDeleteConfirm(false);
+                  }}
+                  className="px-4 py-2 bg-[#a00101] hover:bg-[#870000] text-white text-sm border border-black rounded-md transition cursor-pointer"
+                >
+                  Delete Account
+                </button>
+              </div>
 
             {/* X button on the top right to exit */}
             <button

@@ -61,7 +61,6 @@ function ContactView() {
         )
         .eq("client_id", userId)
         .order("start_at", { ascending: false });
-      console.log(sessionRows);
 
       if (sesErr) {
         console.error(sesErr);
@@ -271,13 +270,13 @@ function ContactView() {
       // 4) generate the ZIP file and trigger download
 
       // CONSOLE DEBUG (keep)
-      console.log('Generating ZIP...');
+      // console.log('Generating ZIP...');
 
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const zipFilename = `${galleryTitle || "gallery"}_${new Date().getTime()}.zip`;
 
       // CONSOLE DEBUG (keep)
-      console.log('Saving as:', zipFilename);
+      // console.log('Saving as:', zipFilename);
 
       saveAs(zipBlob, zipFilename);
 
