@@ -167,6 +167,32 @@ app.post("/api/availability/blocks", async (req, res) => {
     }
 });
 
+app.post("/api/sessions/book", async (req, res) => {
+    const { client_id, date, start_time, end_time, location_text } = req.body;
+
+    const requestStart = new Date(`${date}T${start_time}:00`);
+    const requestEnd = new Date(`${date}T${end_time}:00`);
+
+    try {
+        // Query the Availability table for any ranges that overlap with the request
+        // Logic: (TableStart < RequestEnd) AND (TableEnd > RequestStart)
+        const { data: conflicts, error } = await supabase
+            .from("Availability") 
+            .select("*")
+            .eq("date", date) // Assuming you store date separately or as part of timestamp
+            .filter("unavailable_start", "lt", requestEnd.toISOString())
+            .filter("unavailable_end", "gt", requestStart.toISOString());
+
+        if (conflicts && conflicts.length > 0) {
+            return res.status(409).json({ error: "The photographer is unavailable during this specific range." });
+        }
+
+        // Proceed with insertion into Session table...
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 app.use("/api/invoice", invoiceRoutes);
 
