@@ -72,8 +72,7 @@ export default function ClientDashboard() {
         setSessions(sessionRows ?? []);
       }
 
-      const sessionIds =
-        sessionRows?.map((s) => s.id).filter(Boolean) ?? [];
+      const sessionIds = sessionRows?.map((s) => s.id).filter(Boolean) ?? [];
 
       // 2) invoices for those sessions
       let invoiceRows = [];
@@ -124,10 +123,11 @@ export default function ClientDashboard() {
         } else {
           console.error(error);
         }
+      }
+      setContracts(contractRows);
 
-        setContracts(contractRows);
-
-        // 5) notifications / reminders for this user (most recent first)
+      // 5) notifications / reminders for this user (most recent first)
+      if (sessionIds.length > 0) {
         const { data: notificationRows, error: notifErr } = await supabase
           .from("Notification")
           .select("id, subject, body, status, sent_at, created_at, session_id")
@@ -141,9 +141,9 @@ export default function ClientDashboard() {
         } else {
           setNotifications(notificationRows ?? []);
         }
-
-        setLoading(false);
       }
+
+      setLoading(false);
     }
 
     loadData();
@@ -240,7 +240,7 @@ export default function ClientDashboard() {
     // If there was a problem show error message and stop
     if (error) {
       console.error("User table update error:", error);
-      setSaveError(error.message ||"Could not save changes.");
+      setSaveError(error.message || "Could not save changes.");
       return;
     }
 
@@ -355,7 +355,7 @@ export default function ClientDashboard() {
     if (sessionErr || !sessionData?.session?.access_token) {
       setSaveError("No valid session token found. Please log in again.");
       return;
-  }
+    }
     // Extract the Bearer token from the session
     const token = sessionData.session.access_token;
 
@@ -368,19 +368,19 @@ export default function ClientDashboard() {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`, // Required for authentication
-    },
-    body: JSON.stringify({ userId: user.id }), // Send user id in request body
-  });
+      },
+      body: JSON.stringify({ userId: user.id }), // Send user id in request body
+    });
 
-  // For debugging
-  const text = await res.text();
-  console.log("user-delete raw status:", res.status);
-  console.log("user-delete raw body:", text);
+    // For debugging
+    const text = await res.text();
+    // console.log("user-delete raw status:", res.status);
+    // console.log("user-delete raw body:", text);
 
-  if (!res.ok) {
-    setSaveError(text || "Could not delete account.");
-    return;
-  }
+    if (!res.ok) {
+      setSaveError(text || "Could not delete account.");
+      return;
+    }
 
     //Clear profile, log user out, and redirect to homepage
     setProfile(null);
@@ -409,12 +409,12 @@ export default function ClientDashboard() {
       //const filePath = `photos/galleries/${galleryId}`;
 
       // 1) Fetch photos for this gallery
-      const {data: photoList, error: photosError} = await supabase.storage
-      .from('photos')
-      .list(`galleries/${galleryId}`);
+      const { data: photoList, error: photosError } = await supabase.storage
+        .from('photos')
+        .list(`galleries/${galleryId}`);
 
-      console.log(photoList);
-    
+      // console.log(photoList);
+
       // error in fetching photos
       if (photosError) {
         console.error("Error fetching photos:", photosError);
@@ -424,22 +424,22 @@ export default function ClientDashboard() {
 
       // no photos found in gallery message
       if (!photoList || photoList.length === 0) {
-        alert ("This gallery has no photos.");
+        alert("This gallery has no photos.");
         return;
       }
-      
+
       // load photos first before heading into next part  
       let photos = [];
-      
+
       photoList.forEach(async (photo) => {
         const { data: photoData, error: photoError } = await supabase.storage.from(`photos/galleries/${galleryId}`).download(photo.name);
-        
+
         if (!photoError) {
           photos.push(photoData);
         }
       });
-      console.log(photos);
-      
+      // console.log(photos);
+
       // 2) Create a new ZIP file
       const zip = new JSZip();
       const folder = zip.folder(galleryTitle || "Gallery");
@@ -457,9 +457,9 @@ export default function ClientDashboard() {
           const filePath = `galleries/${galleryId}/${photo.name}`;
           // get signed URL for secure access from Supabase Storage
           const { data: urlData, error: urlError } = await supabase.storage
-          .from("photos") // assuming 'photos' is the bucket name
-          .createSignedUrl(filePath, 3600); // URL valid for 1 hour
-          
+            .from("photos") // assuming 'photos' is the bucket name
+            .createSignedUrl(filePath, 3600); // URL valid for 1 hour
+
           // CONSOLE DEBUG 
           // console.log( 'URL result:', {urlData, urlError});
 
@@ -467,7 +467,7 @@ export default function ClientDashboard() {
             console.error(`Error getting URL for ${photo.name}:`, urlError);
             continue;
           }
-          
+
           // fetch the photo as a blob
           const response = await fetch(urlData.signedUrl);
           if (!response.ok) {
@@ -492,14 +492,14 @@ export default function ClientDashboard() {
 
       // 4) generate the ZIP file and trigger download
       // CONSOLE DEBUG (keep)
-      console.log('Generating ZIP...');
+      // console.log('Generating ZIP...');
       const zipBlob = await zip.generateAsync({ type: "blob" });
       const zipFilename = `${galleryTitle || "gallery"}_${new Date().getTime()}.zip`;
 
-      saveAs (zipBlob, zipFilename);
-      
+      saveAs(zipBlob, zipFilename);
+
       if (successCount < photoList.length) {
-        alert (`Downloaded ${successCount} out of ${photoList.length} photos. Some files failed.`);
+        alert(`Downloaded ${successCount} out of ${photoList.length} photos. Some files failed.`);
       }
 
     } catch (error) {
@@ -776,45 +776,45 @@ export default function ClientDashboard() {
           <h2 className=" text-lg font-serif text-brown mb-3">Forms & Contracts</h2>
           <div className="flex-col w-full space-y-2">
             <div className="relative">
-            {contracts.length === 0 ? (
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-neutral-500">
-                  No new contracts have been issued to you yet.
-                </p>
-              </div>
-            ) : (
-              <ul className="space-y-3">
-                {contracts.map((c) => (
-                  <li
-                    key={c.id}
-                    className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                  >
-                    <div>
-                      <p className="text-sm text-brown font-semibold">
-                        {c.ContractTemplate.name || "Contract"}
-                      </p>
-                    </div>
-                    {
-                      <Link
-                        to={`/dashboard/contracts/${c.id}`}
-                        className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
-                      >
-                        Review &amp; Sign
-                      </Link>
-                    }
-                  </li>
-                ))}
-              </ul>
-            )}
+              {contracts.length === 0 ? (
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-neutral-500">
+                    No new contracts have been issued to you yet.
+                  </p>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {contracts.map((c) => (
+                    <li
+                      key={c.id}
+                      className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+                    >
+                      <div>
+                        <p className="text-sm text-brown font-semibold">
+                          {c.ContractTemplate.name || "Contract"}
+                        </p>
+                      </div>
+                      {
+                        <Link
+                          to={`/dashboard/contracts/${c.id}`}
+                          className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
+                        >
+                          Review &amp; Sign
+                        </Link>
+                      }
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
             <div className="flex flex-row-reverse relative">
               <div className="flex relative">
-                  <Link
-                    to="/dashboard/contracts"
-                    className="text-xs px-2 py-1 rounded bg-[#446780] hover:bg-[#98c0dc] text-white font-semibold transition border border-black text-center"
-                  >
-                    Go to Contracts
-                  </Link>
+                <Link
+                  to="/dashboard/contracts"
+                  className="text-xs px-2 py-1 rounded bg-[#446780] hover:bg-[#98c0dc] text-white font-semibold transition border border-black text-center"
+                >
+                  Go to Contracts
+                </Link>
               </div>
             </div>
           </div>
@@ -1171,7 +1171,7 @@ export default function ClientDashboard() {
                   type="button"
                   onClick={async () => {
                     await handleDeleteAccount();
-                    console.log("Delete account clicked");
+                    // console.log("Delete account clicked");
                     setShowDeleteConfirm(false);
                   }}
                   className="px-4 py-2 bg-[#a00101] hover:bg-[#870000] text-white text-sm border border-black rounded-md transition cursor-pointer"
