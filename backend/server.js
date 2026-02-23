@@ -179,7 +179,7 @@ app.post("/api/sessions/book", async (req, res) => {
         const { data: conflicts, error } = await supabase
             .from("Availability") 
             .select("*")
-            .eq("date", date) // Assuming you store date separately or as part of timestamp
+            .eq("date", date) 
             .filter("unavailable_start", "lt", requestEnd.toISOString())
             .filter("unavailable_end", "gt", requestStart.toISOString());
 
