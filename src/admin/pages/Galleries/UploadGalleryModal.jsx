@@ -67,7 +67,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
     const newPreviews = [];
 
     let loadedPreviews = 0;
-    console.log(filesToPreview);
+    // console.log(filesToPreview);
     filesToPreview.forEach((file) => {
       validFiles.push(file);
       const reader = new FileReader();
@@ -281,7 +281,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
           })
           .select()
           .single();
-        console.log("1) newGallery:", newGallery);
+        // console.log("1) newGallery:", newGallery);
         if (galleryCreateError) throw galleryCreateError;
         galleryId = newGallery.id;
       }
@@ -294,7 +294,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
       for (let i = 0; i < totalFiles; i++) {
         // cancel upload
         if (cancelUploadRef.current) {
-          console.log("Upload cancelled by admin");
+          // console.log("Upload cancelled by admin");
           setUploading(false);
           setCurrentFile(null);
           return;
@@ -315,13 +315,13 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
 
           for (let retry = 0; retry < maxRetries && !uploadSuccess; retry++) {
             if (cancelUploadRef.current) {
-              console.log("Upload cancelled during retry");
+              // console.log("Upload cancelled during retry");
               setUploading(false);
               setCurrentFile(null);
               return;
             }
-            console.log("filepath:", filePath);
-            console.log("file:", file);
+            // console.log("filepath:", filePath);
+            // console.log("file:", file);
 
             const { data: uploadData, error: uploadError } =
               await supabase.storage.from("photos").upload(filePath, file, {
