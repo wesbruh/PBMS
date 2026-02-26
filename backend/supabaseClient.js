@@ -5,5 +5,5 @@ dotenv.config();
 
 export const supabase = createClient(
   process.env.URL,
-  process.env.SERVICE_ROLE_KEY
+  process.env.SUPABASE_ANON_KEY
 );
