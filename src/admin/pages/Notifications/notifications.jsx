@@ -121,13 +121,13 @@ function Notifications() {
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex w-1/5 min-w-50">
+      <div className="w-1/5 min-w-50 overflow-y-scroll">
         <Sidebar />
       </div>
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner">
+          <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-scroll">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications</h1>
               <p className="text-gray-600">
