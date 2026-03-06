@@ -1,18 +1,12 @@
 import Sidebar from "../../components/shared/Sidebar/Sidebar";
 import Frame from "../../components/shared/Frame/Frame";
-import YTDBarChart from "../../components/shared/YTDBarChart/YTDBarChart";
-import MetricsGrid from "../../components/shared/MetricsGrid/MetricsGrid";
-import SessionCalendar from "../../components/shared/SessionCalendar/SessionCalendar";
 import { useAuth } from "../../../context/AuthContext";
 
-// main component
 function AdminHome() {
   const { profile } = useAuth();
-  const username = profile
-    ? `${profile.first_name} ${profile.last_name}`
-    : null;
+  const username = (profile != null) ? `${profile.first_name} ${profile.last_name}` : "Admin";
 
-  if (!username) {
+  if (username === "Admin") {
     return (
       <div className="w-full py-16 text-center text-brown font-serif">
         Loading your account...
@@ -22,43 +16,18 @@ function AdminHome() {
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      {/* Sidebar */}
       <div className="w-1/5 min-w-50 overflow-y-scroll">
         <Sidebar />
       </div>
-
-      {/* Main content */}
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="flex flex-col bg-white w-full h-full overflow-y-scroll">
-            {/* Page header */}
-            <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-              <h1 className="text-2xl font-bold text-gray-900">
-                Welcome back, {username}
-              </h1>
-              <p className="text-sm text-gray-500 mt-0.5">
-                Here's what's happening within Your Roots Photography.
-              </p>
-            </div>
-
-            <MetricsGrid />
-
-            {/* Two-column body */}
-            <div className="grid grid-cols-2 gap-4 px-3 md:px-6 flex-1">
-              {/* LEFT COLUMN: YTD Chart*/}
-              <div style={{ minHeight: 272, minWidth: 100 }}>
-                <YTDBarChart />
-              </div>
-
-              {/* RIGHT COLUMN: Calendar with CONFIRMED SESSIONS*/}
-              <div style={{ minWidth: 100 }}>
-                <SessionCalendar />
-              </div>
-            </div>
+          <div className='relative w-full m-10 font-bold text-brown text-2xl overflow-y-scroll'>
+            <h2>Welcome, {username}</h2>
           </div>
         </Frame>
       </div>
     </div>
   );
 }
-export default AdminHome;
+
+export default AdminHome
