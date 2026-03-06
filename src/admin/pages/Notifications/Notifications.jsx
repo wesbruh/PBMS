@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import Sidebar from "../../components/shared/Sidebar/sidebar";
-import Frame from "../../components/shared/Frame/frame";
+import Sidebar from "../../components/shared/Sidebar/Sidebar";
+import Frame from "../../components/shared/Frame/Frame";
 import Table from "../../components/shared/Table/Table.jsx";
 import { supabase } from "../../../lib/supabaseClient";
 
