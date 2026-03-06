@@ -9,6 +9,7 @@ import Testimonials from './pages/Testimonials/testimonials';
 import SignUp from './pages/SignUp/SignUp.jsx';
 import Login from './pages/Login/Login.jsx';
 import InquiryPage from "./pages/Inquiry/Inquiry.jsx";
+import Payment from "./pages/Payment/Payment";
 import Services from './pages/Services/Services.jsx';
 import Weddings from './pages/Special/Weddings.jsx';
 import Labor from './pages/Special/Labor.jsx';
@@ -18,7 +19,7 @@ import ClientDashboard from "./pages/Dashboard/ClientDashboard.jsx";
 import AuthCallback from "./pages/Auth/AuthCallback.jsx";
 import AuthHashRouter from './components/AuthHashRouter.jsx';
 import ContractsPage from "./pages/Dashboard/Contracts.jsx";
-import ContractDetail from "./pages/Dashboard/ContractDetail.jsx";
+import ContractView from "./pages/Dashboard/ContractView.jsx";
 import IdleLogout from './components/IdleLogout.jsx';
 
 // Protected Admin Routes
@@ -63,6 +64,7 @@ function AppContent() {
             <Route path="/login" element={<Login />} />
             <Route path="/inquiry" element={<InquiryPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/payment" element={<Payment />} />
 
             {/* Services */}
             <Route path="services" element={<Outlet />}>
@@ -75,7 +77,8 @@ function AppContent() {
             <Route path="dashboard" element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="contracts" element={<ContractsPage />} />
-              <Route path="contracts/:id" element={<ContractDetail />} />
+              <Route path="contracts/:id" element={<ContractView />} />
+              <Route path="inquiry" element={<InquiryPage />} />
             </Route>
 
             {/* Protected Admin Routes */}

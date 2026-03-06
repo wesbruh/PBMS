@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
+import { useSearchParams } from "react-router-dom";
 
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
 import { saveAs } from "file-saver";
@@ -10,6 +11,9 @@ import { saveAs } from "file-saver";
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
 
 export default function ClientDashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const checkoutSessionId = searchParams.get('checkout_session_id') || null;
+
   const { user, profile, setProfile } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -41,13 +45,53 @@ export default function ClientDashboard() {
     email: "",
   });
 
-
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState("");
 
   // used to track download gallery progress
   const [downloadingGalleries, setDownloadingGalleries] = useState({});
 
+  const handlePayment = async (invoice) => {
+    const { id: invoiceId, remaining: amountDue } = invoice;
+    const checkoutSession = await fetch("http://localhost:5001/api/payment/rest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        price: amountDue
+      })
+    });
+
+    if (checkoutSession.ok) {
+      const { id, url } = await checkoutSession.json();
+
+      try {
+        // create entry in Payment Table
+        const { data: paymentData, error: paymentError } = await supabase
+          .from("Payment")
+          .insert({
+            invoice_id: invoiceId,
+            provider: "Stripe",
+            provider_payment_id: id,
+            amount: amountDue,
+            currency: "USD",
+            status: "Pending",
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (paymentError) throw paymentError;
+
+        // redirect to stripe
+        window.location.href = url;
+      } catch (paymentError) {
+        console.error("Error processing payment: ", paymentError)
+      }
+    } else {
+      const { error: errorMessage } = await checkoutSession.json();
+      console.error("Stripe connection failed: ", errorMessage);
+    }
+  };
 
   // load all data that belongs to THIS user only
   useEffect(() => {
@@ -55,6 +99,50 @@ export default function ClientDashboard() {
 
     async function loadData() {
       setLoading(true);
+      // 0) update invoices on checkout_session_success
+      if (checkoutSessionId) {
+        try {
+          // get client_id based on checkoutSessionId
+          const { data: paymentData, error: paymentError } = await supabase
+            .from("Payment")
+            .select("invoice_id, amount, Invoice( Session( client_id ) )")
+            .eq("provider_payment_id", checkoutSessionId)
+            .single();
+
+          if (paymentError) throw paymentError;
+
+          const { invoice_id } = paymentData;
+          const { client_id } = paymentData.Invoice.Session;
+
+          // ensure checkout session belongs to user
+          if (user.id === client_id) {
+            const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
+            const status = await response.json().then((data) => { return data.session.payment_status });
+
+            // if session has been fully paid and processed
+            if (status === "paid") {
+              const now = new Date().toISOString();
+
+              // update invoice and payment tables
+              const { error: paymentError } = await supabase
+                .from("Payment")
+                .update({ status: "Paid", paid_at: now })
+                .eq("provider_payment_id", checkoutSessionId)
+                .single();
+
+              const { error: invoiceError } = await supabase
+                .from("Invoice")
+                .update({ remaining: 0, status: "Paid", updated_at: now })
+                .eq("id", invoice_id)
+                .single();
+
+              if (paymentError || invoiceError) throw (paymentError, invoiceError)
+            }
+          }
+        } catch (error) {
+          console.error("Payment Error:", error)
+        }
+      }
 
       // 1) sessions for this user
       const { data: sessionRows, error: sesErr } = await supabase
@@ -80,7 +168,7 @@ export default function ClientDashboard() {
         const { data, error } = await supabase
           .from("Invoice")
           .select(
-            "id, session_id, invoice_number, issue_date, due_date, total, status"
+            "id, session_id, invoice_number, issue_date, due_date, remaining, status"
           )
           .in("session_id", sessionIds)
           .order("issue_date", { ascending: false });
@@ -142,7 +230,6 @@ export default function ClientDashboard() {
           setNotifications(notificationRows ?? []);
         }
       }
-
       setLoading(false);
     }
 
@@ -656,6 +743,7 @@ export default function ClientDashboard() {
                               <></> :
                               <button
                                 type="button"
+                                onClick={() => handlePayment(inv)}
                                 className="px-2 py-1 md:px-4 flex bg-brown rounded text-xs md:text-sm text-white font-bold hover:bg-[#AB8C4B] cursor-pointer">Pay
                               </button>
                           }
@@ -703,11 +791,11 @@ export default function ClientDashboard() {
                         </div>
                         <div className="flex flex-col">
                           <p className="text-sm text-neutral-700">
-                            Total Due
+                            Amount Due
                           </p>
                           <p className="text-sm text-neutral-500">
-                            {/* When invoice is paid or total is NULL, read total as 0, otherwise read total */}
-                            ${((inv.status === "Paid") ? 0 : (inv.total ?? 0)).toFixed(2)}
+                            {/* When invoice is paid or remaining is NULL, read remaining as 0, otherwise read total */}
+                            ${((inv.status === "Paid") ? 0 : (inv.remaining ?? 0)).toFixed(2)}
                           </p>
                         </div>
                       </div>

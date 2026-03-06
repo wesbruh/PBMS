@@ -11,7 +11,7 @@ function dataUrlToBlob(dataUrl) {
   return new Blob([arr], { type: mime });
 }
 
-export default function SignContractModal({ open, onClose, contract, onSigned }) {
+export default function SignContractModal({ open, onClose, contract, contractTemplate, onSigned }) {
   const sigRef = useRef(null);
   const [saving, setSaving] = useState(false);
 
@@ -19,7 +19,7 @@ export default function SignContractModal({ open, onClose, contract, onSigned })
     if (!open) setSaving(false);
   }, [open]);
 
-  if (!open || !contract) return null;
+  if (!open || !contract || !contractTemplate) return null;
 
   const clear = () => sigRef.current?.clear();
 
@@ -50,16 +50,19 @@ export default function SignContractModal({ open, onClose, contract, onSigned })
       // 4) Mark contract as signed
       const { error: updErr } = await supabase
         .from("Contract")
-        .update({ status: "Signed", signed_pdf_url: signedUrl })
-        .eq("id", contract.id);
-        if (updErr) throw updErr;
+        .update({ signed_at: new Date().toISOString(), status: "Signed", signed_pdf_url: signedUrl })
+        .eq("id", contract.id)
 
-      onSigned?.({
-        id: contract.id,
-        signedUrl,                           // the public URL we just saved
-        status: "Signed",                    // normalize to title-case if your DB uses that
-        updatedAt: new Date().toISOString(),
-      });
+      if (updErr) throw updErr;
+
+      // 5) return contract as signed
+      const { data: contractData } = await supabase
+        .from("Contract")
+        .select()
+        .eq("id", contract.id)
+        .single();
+
+      onSigned(contractData);
       onClose();
       alert("Contract signed!");
     } catch (e) {
@@ -74,7 +77,7 @@ export default function SignContractModal({ open, onClose, contract, onSigned })
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="w-full max-w-xl rounded-lg bg-white shadow-lg border">
         <div className="p-4 border-b flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Sign “{contract.title ?? "Contract"}”</h3>
+          <h3 className="text-lg font-semibold">Sign “{contractTemplate.name ?? "Contract"}”</h3>
           <button onClick={onClose} className="text-sm px-2 py-1 rounded border hover:bg-neutral-50">Close</button>
         </div>
 
