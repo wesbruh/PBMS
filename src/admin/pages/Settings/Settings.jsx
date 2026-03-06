@@ -1,5 +1,5 @@
-import Sidebar from "../../components/shared/Sidebar/sidebar";
-import Frame from "../../components/shared/Frame/frame";
+import Sidebar from "../../components/shared/Sidebar/Sidebar";
+import Frame from "../../components/shared/Frame/Frame";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const PROFILE_STORAGE_KEY = "admin.personalSettings.profile";
