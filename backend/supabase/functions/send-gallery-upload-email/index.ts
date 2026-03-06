@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
     ">
     <tr>
     <td style="background-color: #446780; padding: 32px 40px; text-align: center;">
-    <p style="margin: 0 0 4px 0; color: #c8a97e; font-size: 12px; letter-spacing: 3px; text-transform: uppercase;">
+    <p style="margin: 0 0 4px 0; color: #c8a97e; font-size: 14px; letter-spacing: 3px; text-transform: uppercase;">
     Your Roots Photography
     </p>
     <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: normal; letter-spacing: 1px;">
@@ -83,7 +83,7 @@ Deno.serve(async (req: Request) => {
     <p style="margin: 0 0 24px 0; font-size: 16px; color: #2c2c2c;">
     Hi <strong>${name}</strong>,
     </p>
-    <p style="margin: 0 0 28px 0; font-size: 15px; color: #4a4a4a; line-height: 1.7;">
+    <p style="margin: 0 0 28px 0; font-size: 16px; color: #4a4a4a; line-height: 1.7;">
     Your photos from <strong>${sessionDate}</strong> are now available. 
     I hope you love them as much as I loved capturing them!
     </p>
@@ -113,10 +113,10 @@ Deno.serve(async (req: Request) => {
     </tr>
     <tr>
     <td style="background-color:#446780; padding: 24px 40px; text-align: center;">
-    <p style="margin: 0; color: #c8a97e; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;">
+    <p style="margin: 0 0 4px 0; color: #c8a97e; font-size: 14px; letter-spacing: 2px; text-transform: uppercase;">
     Your Roots Photography
     </p>
-    <p style="margin: 0; color: #a9b4ca; font-size: 11px;">
+    <p style="margin: 0; color: #a9b4ca; font-size: 12px;">
     Questions? Contact me at your.rootsphotography@gmail.com
     </p>
     </td>
