@@ -88,23 +88,23 @@ function Services() {
        </div>
      </div>
 
-
+      {/* Packages*/}
      <div className="mx-5 md:mx-10 lg:mx-15 my-12 md:my-16 lg:my-20">
        <p className="font-serif text-center text-3xl md:text-4xl mb-10">Photography Packages</p>
        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
          {packages.map((p, i) => (
-           <div key={i} className="border border-neutral-200">
+           <div key={i} className="border border-neutral-200 rounded-3xl overflow-hidden shadow-sm hover:shadow-lg transition duration-300 bg-white">
              <img src={p.img} className="object-cover h-60 w-full" />
-             <div className="p-5">
+             <div className="p-6">
                <h2 className="font-serif text-2xl">{p.name}</h2>
                <p className="text-brown font-semibold mt-2">{p.price}</p>
-               <ul className="mt-4 text-sm space-y-1">
+               <ul className="mt-4 text-sm space-y-1 text-neutral-600 space-y-2 list-disc list-inside">
                  {p.points.map((pt, idx) => (
                    <li key={idx}>{pt}</li>
                  ))}
                </ul>
                <Link to="/inquiry"
-                 className="flex justify-center items-center w-full mt-6 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm">
+                 className="flex justify-center items-center w-full mt-6 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm rounded-3xl transition">
                  Book Now
                </Link>
              </div>
@@ -113,17 +113,17 @@ function Services() {
        </div>
      </div>
 
-
+    {/* SPECIAL SERVICES */}
      <div className="bg-[#887C62] text-white py-12 md:py-16 lg:py-20">
        <div className="mx-5 md:mx-10 lg:mx-15">
          <p className="font-serif text-3xl md:text-4xl">Special Services</p>
-         <p className="mt-3 font-sans text-sm md:text-base">for moments that deserve their own story</p>
+         <p className="mt-3 font-sans text-sm md:text-base">For moments that deserve their own story</p>
 
 
          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
-           <Link to="/services/weddings" className="block border border-white/30">
+           <Link to="/services/weddings" className="block border border-white/30 rounded-3xl overflow-hidden hover:shadow-lg transition">
              <img src="/images/temp_t.jpg" className="object-cover h-56 w-full" />
-             <div className="p-5">
+             <div className="p-6">
                <h4 className="font-serif text-2xl">Weddings</h4>
                <p className="text-sm mt-2">Full or half-day coverage, timeline help, galleries & prints.</p>
                <span className="inline-block mt-4 underline">View Packages</span>
@@ -131,9 +131,9 @@ function Services() {
            </Link>
 
 
-           <Link to="/services/labor-delivery" className="block border border-white/30">
+           <Link to="/services/labor-delivery" className="block border border-white/30 rounded-3xl overflow-hidden hover:shadow-lg transition">
              <img src="/images/temp_s.jpg" className="object-cover h-56 w-full" />
-             <div className="p-5">
+             <div className="p-6">
                <h4 className="font-serif text-2xl">Labor & Delivery</h4>
                <p className="text-sm mt-2">On-call experience documenting your birth story with care.</p>
                <span className="inline-block mt-4 underline">Learn More</span>
@@ -148,16 +148,17 @@ function Services() {
        <img className="absolute w-full object-cover object-[30%_35%] h-100 md:h-110 lg:h-120" src={ctaImg} />
        <div className="absolute flex flex-col my-25 w-full justify-between">
          <div className="flex pl-10 md:pl-13 lg:pl-15 h-1/3">
-           <p className="text-white text-2xl md:text-3xl lg:text-4xl font-serif">let’s get you booked</p>
+           <p className="text-white text-2xl md:text-3xl lg:text-4xl font-serif">Let’s get you booked!</p>
          </div>
          <div className="flow-root my-24">
            <div className="flex flex-col float-left md:float-right lg:float-right pl-10 md:pr-13 lg:pr-15">
              <p className="font-mono text-white">YOUR ROOTS PHOTOGRAPHY</p>
-              <a className='flex justify-center items-center w-full mx-auto mt-5 mb-6 md:mb-8 lg:mb-10
-                             bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm'
-                href="mailto:Your.rootsphotography@gmail.com">
-                CONTACT ME!
-              </a>
+              <Link
+                to="/inquiry"
+                className="flex justify-center items-center w-full mx-auto mt-5 mb-6 md:mb-8 lg:mb-10
+                            bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm rounded-2xl transition">
+                 CONTACT ME!
+              </Link>
            </div>
          </div>
        </div>
