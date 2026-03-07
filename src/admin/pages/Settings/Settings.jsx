@@ -462,13 +462,15 @@ function AdminSettings() {
 
   if (isLoadingSettings) {
     return (
-      <div className="flex my-10 md:my-14 mx-4 md:mx-6 lg:mx-10 bg-white rounded-lg">
-        <div className="flex w-1/5 min-w-[200px]">
+      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+        <div className="flex w-1/5 min-w-50">
           <Sidebar />
         </div>
-        <div className="flex w-full shadow-inner rounded-lg">
+        <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
           <Frame>
-            <div className="p-6 text-gray-600">Loading your settings...</div>
+            <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll">
+              <div className="p-2 text-gray-600">Loading your settings...</div>
+            </div>
           </Frame>
         </div>
       </div>
@@ -477,13 +479,13 @@ function AdminSettings() {
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="w-1/5 min-w-50 overflow-y-scroll">
+      <div className="flex w-1/5 min-w-50">
         <Sidebar />
       </div>
 
-      <div className="flex w-full shadow-inner rounded-lg">
+      <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-auto">
+          <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Personal Settings</h1>
               <p className="text-gray-600">
