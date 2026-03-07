@@ -393,11 +393,13 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
         
       }
       // 5) Update gallery with notification info
-        const { data: sessionData } = await supabase
+        const { data: sessionData, error: sessionFetchError } = await supabase
           .from("Session")
-          .select("User(email)")
+          .select("client_id, User:client_id(email)")
           .eq("id", session.id)
           .single();
+
+        console.log("[Gallery Upload] sessionData:", sessionData, "error:", sessionFetchError);
 
         if (sessionData?.User?.email) {
           await supabase
@@ -407,8 +409,29 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
               published_link: `${window.location.origin}/client/galleries/${galleryId}`,
             })
             .eq("id", galleryId);
-            
+
             // EMAIL IS SENT AUTOMATICALLY VIA DATABASE TRIGGER AFTER THIS + EDGE FUNCTION
+        }
+
+        // 6) Insert notification record for gallery published
+        if (!sessionData?.client_id) {
+          console.warn("[Gallery Upload] Skipping notification — client_id is missing. sessionData:", sessionData);
+        } else {
+          const { error: notifError } = await supabase.from("Notification").insert({
+            id: crypto.randomUUID(),
+            user_id: sessionData.client_id,
+            session_id: session.id,
+            channel: "email",
+            subject: "Your Gallery Is Ready!",
+            body: `Hi ${session.clientName}, your ${session.type} photo gallery from ${session.date} is now ready to view. Log in to your client dashboard to access your photos.`,
+            status: "sent",
+            sent_at: new Date().toISOString(),
+          });
+          if (notifError) {
+            console.error("[Gallery Upload] Notification insert failed:", notifError);
+          } else {
+            console.log("[Gallery Upload] Notification inserted successfully for user_id:", sessionData.client_id);
+          }
         }
       // Success!
       setTimeout(() => {

@@ -1,9 +1,32 @@
 import { Link, useLocation } from "react-router-dom";
 import { Home, Camera, Calendar, Contact2 ,Image as ImageIcon, Bell, Banknote, ReceiptText, Settings, } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "../../../../lib/supabaseClient";
 
 function Sidebar() {
   // determines location of user based on current page
   const location = useLocation();
+
+  const [hasUnread, setHasUnread] = useState(false);
+
+  useEffect(() => {
+    const checkUnread = async () => {
+      const { count } = await supabase
+        .from("Notification")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "sent");
+      setHasUnread((count ?? 0) > 0);
+    };
+
+    checkUnread();
+
+    const channel = supabase
+      .channel("sidebar-unread")
+      .on("postgres_changes", { event: "*", schema: "public", table: "Notification" }, checkUnread)
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, []);
 
   // helper functions to indicate if the page link is an active page, including special services tab
   const isActive = (path) => location.pathname.substring('/admin'.length) == path;
@@ -34,7 +57,14 @@ function Sidebar() {
               <Link to="/admin/galleries" className={`${linkStyles} ${isActive('/galleries') ? activeLinkStyles : ''}`}><ImageIcon size={24} />Galleries</Link>
             </div>
             <div className='flex m-3'>
-              <Link to="/admin/notifications" className={`${linkStyles} ${isActive('/notifications') ? activeLinkStyles : ''}`}><Bell size={24} />Notifications</Link>
+              <Link
+                to="/admin/notifications"
+                className={`${linkStyles} ${isActive('/notifications') ? activeLinkStyles : ''} ${hasUnread ? 'font-bold' : ''}`}
+              >
+                <Bell size={24} />
+                Notifications
+                {hasUnread && <span className="ml-1.5 w-2 h-2 rounded-full bg-white flex-shrink-0" />}
+              </Link>
             </div>
             <div className='flex m-3'>
               <Link to="/admin/payments" className={`${linkStyles} ${isActive('/payments') ? activeLinkStyles : ''}`}><Banknote size={24} />Payments and Invoices</Link>
