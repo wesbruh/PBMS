@@ -5,6 +5,63 @@ import { supabase } from "../supabaseClient.js";
 
 const router = express.Router();
 
+//Invoice for Sessions
+
+router.post("/generate/:sessionId", async (req, res) => {
+  try{
+    const { sessionId } = req.params;
+
+    const { data: session, error } = await supabase
+      .from("Session")
+      .select(` id, status, 
+        User:client_id(first_name, last_name, email),SessionType:session_type_id(name, base_price)`)
+      .eq("id", sessionId)
+      .single();
+
+    if(error || !session){
+      return res.status(404). json({ message: "Session not found" });
+    }
+
+    if(session.status !== "Confirmed") {
+      return res.status(400).json({
+        message: "Invoice can only be generated for confirmed sessions",
+      });
+    }
+    const price = session.SessionType?.base_price ?? 0;
+    const { data: invoice, error: insertError } = await supabase
+      .from("Invoice")
+      .insert({
+        session_id: session.id,
+        invoice_number: `INV-${Date.now()}`,
+        client_name: `${session.User.first_name} ${session.User.last_name}`,
+        client_email: session.User.email,
+        subtotal: price,
+        tax: 0,
+        total: price,
+        issue_date: new Date().toISOString(),
+        items: [
+          {
+            description: session.SessionType.name,
+            quantity: 1,
+            price: price
+          }
+        ]
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      throw insertError;
+    }
+
+    res.json(invoice);
+
+  } catch (err) {
+    console.error("Invoice generation error:", err);
+    res.status(500).json({ message: "Failed to create invoice" });
+  }
+});
+
 router.get("/:invoiceId/pdf", async (req, res) => {
   try {
     const invoiceId = req.params.invoiceId;
