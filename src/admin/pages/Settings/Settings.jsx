@@ -451,9 +451,11 @@ function AdminSettings() {
 
   const handleEmailToggle = () => {
     setEmailNotifications((current) => !current);
+    setEmailNotifications((current) => !current);
   };
 
   const handleDashboardAlertsToggle = () => {
+    setDashboardAlerts((current) => !current);
     setDashboardAlerts((current) => !current);
   };
 
@@ -462,15 +464,13 @@ function AdminSettings() {
 
   if (isLoadingSettings) {
     return (
-      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-        <div className="flex w-1/5 min-w-50">
+      <div className="flex my-10 md:my-14 mx-4 md:mx-6 lg:mx-10 bg-white rounded-lg">
+        <div className="flex w-1/5 min-w-[200px]">
           <Sidebar />
         </div>
-        <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
+        <div className="flex w-full shadow-inner rounded-lg">
           <Frame>
-            <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll">
-              <div className="p-2 text-gray-600">Loading your settings...</div>
-            </div>
+            <div className="p-6 text-gray-600">Loading your settings...</div>
           </Frame>
         </div>
       </div>
@@ -496,6 +496,12 @@ function AdminSettings() {
             {showSavedBanner && (
               <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                 Personal settings saved successfully.
+              </div>
+            )}
+
+            {formError && (
+              <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {formError}
               </div>
             )}
 
@@ -579,7 +585,10 @@ function AdminSettings() {
                   onClick={saveProfileChanges}
                   disabled={isSaving}
                   className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] disabled:opacity-70 text-white rounded-md border border-black text-sm transition"
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] disabled:opacity-70 text-white rounded-md border border-black text-sm transition"
                 >
+                  {isSaving ? "Saving..." : "Save Changes"}
                   {isSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>
