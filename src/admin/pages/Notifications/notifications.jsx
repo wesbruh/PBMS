@@ -3,11 +3,14 @@ import Sidebar from "../../components/shared/Sidebar/sidebar";
 import Frame from "../../components/shared/Frame/frame";
 import Table from "../../components/shared/Table/Table.jsx";
 import { supabase } from "../../../lib/supabaseClient";
+import { Trash2 } from "lucide-react";
 
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [filterTab, setFilterTab] = useState("All");
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -85,8 +88,48 @@ function Notifications() {
   };
 
   useEffect(() => {
-    fetchNotifications();
+    supabase
+      .from("Notification")
+      .update({ status: "read" })
+      .eq("status", "sent");
   }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+
+    const channel = supabase
+      .channel("notifications-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "Notification" },
+        () => fetchNotifications()
+      )
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
+  }, []);
+
+  const filteredNotifications = notifications.filter((n) => {
+    if (filterTab === "All") return true;
+    const subject = n.subject.toLowerCase();
+    if (filterTab === "Sessions") return subject.includes("gallery");
+    if (filterTab === "Payment & Invoice") return subject.includes("invoice") || subject.includes("payment");
+    return true;
+  });
+
+  const handleDelete = async (id) => {
+    const { error: deleteError } = await supabase
+      .from("Notification")
+      .delete()
+      .eq("id", id);
+
+    if (deleteError) {
+      console.error("Failed to delete notification:", deleteError);
+    } else {
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+    }
+    setConfirmDeleteId(null);
+  };
 
   const tableNotificationColumns = [
     { key: "recipientName", label: "Recipient", sortable: true },
@@ -117,9 +160,46 @@ function Notifications() {
         </span>
       ),
     },
+    {
+      key: "actions",
+      label: "",
+      sortable: false,
+      render: (_, row) => (
+        <button
+          onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(row.id); }}
+          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+          title="Delete notification"
+        >
+          <Trash2 size={16} />
+        </button>
+      ),
+    },
   ];
 
   return (
+    <>
+    {confirmDeleteId && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Notification</h3>
+          <p className="text-sm text-gray-600 mb-5">Are you sure you want to delete this notification?</p>
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setConfirmDeleteId(null)}
+              className="px-4 py-2 text-sm rounded-md border hover:bg-gray-50 transition"
+            >
+              No
+            </button>
+            <button
+              onClick={() => handleDelete(confirmDeleteId)}
+              className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+            >
+              Yes
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
       <div className="w-1/5 min-w-50 overflow-y-scroll">
         <Sidebar />
@@ -152,22 +232,49 @@ function Notifications() {
               </div>
             )}
 
+            {/* Filter Tabs */}
+            {!loading && !error && (
+              <div className="flex justify-center gap-2 mb-4">
+                {["All", "Sessions", "Payment & Invoice"].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setFilterTab(tab)}
+                    className={`px-5 py-2 rounded-full text-sm font-medium border transition-colors ${
+                      filterTab === tab
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Table */}
-            {!loading && !error && notifications.length > 0 && (
+            {!loading && !error && filteredNotifications.length > 0 && (
               <div>
                 <Table
                   columns={tableNotificationColumns}
-                  data={notifications}
+                  data={filteredNotifications}
                   searchable={true}
                   searchPlaceholder={"Search notifications by recipient or message..."}
                   rowsPerPage={5}
                 />
               </div>
             )}
+
+            {/* Empty state for active filter */}
+            {!loading && !error && notifications.length > 0 && filteredNotifications.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-center">
+                <p className="text-sm text-gray-500">No {filterTab} notifications found.</p>
+              </div>
+            )}
           </div>
         </Frame>
       </div>
     </div>
+    </>
   );
 }
 
