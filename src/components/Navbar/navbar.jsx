@@ -69,22 +69,20 @@ function Navbar() {
     "block py-3 px-4 hover:bg-[#AB8C4B] hover:text-white transition-colors rounded";
 
   useEffect(() => {
-    const loadAdminRole = async () => {
-      const id = await GetId("Admin");
-      setAdminId(id);
+    const loadRoles = async () => {
+      if (!adminRoleId) {
+        const id = await GetId("Admin");
+        setAdminId(id);
+      }
+
+      if (!userRoleId) {
+        const id = await GetId("User");
+        setUserId(id);
+      }
     };
 
-    loadAdminRole();
-  }, []);
-
-  useEffect(() => {
-    const loadAdminRole = async () => {
-      const id = await GetId("Admin");
-      setAdminId(id);
-    };
-
-    loadAdminRole();
-  }, []);
+    loadRoles();
+  }, [adminRoleId, userRoleId]);
 
   return (
     // each link uses the styles according to user indicating hover over a tab and what the active page, navbar is trasnparent on homepage only
@@ -113,8 +111,34 @@ function Navbar() {
 
       {/* Navbar tabs and buttons on right side of Navbar. Specifically designed to have gaps between tabs and not large gaps between the buttons
       Adjusted to hidden desktop navbar when viewing from mobile. Moved special services to be next to regular services in desktop nav */}
-      <div className="hidden lg:flex font-serif text-sm items-center ml-auto">
-        <div className="flex items-center gap-6">
+      <div className='hidden lg:flex font-serif text-sm items-center ml-auto'>
+        <div className='flex items-center gap-6'>
+      <Link to="/" className={`${linkStyles} ${isActive('/') ? activeLinkStyles : ''}`}>Home</Link> 
+      <Link to="/about" className={`${linkStyles} ${isActive('/about') ? activeLinkStyles : ''}`}>About</Link> 
+      <Link to="/testimonials" className={`${linkStyles} ${isActive('/testimonials') ? activeLinkStyles : ''}`}>Testimonials</Link>
+      <Link to="/portfolio" className={`${linkStyles} ${isActive('/portfolio') ? activeLinkStyles : ''}`}>Portfolio</Link>
+      <Link to="/services" className={`${linkStyles} ${isActive('/services') ? activeLinkStyles : ''}`}>Services</Link>
+      
+      {/* Special Services Dropdown Menu */}
+      <div className="inline-block relative group">
+        <button className={`${linkStyles} ${isSpecialServicesActive ? activeLinkStyles : ''}`}>Special Services</button>
+        <ul className ='absolute top-full mt-2 bg-white shadow-xl rounded-md py-2 z-10 max-h-0 opacity-0 overflow-hidden 
+        group-hover:max-h-40 group-hover:opacity-100  transition-all duration-800 ease-out'>
+          <li className='px-3 py-1'>
+          <Link to="/services/weddings" className={`${linkStyles} text-black! ${isActive('/services/weddings') ? activeLinkStyles : ''}`}>Weddings</Link>
+          </li>
+          <li className='whitespace-nowrap px-3 py-4'>
+          <Link to="/services/labor-and-delivery" className={`${linkStyles} text-black! ${isActive('/services/labor-and-delivery') ? activeLinkStyles : ''}`}>Labor & Delivery</Link>
+          </li>
+        </ul>
+
+      </div>
+       <Link to={user && roleId === userRoleId ? "/dashboard/inquiry" : "/inquiry" }  className={`${linkStyles} ${isActive('/inquiry') || isActive('/dashboard/inquiry') ? activeLinkStyles : ''}`}>Book with me</Link>
+      </div>
+
+      {/* Login/Create Account buttons */}
+      {user ? (
+        <>
           <Link
             to="/"
             className={`${linkStyles} ${isActive("/") ? activeLinkStyles : ""}`}
@@ -386,7 +410,7 @@ function Navbar() {
             )}
           </div>
 
-          {/* REMOVED: Mobile "Book with me" nav link */}
+          <Link to={user && roleId === userRoleId ? "/dashboard/inquiry" : "/inquiry"} onClick={() => setIsMenuOpen(false)} className={`${mobileLinkStyles} ${(isActive('/inquiry') || isActive('/dashboard/inquiry')) ? 'bg-[#7E4C3C] text-white' : ''}`}>Book with me</Link>
 
           {/* Mobile Authentication buttons */}
           <div className="mt-8 space-y-3 px-4">

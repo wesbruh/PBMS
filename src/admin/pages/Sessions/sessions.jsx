@@ -2,17 +2,14 @@ import { useState, useEffect } from "react";
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
-
-
+import Stripe from "stripe";
 
 function Sessions() {
   const [sessions, setSessions] = useState([]);
-  const [defaultContract, setDefaultContract] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchSessions();
-    loadDefaultContract();
   }, []);
 
   const fetchSessions = async () => {
@@ -27,27 +24,31 @@ function Sessions() {
     }
   };
 
-  const loadDefaultContract = async () => {
-    try {
-      const response = await fetch("http://localhost:5001/api/contract/template/default");
-      const data = await response.json();
-      setDefaultContract(data);
-    } catch (error) {
-      console.error("Error fetching sessions:", error);
-    }
-  };
+  const getPaymentIntent = async (checkoutSessionId) => {
+    if (!checkoutSessionId) return { status: null, paymentIntent: null }
+    const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
+    const { payment_intent: paymentIntent } = await response.json();
+    return { status: response.ok, paymentIntent };
+  }
 
-  const generateContract = async (session_id) => {
+  const capturePaymentIntent = async (sessionId, checkoutSessionId) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/contract/generate/${session_id}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ["template_id"]: defaultContract.id})});
-      // DEBUGGING const data = await response.json();
+      const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
+      if (status) {
+        const response = await fetch(`http://localhost:5001/api/intent/capture`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: sessionId, payment_intent: paymentIntent })
+        });
+
+        if (response.ok)
+          await handleUpdate(sessionId, 'status', 'Confirmed');
+        // console.error("Status: ", status); // DEBUGGING
+      }
     } catch (error) {
-      console.error("Error generating contract:", error);
+      console.error("Error capturing payment intent:", error);
     }
-  };
+  }
 
   const generateInvoice = async(session_id) => {
 
@@ -108,7 +109,7 @@ function Sessions() {
     switch (status) {
       case 'Confirmed': return 'bg-green-100 text-green-800 border-green-200';
       case 'Completed': return 'bg-purple-100 text-purple-800 border-purple-200';
-      case 'Inquiry': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Pending': return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'Cancelled': return 'bg-red-100 text-red-800 border-red-200';
       default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
@@ -164,34 +165,25 @@ function Sessions() {
     {
       key: 'status',
       label: 'Status',
-      render: (value, row) => (
-        <select
-          value={value}
-          onChange={(e) => handleUpdate(row.id, 'status', e.target.value)}
-          className={`px-2 py-1 rounded-md text-sm font-semibold border ${getStatusStyle(value)}`}
-        >
-          <option value="Inquiry">Inquiry</option>
-          <option value="Confirmed">Confirmed</option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
-        </select>
+      render: (val) => (
+        <p className={`px-2 py-1 rounded-md text-sm font-semibold border text-center ${getStatusStyle(val)}`}>
+          {val}
+        </p>
       )
     },
     {
-      key: 'action',
+      key: 'deposit_cs_id',
       label: 'Action',
-      render: (_, row) => (
-        (row.status === "Confirmed") ? (
-          <div className="flex gap-2">
-        
-        <button 
-          type={"button"} 
-          onClick={() => generateContract(row.id)} 
-          className={`hover:cursor-pointer text-center px-3 py-1 rounded-md text-sm font-semibold ${getStatusStyle(row.status)}`}
-        >
-          Generate Contract 
-        </button> 
-
+      render: (value, row) => (
+        (row.status === "Pending" && value) ?
+          <button
+            type={"button"}
+            onClick={() => { capturePaymentIntent(row.id, value) }}
+            className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border`}
+          >
+            Confirm
+          </button> :
+         (row.status === "Confirmed") ? (
         <button
           type="button"
           onClick={() => generateInvoice(row.id)}
@@ -200,9 +192,7 @@ function Sessions() {
         >
           Generate Invoice
         </button>
-        </div> 
         ) : <div></div>
-      )
     }
   ];
 
