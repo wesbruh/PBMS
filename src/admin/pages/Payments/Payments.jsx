@@ -11,7 +11,6 @@ function AdminPayments() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
 
-
   useEffect(() => { fetchInvoices(); }, []);
 
   const fetchInvoices = async () => {
