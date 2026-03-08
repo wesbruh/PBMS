@@ -1,35 +1,83 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useMemo } from "react";
+import { Link, useSearchParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext";
 
-const sessionTypeLabel = (v) => {
-  const map = {
-    wedding: "Wedding",
-    engagement: "Engagement",
-    family: "Family",
-    corporate: "Corporate",
-    lifestyle: "Lifestyle",
-  };
-  return map[v] || v || "Session";
-};
+// const sessionTypeLabel = (v) => {
+//   const map = {
+//     wedding: "Wedding",
+//     engagement: "Engagement",
+//     family: "Family",
+//     corporate: "Corporate",
+//     lifestyle: "Lifestyle",
+//   };
+//   return map[v] || v || "Session";
+// };
 
 export default function InquirySuccess() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // We pass these details via navigate(..., { state })
-  const details = useMemo(() => location.state || null, [location.state]);
+  // We pass these details via Stripe's success url
+  const sessionId = searchParams.get('session_id') || null;
+
+  // parameters we want
+  const [fullName, setFullName] = useState(null);
+  const [email, setEmail] = useState(null);
+  const [sessionType, setSessionType] = useState(null);
+  const [dateTime, setDateTime] = useState(null);
+  const [location, setLocation] = useState(null);
+
+  // get user information
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
 
   // If someone refreshes this page, state will be lost.
   // In that case, send them back to the inquiry form.
   useEffect(() => {
-    if (!details) {
-      navigate("/inquiry", { replace: true });
+    if (!sessionId) {
+      navigate("/dashboard/inquiry", { replace: true });
     }
-  }, [details, navigate]);
+  }, [sessionId, navigate]);
 
-  if (!details) return null;
+  useEffect(() => {
+    if (!user || !sessionId) return;
 
-  const { fullName, email, sessionType, desiredDate, location: place } = details;
+    const loadParameters = async () => {
+      try {
+        const { data: sessionData } = await supabase
+          .from("Session")
+          .select("User(id, first_name, last_name, email), SessionType(name), start_at, location_text")
+          .eq("id", sessionId)
+          .single();
+
+        console.log(sessionData);
+        // error checks
+        if (user && sessionData.User.id !== user.id) throw new Error({ message: "Session not found or does not belong to user" });
+
+        // set parameters
+        setFullName(`${sessionData.User.first_name} ${sessionData.User.last_name}`);
+        setEmail(sessionData.User.email);
+        setSessionType(sessionData?.SessionType?.name || null);
+        setDateTime(new Date(sessionData.start_at).toLocaleString());
+        setLocation(sessionData.location_text);
+
+        setLoading(false);
+      } catch (e) {
+        console.error("Error getting session: ", e);
+      }
+    }
+
+    loadParameters();
+  }, [user, sessionId])
+
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-12 text-center font-serif text-brown">
+        Loading details...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#FFFDF4]">
@@ -41,7 +89,7 @@ export default function InquirySuccess() {
               REQUEST RECEIVED
             </h1>
             <p className="mt-3 text-sm md:text-base text-neutral-600 max-w-xl mx-auto">
-              Thank you, {fullName?.split(" ")?.[0] || "there"} 🤍  I’ll review your request and email/text you within 24 hours
+              Thank you, {fullName || ""} 🤍  I’ll review your request and email/text you within 24 hours
               with availability and next steps.
             </p>
           </div>
@@ -71,17 +119,17 @@ export default function InquirySuccess() {
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                 <div className="rounded-lg border border-black/10 bg-white/70 px-4 py-3">
                   <p className="text-[11px] tracking-widest text-neutral-500">SESSION TYPE</p>
-                  <p className="mt-1 font-serif text-[#7E4C3C]">{sessionTypeLabel(sessionType)}</p>
+                  <p className="mt-1 font-serif text-[#7E4C3C]">{sessionType || "-"}</p>
                 </div>
 
                 <div className="rounded-lg border border-black/10 bg-white/70 px-4 py-3">
-                  <p className="text-[11px] tracking-widest text-neutral-500">DESIRED DATE</p>
-                  <p className="mt-1 font-serif text-[#7E4C3C]">{desiredDate || "—"}</p>
+                  <p className="text-[11px] tracking-widest text-neutral-500">DATE &amp; TIME</p>
+                  <p className="mt-1 font-serif text-[#7E4C3C]">{dateTime || "—"}</p>
                 </div>
 
                 <div className="rounded-lg border border-black/10 bg-white/70 px-4 py-3">
                   <p className="text-[11px] tracking-widest text-neutral-500">LOCATION</p>
-                  <p className="mt-1 font-serif text-[#7E4C3C]">{place || "—"}</p>
+                  <p className="mt-1 font-serif text-[#7E4C3C]">{location || "—"}</p>
                 </div>
 
                 <div className="rounded-lg border border-black/10 bg-white/70 px-4 py-3">
@@ -118,7 +166,7 @@ export default function InquirySuccess() {
             <p className="text-sm text-neutral-600">
               Want to submit another request?{" "}
               <Link className="text-[#7E4C3C] underline underline-offset-4 hover:text-[#AB8C4B]" to="/inquiry">
-                Book another session
+                Submit Another Inquiry
               </Link>
             </p>
           </div>
