@@ -5,6 +5,8 @@ import crypto from "crypto";
 import invoiceRoutes from "./pdf/invoice.js";
 import { supabase } from "./supabaseClient.js"; 
 import galleryRoutes from "./routes/galleryRoutes.js";
+import receiptRoutes from "./pdf/receipt.js";
+
 
 dotenv.config();
 
@@ -199,6 +201,7 @@ app.post("/api/availability/blocks", async (req, res) => {
 
 app.use("/api/invoice", invoiceRoutes);
 app.use("/api/gallery", galleryRoutes);
+app.use("/api/receipts", receiptRoutes);
 
 app.get("/test-server", (_req, res) => {
   res.json({ message: "HTTP server running and Supabase-compatible!" });

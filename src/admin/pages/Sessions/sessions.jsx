@@ -49,6 +49,36 @@ function Sessions() {
     }
   };
 
+  const generateInvoice = async(session_id) => {
+
+    try{
+      const response = await fetch(`http://localhost:5001/api/invoice/generate/${session_id}`,
+      { method: "POST" }
+    );
+        if(!response.ok){
+          throw new Error("Failed to generate invoice");
+        }
+
+        const invoice = await response.json();
+        const pdfResponse = await fetch(
+      `http://localhost:5001/api/invoice/${invoice.id}/pdf`
+    );
+
+        const blob = await pdfResponse.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+
+        a.href = url;
+        a.download = `PBMSInvoice.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+      } catch(error){
+        console.error("Error generating invoice:", error);
+      }
+  };
+
   const handleUpdate = async (sessionId, field, value) => {
     // FIX: Convert time strings to proper ISO format for Supabase
     let finalValue = value;
@@ -151,22 +181,34 @@ function Sessions() {
       key: 'action',
       label: 'Action',
       render: (_, row) => (
-        (row.status === "Confirmed") ? 
+        (row.status === "Confirmed") ? (
+          <div className="flex gap-2">
+        
         <button 
           type={"button"} 
           onClick={() => generateContract(row.id)} 
-          className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border ${getStatusStyle(row.status)}`}
+          className={`hover:cursor-pointer text-center px-3 py-1 rounded-md text-sm font-semibold ${getStatusStyle(row.status)}`}
         >
           Generate Contract 
-        </button> :
-        <div></div>
+        </button> 
+
+        <button
+          type="button"
+          onClick={() => generateInvoice(row.id)}
+        //className="hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border bg-gray-100 text-gray-800 border-gray-200"
+        className="hover:cursor-pointer px-3 py-1 rounded-md text-sm font-semibold bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
+        >
+          Generate Invoice
+        </button>
+        </div> 
+        ) : <div></div>
       )
     }
   ];
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex w-1/5 min-w-50">
+      <div className="w-1/5 min-w-50 overflow-y-scroll">
         <Sidebar />
       </div>
 
