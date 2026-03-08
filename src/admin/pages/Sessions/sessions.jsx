@@ -193,6 +193,7 @@ function Sessions() {
           Generate Invoice
         </button>
         ) : <div></div>
+      )
     }
   ];
 

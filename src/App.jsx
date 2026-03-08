@@ -1,14 +1,15 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar/Navbar.jsx';
 import Footer from './components/Footer/Footer.jsx';
-
+import SignUpSuccess from './pages/SignUp/SignUpSuccess.jsx';
+import InquirySuccess from "./pages/Inquiry/InquirySuccess.jsx";
 import Home from './pages/Home/home';
 import About from './pages/About/about';
 import Portfolio from "./pages/Portfolio/portfolio.jsx";
 import Testimonials from './pages/Testimonials/testimonials';
 import SignUp from './pages/SignUp/SignUp.jsx';
 import Login from './pages/Login/Login.jsx';
-import InquiryPage from "./pages/Inquiry/Inquiry.jsx";
+import Inquiry from "./pages/Inquiry/Inquiry.jsx";
 import Payment from "./pages/Payment/Payment";
 import Services from './pages/Services/Services.jsx';
 import Weddings from './pages/Special/Weddings.jsx';
@@ -61,8 +62,8 @@ function AppContent() {
             <Route path="/testimonials" element={<Testimonials />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/signup/success" element={<SignUpSuccess />} />
             <Route path="/login" element={<Login />} />
-            <Route path="/inquiry" element={<InquiryPage />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/payment" element={<Payment />} />
 
@@ -78,7 +79,8 @@ function AppContent() {
               <Route index element={<ClientDashboard />} />
               <Route path="contracts" element={<ContractsPage />} />
               <Route path="contracts/:id" element={<ContractView />} />
-              <Route path="inquiry" element={<InquiryPage />} />
+              <Route path="inquiry" element={<Inquiry />} />
+              <Route path="inquiry/success" element={<InquirySuccess />} />
             </Route>
 
             {/* Protected Admin Routes */}

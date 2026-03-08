@@ -78,7 +78,7 @@ export default function SignContractModal({ open, onClose, contract, contractTem
       <div className="w-full max-w-xl rounded-lg bg-white shadow-lg border">
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold">Sign “{contractTemplate.name ?? "Contract"}”</h3>
-          <button onClick={onClose} className="text-sm px-2 py-1 rounded border hover:bg-neutral-50">Close</button>
+          <button type="button" onClick={onClose} className="text-sm px-2 py-1 rounded border hover:bg-neutral-50">Close</button>
         </div>
 
         <div className="p-4 space-y-3">
@@ -93,10 +93,11 @@ export default function SignContractModal({ open, onClose, contract, contractTem
             />
           </div>
           <div className="flex gap-2">
-            <button onClick={clear} className="px-3 py-2 rounded border hover:bg-neutral-50">
+            <button type="button" onClick={clear} className="px-3 py-2 rounded border hover:bg-neutral-50">
               Clear
             </button>
             <button
+              type="button"
               onClick={save}
               disabled={saving}
               className="px-3 py-2 rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"

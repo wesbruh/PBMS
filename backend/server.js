@@ -8,7 +8,6 @@ import galleryRoutes from "./routes/galleryRoutes.js";
 import Stripe from "stripe";
 import receiptRoutes from "./pdf/receipt.js";
 
-
 dotenv.config();
 
 const app = express();
@@ -267,7 +266,7 @@ app.post("/api/availability/blocks", async (req, res) => {
 // create and retrieve Stripe Checkout Session information
 app.post("/api/payment/:type", async (req, res) => {
   const { type } = req.params;
-  const { from_url, product_data, price, apply_tax, tax_rate } = req.body
+  const { session_id, from_url, product_data, price, apply_tax, tax_rate } = req.body
 
   // compute final price based on values passed in
   // if no price is passed in, default to 150
@@ -300,9 +299,8 @@ app.post("/api/payment/:type", async (req, res) => {
         payment_intent_data: {
           capture_method: 'manual',
         },
-        success_url: 'http://localhost:5173/dashboard?success=true',
-        cancel_url: from_url ||
-          'http://localhost:5173/dashboard?success=false'
+        success_url: `http://localhost:5173/dashboard/inquiry/success?session_id=${session_id}`,
+        cancel_url: from_url
       });
 
       res.status(200).json({
