@@ -22,20 +22,19 @@ function AdminPayments() {
         .from("Invoice")
         .select(`
     id,
-    invoice_number,
-    issue_date,
-    due_date,
-    subtotal,
-    tax,
-    total,
+    amount,
+    currency,
     status,
-    created_at,
-    Session (
-      id,
-      client_id,
-      User (
-        first_name,
-        last_name
+    paid_at,
+    provider,
+    invoice_id,
+    Invoice(
+      invoice_number,
+      Session (
+        User (
+          first_name,
+          last_name
+        )
       )
     )
   `)

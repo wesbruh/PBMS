@@ -453,6 +453,122 @@
   white-space: nowrap;
 }
 
+
+/* Cover Photo and Personalized Message styling */
+/* Cover photo hint text above the grid */
+.cover-photo-hint {
+  font-size: 0.8rem;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+
+/* Highlight the selected cover card */
+.preview-item--cover {
+  outline: 2px solid #f59e0b;
+  border-radius: 8px;
+}
+
+/* Star button — top-left of each preview card */
+.preview-cover-btn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  border: none;
+  border-radius: 50%;
+  padding: 4px;
+  cursor: pointer;
+  color: #d1d5db;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.preview-cover-btn:hover {
+  background: rgba(0, 0, 0, 0.65);
+  color: #fbbf24;
+}
+.preview-cover-btn--active {
+  background: rgba(245, 158, 11, 0.85);
+  color: #fff;
+}
+
+/* "Cover Photo" badge under the filename */
+.cover-badge {
+  display: inline-block;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-bottom: 3px;
+}
+
+/* Personalized message section */
+.message-section {
+  margin-top: 1.25rem;
+}
+.message-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.message-label-optional {
+  font-weight: 400;
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+.message-hint {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-bottom: 0.4rem;
+}
+.message-textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  resize: vertical;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+.message-textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+.message-textarea--error {
+  border-color: #ef4444;
+}
+.message-textarea:disabled {
+  background: #f9fafb;
+  color: #9ca3af;
+}
+.message-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 4px;
+}
+.message-error {
+  font-size: 0.78rem;
+  color: #ef4444;
+}
+.message-char-count {
+  font-size: 0.78rem;
+  color: #6b7280;
+  margin-left: auto;
+}
+.message-char-count--warning {
+  color: #f59e0b;
+}
+.message-char-count--limit {
+  color: #ef4444;
+  font-weight: 600;
+}
 /* Responsive */
 @media (max-width: 640px) {
   .upload-options {

@@ -50,6 +50,36 @@ function Sessions() {
     }
   }
 
+  const generateInvoice = async(session_id) => {
+
+    try{
+      const response = await fetch(`http://localhost:5001/api/invoice/generate/${session_id}`,
+      { method: "POST" }
+    );
+        if(!response.ok){
+          throw new Error("Failed to generate invoice");
+        }
+
+        const invoice = await response.json();
+        const pdfResponse = await fetch(
+      `http://localhost:5001/api/invoice/${invoice.id}/pdf`
+    );
+
+        const blob = await pdfResponse.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+
+        a.href = url;
+        a.download = `PBMSInvoice.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+      } catch(error){
+        console.error("Error generating invoice:", error);
+      }
+  };
+
   const handleUpdate = async (sessionId, field, value) => {
     // FIX: Convert time strings to proper ISO format for Supabase
     let finalValue = value;
@@ -143,7 +173,7 @@ function Sessions() {
     },
     {
       key: 'deposit_cs_id',
-      label: 'CSID',
+      label: 'Action',
       render: (value, row) => (
         (row.status === "Pending" && value) ?
           <button
@@ -153,8 +183,16 @@ function Sessions() {
           >
             Confirm
           </button> :
-          <div></div>
-      )
+         (row.status === "Confirmed") ? (
+        <button
+          type="button"
+          onClick={() => generateInvoice(row.id)}
+        //className="hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border bg-gray-100 text-gray-800 border-gray-200"
+        className="hover:cursor-pointer px-3 py-1 rounded-md text-sm font-semibold bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
+        >
+          Generate Invoice
+        </button>
+        ) : <div></div>
     }
   ];
 
