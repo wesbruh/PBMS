@@ -1,7 +1,10 @@
 import { useState, useRef } from "react";
-import { X, Upload, ImagePlus, Image as ImageIcon, Trash2, CheckCircle, FolderOpen } from "lucide-react";
+import { X, Upload, ImagePlus, Image as ImageIcon, Trash2, CheckCircle, FolderOpen, Star} from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient.js";
 import "./UploadGalleryModal.css";
+import { set } from "zod";
+
+const MAX_MESSAGE_LENGTH = 1000; // Max character length for personalized messages, includes spaces, punctuation, etc.
 
 const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -12,6 +15,10 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
   const [error, setError] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("idle"); // idle, uploading, cancelled, completed
+  const [coverPhotoIndex, setCoverPhotoIndex] = useState(null); // New state to track which photo is selected as cover for email thumbnail
+  const [personalizedMessage, setPersonalizedMessage] = useState("");
+  const [messageError, setMessageError] = useState(null);
+
   const fileInputRef = useRef(null);
   const folderInputRef = useRef(null);
   const cancelUploadRef = useRef(false); // Ref to track if upload has been cancelled while uploading
@@ -49,10 +56,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
       return true;
     });
 
-    const currentTotalSize = selectedFiles.reduce(
-      (sum, file) => sum + file.size,
-      0,
-    );
+    const currentTotalSize = selectedFiles.reduce((sum, file) => sum + file.size,0,);
     const newTotalSize = imageFiles.reduce((sum, file) => sum + file.size, 0);
 
     if (currentTotalSize + newTotalSize > MAX_TOTAL_SIZE) {
@@ -65,9 +69,8 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
     const MAX_PREVIEWS = 8; // Limit number of previews to prevent any performance issues. All files will still be uploaded, just without previews if over the limit.
     const filesToPreview = imageFiles.slice(0, MAX_PREVIEWS);
     const newPreviews = [];
-
     let loadedPreviews = 0;
-    // console.log(filesToPreview);
+
     filesToPreview.forEach((file) => {
       validFiles.push(file);
       const reader = new FileReader();
@@ -146,7 +149,6 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
           promises.push(traverseFileTree(item));
         }
       }
-
       Promise.all(promises).then(() => {
         if (files.length > 0) {
           handleFileSelect(files);
@@ -188,9 +190,32 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
 
   // Remove file from selection
   const removeFile = (index) => {
+    // if cover photo is being removed, clear the cover selection indicator
+    if (coverPhotoIndex === index) {
+      setCoverPhotoIndex(null);
+    } else if (coverPhotoIndex !== null && index < coverPhotoIndex){
+      setCoverPhotoIndex((prev) => prev -1); // adjust cover index if a file above it is removed to keep it aligned with the correct photo
+    }
     // removes the file and its corresponding preview at the same index from state so both arrays stay aligned and the UI updates immediately.
     setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
     setPreviews((prev) => prev.filter((_, i) => i !== index));
+  };
+  
+  // Toggle cover photo selection
+  const handleCoverSelect = (index) => {
+    setCoverPhotoIndex((prev) => (prev === index ? null : index));
+  };
+
+  // handle personalized message input with validation for 1000 character limit
+  const handlePersonalizedMessageChange = (e) => {
+    const messageVal = e.target.value;
+    if (messageVal.length > MAX_MESSAGE_LENGTH) {
+      setMessageError(`Personalized message cannot exceed ${MAX_MESSAGE_LENGTH} characters.`);
+      setPersonalizedMessage(messageVal.slice(0, MAX_MESSAGE_LENGTH));
+    } else {
+      setMessageError(null);
+      setPersonalizedMessage(messageVal);
+    }
   };
 
   // Format file size
@@ -209,6 +234,13 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
     iterates selected files uploading each to Supabase Storage with retry + cancellation checks, then updates the Gallery with notification details and finally 
     triggers the success callback + resets modal state (or sets an error on failure)
     */
+
+    // hard block if personalized message is over the limit, should never happen due to inline validation but added as extra safety check before starting upload process
+    if (personalizedMessage.length > MAX_MESSAGE_LENGTH) {
+      setMessageError(`Personalized message cannot exceed ${MAX_MESSAGE_LENGTH} characters.`);
+      return;
+    }
+
     setUploadStatus("uploading");
     cancelUploadRef.current = false; // Reset cancel flag at start of upload
 
@@ -254,13 +286,12 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
 
       // 3) Create or get the gallery for this session
       let galleryId;
-
       // Check if gallery already exists for this session
       const { data: existingGallery, error: galleryFetchError } = await supabase
         .from("Gallery")
         .select("id")
         .eq("session_id", session.id)
-        .single();
+        .maybeSingle();
 
       if (galleryFetchError && galleryFetchError.code !== "PGRST116") {
         // PGRST116 means no rows returned, which is fine
@@ -290,6 +321,8 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
       const uploadedPhotos = [];
       const failedPhotos = [];
       const totalFiles = selectedFiles.length;
+      let coverPhotoPath = null;  // track the storage path of the selected cover photo to save to the Gallery for email thumbnail (if admin selected one)
+      let coverPhotoUrl = null;   // track the public URL of the cover photo to include in the notification email (if selected)
 
       for (let i = 0; i < totalFiles; i++) {
         // cancel upload
@@ -331,6 +364,15 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
             // console.log(uploadData);
             if (!uploadError) {
               uploadSuccess = true;
+
+              // if this photo is the selected cover, save its path and signed URL for email. signedUrl expires after one year for the email.
+              if (i === coverPhotoIndex) {
+                coverPhotoPath = filePath;
+                const { data: signedData } = await supabase.storage
+                  .from("photos")
+                  .createSignedUrl(filePath, 60 * 60 * 24 *365);
+                coverPhotoUrl = signedData?.signedUrl ?? null;
+              }
 
               // get image dimension if possible
               let width = null;
@@ -392,7 +434,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
 
         
       }
-      // 5) Update gallery with notification info
+      // 5) Update gallery with notification info + cover phto + personalized message
         const { data: sessionData } = await supabase
           .from("Session")
           .select("User(email)")
@@ -404,7 +446,10 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
             .from("Gallery")
             .update({
               published_email: sessionData.User.email,
-              published_link: `${window.location.origin}/client/galleries/${galleryId}`,
+              published_link: `${window.location.origin}/dashboard`,
+              cover_photo_path: coverPhotoPath,
+              cover_photo_url: coverPhotoUrl,
+              personalized_message: personalizedMessage.trim() || null,
             })
             .eq("id", galleryId);
             
@@ -462,6 +507,10 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
     setError(null);
     setUploadProgress(0);
     setUploadStatus("idle");
+    // reset fields related to cover photo selection and personalized message
+    setCoverPhotoIndex(null);
+    setPersonalizedMessage("");
+    setMessageError(null);
     onClose();
   };
 
@@ -470,6 +519,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
   // Computes the combined size of all currently-selected files and the percentage of the 300MB cap so the UI can show the fill bar + warning threshold.
   const totalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0);
   const sizePercentage = (totalSize / MAX_TOTAL_SIZE) * 100;
+  const charsRemaining = MAX_MESSAGE_LENGTH - personalizedMessage.length; // for personalized message character count display
 
   return (
     <div className="modal-overlay" onClick={handleCloseModal}>
@@ -577,9 +627,16 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
                   Total: {formatFileSize(totalSize)}
                 </p>
               </div>
+              {/* Cover Photo Selection */}
+              {!uploading && (
+                <p className="cover-photo-hint">
+                  <Star size={13} style={{ display: "inline", marginRight: 4, verticalAlign: "middle" }} />
+                  Click the star on any image to set it as the email cover photo to the client. (optional).
+                </p>
+              )}
               <div className="preview-grid">
                 {previews.slice(0, 20).map((preview, index) => (
-                  <div key={index} className="preview-item">
+                  <div key={index} className={`preview-item ${coverPhotoIndex === index ? "preview-item--cover" : ""}`}>
                     <div className="preview-image-container">
                       {preview.preview ? (
                         <img
@@ -592,6 +649,17 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
                           <ImageIcon size={32} />
                         </div>
                       )}
+                      {/* Cover photo star button (top-left) */}
+                      {!uploading && (
+                        <button
+                          className={`preview-cover-btn ${coverPhotoIndex === index ? "preview-cover-btn--active" : ""}`}
+                          onClick={() => handleCoverSelect(index)}
+                          title={coverPhotoIndex === index ? "Remove cover photo" : "Set as cover photo"}
+                        >
+                          <Star size={15} />
+                        </button>
+                      )}
+                      {/* Delete photo button (top-right) */}
                       {!uploading && (
                         <button
                           className="preview-remove-btn"
@@ -602,6 +670,9 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
                       )}
                     </div>
                     <div className="preview-info">
+                      {coverPhotoIndex === index && (
+                        <span className="cover-badge">Cover Photo</span> 
+                      )}
                       <p className="preview-filename">{preview.name}</p>
                       <p className="preview-filesize">
                         {formatFileSize(preview.size)}
@@ -617,6 +688,34 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
               )}
             </div>
           )}
+
+          {/* Personalized Message Section */}
+          <div className="message-section">
+            <label className="message-label" htmlFor="personalizedMessage">
+              Personalized Message <span className="message-label-optional">(Optional)</span>
+            </label>
+            <p className="message-hint">
+              This message will be included in the gallery notification email sent to {session.clientName}.
+            </p>
+            <textarea id="personalizedMessage"
+            className={`message-textarea ${messageError ? "message-textarea--error" : ""}`}
+            value={personalizedMessage}
+            onChange={handlePersonalizedMessageChange}
+            disabled={uploading}
+            placeholder={`Add a personal note for ${session.clientName}...`}
+            rows={4}
+            />
+            <div className="message-footer">
+              {messageError ? (
+                <span className="message-error">{messageError}</span>
+              ) : (
+                <span /> // spacer to keep the layout consistent 
+              )}
+              <span className={`message-char-count ${charsRemaining <= 100 ? "message-char-count--warning" : ""} ${charsRemaining <= 0 ? "message-char-count--limit" : ""}`}>
+                {personalizedMessage.length} / {MAX_MESSAGE_LENGTH}
+                </span>
+            </div>
+          </div>
 
           {/* Upload Progress */}
           {uploadStatus === "uploading" && (
