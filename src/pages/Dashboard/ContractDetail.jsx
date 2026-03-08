@@ -8,7 +8,6 @@ export default function ContractDetail({ contract, contractTemplate, onSigned })
   const signedUrl = contract?.signed_pdf_url || null;
   
   if (!contractTemplate) return null;
-
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">{contractTemplate.name}</h1>
@@ -17,6 +16,7 @@ export default function ContractDetail({ contract, contractTemplate, onSigned })
       <div className="flex gap-2">
         {statusKey === "Draft" && !signedUrl ? (
           <button
+            type="button"
             onClick={() => setSigning(true)}
             className="px-3 py-2 rounded-md bg-neutral-900 text-white hover:bg-neutral-800 hover:cursor-pointer"
           >
