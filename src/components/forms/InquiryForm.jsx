@@ -4,6 +4,8 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "../../lib/supabaseClient";
+import { useAuth } from "../../context/AuthContext"
+import ContractDetail from "../../pages/Dashboard/ContractDetail";
 
 const isTodayOrFuture = (value) => {
   if (!value) return false;
@@ -13,7 +15,6 @@ const isTodayOrFuture = (value) => {
   t.setHours(0, 0, 0, 0);
   return d >= t;
 };
-
 
 const SESSION_TYPES = [
   {
@@ -56,8 +57,8 @@ const Schema = z.object({
     required_error: "Select a session type",
   }),
 
-  desiredDate: z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
-
+  date: z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
+  startTime: z.string(),
 
   location: z.string().optional(),
 
@@ -66,7 +67,65 @@ const Schema = z.object({
 
 export default function InquiryForm() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [emailLocked, setEmailLocked] = useState(false);
+
+  const [contractTemplates, setContractTemplates] = useState();
+  const [contract, setContract] = useState();
+  const [submitLock, setSubmitLock] = useState(true);
+
+  const [loading, setLoading] = useState(true);
+
+  // load all contract templates once
+  useEffect(() => {
+    const loadContracts = async () => {
+      const response = await fetch("http://localhost:5001/api/contract/templates", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+      const data = await response.json();
+      await data.forEach((template) => {
+        setContractTemplates(prev => ({ ...prev, [`${template.id}`]: { "body": template.body, "name": template.name } }));
+      });
+    };
+
+    loadContracts();
+  }, []);
+
+  useEffect(() => {
+    const getDefaultContract = async () => {
+      if (!user) return;
+
+      const response = await fetch("http://localhost:5001/api/contract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: user.id
+        })
+      });
+
+      const data = await response.json();
+      setContract(data);
+      setLoading(false);
+    };
+
+    getDefaultContract();
+  }, [user]);
+
+  const updateContractTemplate = async (templateId) => {
+    try {
+      const response = await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ "template_id": templateId }),
+      });
+
+      if (response.ok)
+        setContract({ ...contract, template_id: templateId })
+    } catch (error) {
+      console.error("Failed to update contract:", error);
+    }
+  };
 
   const minDate = useMemo(() => new Date().toISOString().split("T")[0], []);
 
@@ -80,7 +139,7 @@ export default function InquiryForm() {
     formState: { errors, isSubmitting },
   } = useForm({
     resolver: zodResolver(Schema),
-    mode: "onChange",
+    mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: {
       firstName: "",
@@ -88,7 +147,8 @@ export default function InquiryForm() {
       email: "",
       phone: "",
       sessionType: "",
-      desiredDate: "",
+      date: "",
+      startTime: "",
       location: "",
       message: "",
     },
@@ -99,10 +159,6 @@ export default function InquiryForm() {
   // Prefill email + first/last name when logged in
   useEffect(() => {
     const prefillFromAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
       if (!user) return;
 
       if (user.email) {
@@ -124,13 +180,14 @@ export default function InquiryForm() {
     };
 
     prefillFromAuth();
-  }, [setValue, getValues, trigger]);
+  }, [user, setValue, getValues, trigger]);
 
   const onSubmit = async (formData) => {
+    if (submitLock) return;
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
 
-      // 1) Upsert client by email (creates if new)
+      {/*// 1) Upsert client by email (creates if new)
       const { data: client, error: clientErr } = await supabase
         .from("clients")
         .upsert(
@@ -140,29 +197,79 @@ export default function InquiryForm() {
         .select("id, full_name, email")
         .single();
 
-      if (clientErr) throw clientErr;
+      if (clientErr) throw clientErr;*/}
 
-      // 2) Insert inquiry
-      const { error: inqErr } = await supabase.from("inquiries").insert([
-        {
-          client_id: client.id,
-          session_type: formData.sessionType,
-          desired_date: formData.desiredDate,
-          location: formData.location || null,
-          message: formData.message || null,
-          status: "pending",
-        },
-      ]);
+      // 2) Insert Session
+      const now = new Date().toISOString();
+      const { data: sessionData, error: sessionError } = await supabase.from("Session")
+        .insert(
+          {
+            client_id: user.id,
+            //session_type: formData.sessionType,
+            start_at: new Date(`${formData.date}T${formData.startTime}`).toISOString(),
+            end_at: new Date(`${formData.date}T${formData.startTime}`).toISOString(),
+            location_text: formData.location || null,
+            notes: formData.message || null,
+            status: "Pending",
+            created_at: now,
+            updated_at: now
+          })
+        .select()
+        .single();
 
-      if (inqErr) throw inqErr;
+      if (sessionError) throw sessionError;
 
-      navigate("/inquiry/success", {
+      const { id: sessionId } = sessionData;
+      console.log(sessionData);
+      console.log(sessionId);
+      // instantiate request body
+      const currLoc = window.location.href;
+
+      // create and retrieve checkout session information based on body
+      const response = await fetch("http://localhost:5001/api/payment/deposit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionId,
+          from_url: currLoc,
+          apply_tax: true,
+          tax_rate: 15
+        })
+      });
+
+      const checkoutSession = await response.json();
+
+      if (response.ok) {
+        // upsert deposit_cs_id into db and 
+        await supabase
+          .from("Session")
+          .upsert({ id: sessionId, deposit_cs_id: checkoutSession.id });
+
+        // update is_active and session_id in db 
+        await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ "session_id": sessionId, "is_active": true }),
+        });
+
+        // redirect to Stripe
+        window.location.href = checkoutSession.url;
+      } else {
+        await supabase
+          .from("Session")
+          .delete()
+          .eq("id", sessionId);
+        alert("Stripe connection failed.");
+      }
+
+      navigate("/dashboard/inquiry/success", {
         replace: true,
         state: {
           fullName,
           email: formData.email,
           sessionType: formData.sessionType,
-          desiredDate: formData.desiredDate,
+          dateTime: `${formData.date} ${formData.startTime}`,
+          startTime: formData.startTime,
           location: formData.location || "",
         },
       });
@@ -177,6 +284,14 @@ export default function InquiryForm() {
     "focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]";
 
   const labelCaps = "text-[11px] tracking-[0.2em] text-[#7E4C3C]";
+
+  if (loading) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-12 text-center font-serif text-brown">
+        Loading details...
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
@@ -215,9 +330,8 @@ export default function InquiryForm() {
             placeholder="jane@example.com"
             readOnly={emailLocked}
             aria-readonly={emailLocked}
-            className={`${inputBase} ${
-              errors.email ? "border-red-500" : "border-black/10"
-            } ${emailLocked ? "bg-neutral-100 text-neutral-600 cursor-not-allowed" : ""}`}
+            className={`${inputBase} ${errors.email ? "border-red-500" : "border-black/10"
+              } ${emailLocked ? "bg-neutral-100 text-neutral-600 cursor-not-allowed" : ""}`}
             aria-invalid={!!errors.email}
           />
           <p className="mt-1 text-[11px] text-neutral-500">
@@ -259,7 +373,6 @@ export default function InquiryForm() {
                 />
 
                 <div className="h-28 w-full bg-neutral-100 overflow-hidden">
-                  {}
                   <img
                     src={s.img}
                     alt={s.label}
@@ -273,9 +386,8 @@ export default function InquiryForm() {
 
                 <div className="flex items-center gap-3 px-4 py-3">
                   <span
-                    className={`h-4 w-4 rounded-full border flex items-center justify-center ${
-                      active ? "border-[#7E4C3C]" : "border-black/30"
-                    }`}
+                    className={`h-4 w-4 rounded-full border flex items-center justify-center ${active ? "border-[#7E4C3C]" : "border-black/30"
+                      }`}
                   >
                     {active && <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />}
                   </span>
@@ -294,17 +406,25 @@ export default function InquiryForm() {
       {/* DATE + LOCATION */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <p className={labelCaps}>PREFERRED DATE</p>
+          <p className={labelCaps}>DATE</p>
           <input
             type="date"
             min={minDate}
-            {...register("desiredDate")}
-            className={`${inputBase} ${errors.desiredDate ? "border-red-500" : "border-black/10"}`}
-            aria-invalid={!!errors.desiredDate}
+            {...register("date")}
+            className={`${inputBase} ${errors.date ? "border-red-500" : "border-black/10"}`}
+            aria-invalid={!!errors.date}
           />
-          {errors.desiredDate && (
-            <p className="mt-1 text-sm text-red-600">{errors.desiredDate.message}</p>
+          {errors.date && (
+            <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
           )}
+
+          <div className="animate-in fade-in duration-500">
+            <input
+              type="time"
+              {...register("startTime")}
+              className={`${inputBase}`}
+            />
+          </div>
         </div>
 
         <div>
@@ -324,7 +444,7 @@ export default function InquiryForm() {
       </div>
 
       {/* MESSAGE + CTA SIDE-BY-SIDE */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-1 gap-6 items-start">
         <div>
           <textarea
             rows={5}
@@ -339,15 +459,51 @@ export default function InquiryForm() {
           </p>
           {errors.message && <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>}
         </div>
-
+        <div className="grid grid-cols-1 gap-6">
+          <div className="text-xl flex flex-row font-serif text-brown border-b border-[#E7DFCF] pb-2">
+            <h2 className="flex w-full">Contract</h2>
+            <select
+              value={contract?.template_id || ""}
+              onChange={(e) => { updateContractTemplate(e.target.value) }}
+              className={`px-2 py-1 rounded-md text-sm font-semibold border}`}
+              disabled={contract?.status === "Signed"}
+            >
+              <option
+                disabled
+                value="">Select
+              </option>
+              {
+                Object.keys(contractTemplates)
+                  .map((key) => {
+                    return (
+                      <option
+                        key={key}
+                        value={key}>{contractTemplates[key].name}
+                      </option>
+                    )
+                  })
+              }
+            </select>
+          </div>
+          <ContractDetail
+            contract={contract}
+            contractTemplate={contractTemplates[contract?.template_id] || null}
+            onSigned={(contract) => {
+              setContract(contract);
+              setSubmitLock(false);
+            }}
+          />
+        </div>
+      </div>
+      <div className="space-y-6">
         <div className="rounded-xl border border-black/10 bg-white/60 p-5 shadow-sm">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || submitLock}
             className="w-full h-12 rounded-md bg-brown hover:bg-[#AB8C4B] text-white border border-black transition font-serif
                        disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "Submitting..." : "Request My Session"}
+            {isSubmitting ? "Submitting..." : "Submit My Inquiry"}
           </button>
 
           <div className="mt-4 flex items-center gap-3 text-sm text-neutral-700">
