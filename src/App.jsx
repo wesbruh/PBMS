@@ -1,7 +1,8 @@
 import { BrowserRouter, Routes, Route, Outlet } from 'react-router-dom';
 import Navbar from './components/Navbar/Navbar.jsx';
 import Footer from './components/Footer/Footer.jsx';
-
+import SignUpSuccess from './pages/SignUp/SignUpSuccess.jsx';
+import InquirySuccess from "./pages/Inquiry/InquirySuccess.jsx";
 import Home from './pages/Home/home';
 import About from './pages/About/about';
 import Portfolio from "./pages/Portfolio/portfolio.jsx";
@@ -60,8 +61,10 @@ function AppContent() {
             <Route path="/testimonials" element={<Testimonials />} />
             <Route path="/portfolio" element={<Portfolio />} />
             <Route path="/signup" element={<SignUp />} />
+            <Route path="/signup/success" element={<SignUpSuccess />} />
             <Route path="/login" element={<Login />} />
             <Route path="/inquiry" element={<InquiryPage />} />
+            <Route path="/inquiry/success" element={<InquirySuccess />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
 
             {/* Services */}

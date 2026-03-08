@@ -1,136 +1,30 @@
-import React, { useState } from "react";
-import AddressAutoComplete from "../../components/AddressAutoComplete/AddressAutoComplete";
-import TimeSlotGrid from "../../components/TimeSlotGrid/TimeSlotGrid.jsx";
 
-export default function SessionPage() {
-  const [session, setSession] = useState({
-    date: "",
-    startTime: "",
-    endTime: "",
-    location_text: "", 
-    address: { street1: "", street2: "", city: "", state: "", zip: "" },
-    isLocked: true 
-  });
+import InquiryForm from "../../components/forms/InquiryForm";
+import GoToTop from "../../GoToTop";
 
-  const handleAddressChange = (newAddr) => {
-    setSession(prev => ({ 
-      ...prev, 
-      address: newAddr,
-      location_text: `${newAddr.street1}${newAddr.street2 ? ' ' + newAddr.street2 : ''}, ${newAddr.city}, ${newAddr.state} ${newAddr.zip}`
-    }));
-  };
-
-  const handleUnlock = (verifiedAddr) => {
-    if (verifiedAddr.street1 && verifiedAddr.city && verifiedAddr.state) {
-      setSession(prev => ({ ...prev, isLocked: false }));
-    } else {
-      if (session.address.street1 && session.address.city && session.address.state) {
-        setSession(prev => ({ ...prev, isLocked: false }));
-      } else {
-        alert("Please provide a full address (Street, City, and State) to continue.");
-      }
-    }
-  };
-
-  const handleBookingRequest = async () => {
-    try {
-      const response = await fetch("http://localhost:5001/api/sessions/book", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: session.date,
-          start_time: session.startTime,
-          end_time: session.endTime,
-          location_text: session.location_text,
-        }),
-      });
-
-      if (response.ok) {
-        alert("Success! Your session booking request has been confirmed.");
-        // Reset form
-        setSession({
-          date: "",
-          startTime: "",
-          endTime: "",
-          location_text: "",
-          address: { street1: "", street2: "", city: "", state: "", zip: "" },
-          isLocked: true
-        });
-      } else {
-        const errorData = await response.json();
-        alert(errorData.error || "Booking failed.");
-      }
-    } catch (err) {
-      console.error("Booking Error:", err);
-      alert("Server connection failed.");
-    }
-  };
-
+export default function InquiryPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-12">
-      <div className="bg-white rounded-lg shadow-xl border border-[#E7DFCF] overflow-hidden">
-        
-        <div className="bg-brown p-10 text-center border-b border-[#6A4C2C]">
-          <h1 className="text-3xl font-serif text-white tracking-widest uppercase">Book Your Session</h1>
-          <p className="text-[#FDFCF9] opacity-90 mt-2 font-medium italic">Professional Photography Venue & Timing</p>
-        </div>
+    <div className="min-h-[calc(100vh-80px)] bg-[#FFFDF4]">
+      <div className="mx-4 md:mx-6 lg:mx-10 py-10 md:py-14 flex justify-center">
+        <section className="w-full max-w-3xl">
+          <div className="text-center mb-8 md:mb-10">
+            <h1 className="text-3xl md:text-5xl font-serif font-extralight tracking-wide">
+              BOOK A SESSION
+            </h1>
+            <p className="mt-3 text-sm md:text-base text-neutral-600 max-w-xl mx-auto">
+              Share a few details below and I’ll follow up with availability within 24 hours.
+            </p>
+          </div>
 
-        <div className="p-8 space-y-12 bg-[#FDFCF9]">
-          
-          <section className="space-y-6">
-            <h2 className="text-xl font-serif text-brown border-b border-[#E7DFCF] pb-2">1. Venue Location</h2>
-            <AddressAutoComplete 
-              addressData={session.address} 
-              onChange={handleAddressChange} 
-              onResolved={handleUnlock}
-            />
-            
-            {session.isLocked && (
-              <div className="flex justify-center pt-4">
-                <button 
-                  onClick={() => handleUnlock(session.address)}
-                  className="bg-brown text-white px-10 py-3 rounded shadow hover:opacity-90 transition-all font-bold uppercase text-sm tracking-widest"
-                >
-                  Confirm Location
-                </button>
-              </div>
-            )}
-          </section>
+          <GoToTop />
 
-          <section className={`space-y-8 transition-all duration-700 ${session.isLocked ? "opacity-20 blur-md pointer-events-none" : "opacity-100 blur-0"}`}>
-            <h2 className="text-xl font-serif text-brown border-b border-[#E7DFCF] pb-2">2. Pick a Date & Time</h2>
-            <div className="max-w-xs">
-              <label className="text-xs font-bold text-neutral-500 mb-1 block uppercase tracking-widest">Session Date</label>
-              <input 
-                type="date" 
-                className="w-full rounded border border-neutral-300 px-4 py-3 bg-white outline-none focus:border-brown shadow-sm"
-                value={session.date}
-                onChange={(e) => setSession({...session, date: e.target.value})}
-              />
-            </div>
+          <div className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl shadow-sm px-5 md:px-8 py-8">
+            <InquiryForm />
+          </div>
 
-            {session.date && (
-              <div className="animate-in fade-in duration-500">
-                <TimeSlotGrid 
-                  startTime={session.startTime} 
-                  endTime={session.endTime} 
-                  onSelectRange={(start, end) => setSession({...session, startTime: start, endTime: end})} 
-                />
-              </div>
-            )}
-          </section>
-
-          {!session.isLocked && session.startTime && session.endTime && (
-            <div className="pt-10 border-t border-[#E7DFCF] text-center">
-              <button 
-                onClick={handleBookingRequest}
-                className="bg-brown text-white px-16 py-4 rounded font-bold text-lg hover:scale-105 transition-transform shadow-lg shadow-brown/30"
-              >
-                Send Booking Request
-              </button>
-            </div>
-          )}
-        </div>
+          <div className="mt-8 text-center">
+          </div>
+        </section>
       </div>
     </div>
   );
