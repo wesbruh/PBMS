@@ -131,7 +131,7 @@ function Services() {
            </Link>
 
 
-           <Link to="/services/labor-delivery" className="block border border-white/30 rounded-3xl overflow-hidden hover:shadow-lg transition">
+           <Link to="/services/labor-and-delivery" className="block border border-white/30">
              <img src="/images/temp_s.jpg" className="object-cover h-56 w-full" />
              <div className="p-6">
                <h4 className="font-serif text-2xl">Labor & Delivery</h4>
