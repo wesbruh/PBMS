@@ -31,7 +31,6 @@ function Navbar() {
   const [adminRoleId, setAdminId] = useState(null);
   const [userRoleId, setUserId] = useState(null);
 
-
   const handleLogout = async () => {
     if (user?.id) {
       const { error } = await supabase
@@ -62,22 +61,20 @@ function Navbar() {
   const mobileLinkStyles = "block py-3 px-4 hover:bg-[#AB8C4B] hover:text-white transition-colors rounded";
 
   useEffect(() => {
-      const loadAdminRole = async () => {
+    const loadRoles = async () => {
+      if (!adminRoleId) {
         const id = await GetId("Admin");
         setAdminId(id);
-      };
-  
-      loadAdminRole();
-  }, []);
+      }
 
-  useEffect(() => {
-      const loadAdminRole = async () => {
-        const id = await GetId("Admin");
-        setAdminId(id);
-      };
-  
-      loadAdminRole();
-  }, []);
+      if (!userRoleId) {
+        const id = await GetId("User");
+        setUserId(id);
+      }
+    };
+
+    loadRoles();
+  }, [adminRoleId, userRoleId]);
 
   return (
     // each link uses the styles according to user indicating hover over a tab and what the active page, navbar is trasnparent on homepage only
@@ -112,8 +109,8 @@ function Navbar() {
           </li>
         </ul>
 
-       </div>
-       <Link to="/inquiry"  className={`${linkStyles} ${isActive('/inquiry') ? activeLinkStyles : ''}`}>Book with me</Link>
+      </div>
+       <Link to={user && roleId === userRoleId ? "/dashboard/inquiry" : "/inquiry" }  className={`${linkStyles} ${isActive('/inquiry') || isActive('/dashboard/inquiry') ? activeLinkStyles : ''}`}>Book with me</Link>
       </div>
 
       {/* Login/Create Account buttons */}
@@ -211,7 +208,7 @@ function Navbar() {
             )}
           </div>
 
-          <Link to="/inquiry" onClick={() => setIsMenuOpen(false)} className={`${mobileLinkStyles} ${isActive('/inquiry') ? 'bg-[#7E4C3C] text-white' : ''}`}>Book with me</Link>
+          <Link to={user && roleId === userRoleId ? "/dashboard/inquiry" : "/inquiry"} onClick={() => setIsMenuOpen(false)} className={`${mobileLinkStyles} ${(isActive('/inquiry') || isActive('/dashboard/inquiry')) ? 'bg-[#7E4C3C] text-white' : ''}`}>Book with me</Link>
 
           {/* Mobile Authentication buttons */}
           <div className="mt-8 space-y-3 px-4">

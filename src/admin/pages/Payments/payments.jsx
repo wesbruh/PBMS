@@ -10,17 +10,17 @@ function AdminPayments() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
-  
 
-  useEffect(() => { fetchPayment();}, []);
 
-  const fetchPayment = async () => {
-  try {
-    setLoading(true);
+  useEffect(() => { fetchInvoices(); }, []);
 
-    const { data, error } = await supabase
-  .from("Payment")
-  .select(`
+  const fetchInvoices = async () => {
+    try {
+      setLoading(true);
+
+      const { data, error } = await supabase
+        .from("Invoice")
+        .select(`
     id,
     amount,
     currency,
@@ -38,70 +38,110 @@ function AdminPayments() {
       )
     )
   `)
-  .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    setInvoices(data || []);
-  } catch (error) {
-    console.error("Error fetching payments:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+      setInvoices(data || []);
+    } catch (error) {
+      console.error("Error fetching invoices:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleGenerateReceipt = (invoiceId) => {
-      window.open(`http://localhost:5001/api/receipts/${invoiceId}`, "_blank");
-    };
+  const handleGenerateInvoice = async (sessionId) => {
+    console.log("Generate invoice for session:", sessionId);
+  };
 
   const today = new Date();
 
   const filteredInvoices = invoices.filter((invoice) => {
-    if(activeTab === "All") return true;
+    if (activeTab === "All") return true;
 
-    if(activeTab == "Paid") {
+    if (activeTab == "Paid") {
       return invoice.status === "Paid";
     }
-    
-    if (activeTab === "Pending") {
-    return invoice.status === "Pending";
-  }
 
-  return true;
-});
+    if (activeTab === "Pending") {
+      return invoice.status === "Pending";
+    }
+
+    if (activeTab === "Overdue") {
+      return (
+        invoice.status !== "Paid" &&
+        invoice.due_date &&
+        new Date(invoice.due_date) < today
+      );
+    }
+
+    return true;
+  });
 
   const tablePaymentColumns = [
-    { key: 'client', label: 'Client', sortable: true, render: (_, row) =>
-        `${row.Invoice?.Session?.User?.first_name || ""} ${row.Invoice?.Session?.User?.last_name || ""}`
+    {
+      key: 'client', label: 'Client', sortable: true, render: (_, row) =>
+        `${row.Session?.User?.first_name || ""} ${row.Session?.User?.last_name || ""}`
     },
-    { key: 'invoice_number', label: 'Invoice #', render: (_, row) => row.Invoice?.invoice_number || "-", },
-    { key: 'paid_at', label: 'Paid Date', render: (value, row) => 
-      row.status === "Paid" && value ? new Date(value).toLocaleDateString() : "-" },
-    { key: 'amount', label: 'Amount', render: (value, row) => `${row.currency || "USD"} $${value}`,},
-    { key: "provider", label: "Provider",},
-    { key: "status", label: "Status", render: (value) => value == "Paid" ? (
-      <span className="inline-flex items-center px-3 py-1 rounded-md text-xs font-semibold bg-green-100 text-green-800">
-        Paid
-      </span>
-    ) : (
-      <span className="inline-flex items-center px-3 py-1 rounded-md text-sm font-semibold bg-yellow-100 text-yellow-800">
-        {value}
-      </span>
-    ),
-  },
-    
-     {/*Generate Receipt Button*/
+    { key: 'invoice_number', label: 'Invoice #', sortable: true },
+    { key: 'issue_date', label: 'Issue Date', sortable: true, render: (value) => new Date(value).toLocaleDateString() },
+    { key: 'total', label: 'Total', sortable: true, render: (value) => `$${value}` },
+
+    {
+      key: "status",
+      label: "Status",
+      sortable: true,
+      render: (value, row) => {
+        const isOverdue =
+          value !== "Paid" &&
+          row.due_date &&
+          new Date(row.due_date) < new Date();
+
+        if (isOverdue) {
+          return (
+            <span className="px-3 py-1 rounded-md text-sm font-medium bg-red-100 text-red-800">
+              Overdue
+            </span>
+          );
+        }
+
+        if (value === "Paid") {
+          return (
+            <span className="px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800">
+              Paid
+            </span>
+          );
+        }
+
+        if (value === "Pending") {
+          return (
+            <span className="px-3 py-1 rounded-md text-sm font-medium bg-yellow-100 text-yellow-800">
+              Pending
+            </span>
+          );
+        }
+
+        return (
+          <span className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-gray-800">
+            {value || "—"}
+          </span>
+        );
+      },
+    },
+
+
+    {/*Generate Invoice Button*/
       key: "actions",
       label: "Action",
       render: (_, row) => {
-        if(row.status !== "Paid") return null;
+        if (row.status != "Paid") return null;
 
-        return(
+        return (
           <button
-            onClick={() => handleGenerateReceipt(row.id)}
-          className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
+            onClick={() => handleGenerateInvoice(row.id)}
+            className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
           >
-          Generate Receipt
+            Generate Invoice
           </button>
         );
       }
@@ -137,22 +177,22 @@ function AdminPayments() {
 
             {/*Table*/}
 
-          {loading ? (
-            <div className="py-10 text-center text-gray-500">
-              Loading invoices...
-            </div>
-          ) : (
+            {loading ? (
+              <div className="py-10 text-center text-gray-500">
+                Loading invoices...
+              </div>
+            ) : (
 
-          <Table
-            columns={tablePaymentColumns}
-            data={filteredInvoices}
-            searchable={true}
-            searchPlaceholder='Search Payments by Client Name...'
-            rowsPerPage={5}
-         />
-          )}
-        </div>
-      </Frame>
+              <Table
+                columns={tablePaymentColumns}
+                data={filteredInvoices}
+                searchable={true}
+                searchPlaceholder='Search Payments by Client Name...'
+                rowsPerPage={8}
+              />
+            )}
+          </div>
+        </Frame>
       </div>
     </div>
   );

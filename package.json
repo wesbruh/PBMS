@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
+    "@stripe/react-stripe-js": "^5.6.0",
+    "@stripe/stripe-js": "^8.8.0",
     "@supabase/supabase-js": "^2.78.0",
     "@tailwindcss/vite": "^4.1.16",
     "axios": "^1.13.5",
@@ -31,6 +33,7 @@
     "react-hook-form": "^7.66.0",
     "react-router-dom": "^7.9.4",
     "react-signature-canvas": "^1.1.0-alpha.2",
+    "stripe": "^20.4.0",
     "tailwindcss": "^4.1.16",
     "zod": "^4.3.6"
   },
