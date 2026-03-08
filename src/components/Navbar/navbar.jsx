@@ -59,9 +59,8 @@ function Navbar() {
   const isHomePage = location.pathname === "/";
 
   // shared styles for navbar links, sweeping underline when hovered with alternate color. Static underline with bg-brown
-  const linkStyles = `tracking-wide relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#AB8C4B] hover:after:w-full after:transition-all after:duration-500 after:ease-in' ${
-    isHomePage ? "text-white" : "text-black"
-  }`;
+  const linkStyles = `tracking-wide relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#AB8C4B] hover:after:w-full after:transition-all after:duration-500 after:ease-in' ${isHomePage ? "text-white" : "text-black"
+    }`;
   const activeLinkStyles = "after:!w-full after:bg-brown after:h-[2px]";
 
   // for mobile view links
@@ -69,29 +68,26 @@ function Navbar() {
     "block py-3 px-4 hover:bg-[#AB8C4B] hover:text-white transition-colors rounded";
 
   useEffect(() => {
-    const loadRoles = async () => {
-      if (!adminRoleId) {
-        const id = await GetId("Admin");
-        setAdminId(id);
-      }
-
-      if (!userRoleId) {
-        const id = await GetId("User");
-        setUserId(id);
-      }
+    const loadAdminRole = async () => {
+      const id = await GetId("Admin");
+      setAdminId(id);
+    };
+    const loadUserRole = async () => {
+      const id = await GetId("User");
+      setUserId(id);
     };
 
-    loadRoles();
-  }, [adminRoleId, userRoleId]);
+    loadAdminRole();
+    loadUserRole();
+  }, [user]);
 
   return (
     // each link uses the styles according to user indicating hover over a tab and what the active page, navbar is trasnparent on homepage only
     <nav
-      className={`w-full flex items-center justify-between p-3  ${
-        isHomePage
-          ? "bg-transparent absolute top-0 left-0 z-20"
-          : "bg-[#FFFDF4]"
-      }`}
+      className={`w-full flex items-center justify-between p-3  ${isHomePage
+        ? "bg-transparent absolute top-0 left-0 z-20"
+        : "bg-[#FFFDF4]"
+        }`}
     >
       {/* logo and brand name on left side of Navbar, adjusted size */}
       <div className="flex items-center gap-3">
@@ -101,9 +97,8 @@ function Navbar() {
           className="h-12 w-12 md:h-25 md:w-25"
         />
         <h1
-          className={`${
-            isHomePage ? "text-white" : "text-[#7E4C3C]"
-          } font-serif text-2xl flex-grid`}
+          className={`${isHomePage ? "text-white" : "text-[#7E4C3C]"
+            } font-serif text-2xl flex-grid`}
         >
           YOUR ROOTS PHOTOGRAPHY
         </h1>
@@ -111,34 +106,8 @@ function Navbar() {
 
       {/* Navbar tabs and buttons on right side of Navbar. Specifically designed to have gaps between tabs and not large gaps between the buttons
       Adjusted to hidden desktop navbar when viewing from mobile. Moved special services to be next to regular services in desktop nav */}
-      <div className='hidden lg:flex font-serif text-sm items-center ml-auto'>
-        <div className='flex items-center gap-6'>
-      <Link to="/" className={`${linkStyles} ${isActive('/') ? activeLinkStyles : ''}`}>Home</Link> 
-      <Link to="/about" className={`${linkStyles} ${isActive('/about') ? activeLinkStyles : ''}`}>About</Link> 
-      <Link to="/testimonials" className={`${linkStyles} ${isActive('/testimonials') ? activeLinkStyles : ''}`}>Testimonials</Link>
-      <Link to="/portfolio" className={`${linkStyles} ${isActive('/portfolio') ? activeLinkStyles : ''}`}>Portfolio</Link>
-      <Link to="/services" className={`${linkStyles} ${isActive('/services') ? activeLinkStyles : ''}`}>Services</Link>
-      
-      {/* Special Services Dropdown Menu */}
-      <div className="inline-block relative group">
-        <button className={`${linkStyles} ${isSpecialServicesActive ? activeLinkStyles : ''}`}>Special Services</button>
-        <ul className ='absolute top-full mt-2 bg-white shadow-xl rounded-md py-2 z-10 max-h-0 opacity-0 overflow-hidden 
-        group-hover:max-h-40 group-hover:opacity-100  transition-all duration-800 ease-out'>
-          <li className='px-3 py-1'>
-          <Link to="/services/weddings" className={`${linkStyles} text-black! ${isActive('/services/weddings') ? activeLinkStyles : ''}`}>Weddings</Link>
-          </li>
-          <li className='whitespace-nowrap px-3 py-4'>
-          <Link to="/services/labor-and-delivery" className={`${linkStyles} text-black! ${isActive('/services/labor-and-delivery') ? activeLinkStyles : ''}`}>Labor & Delivery</Link>
-          </li>
-        </ul>
-
-      </div>
-       <Link to={user && roleId === userRoleId ? "/dashboard/inquiry" : "/inquiry" }  className={`${linkStyles} ${isActive('/inquiry') || isActive('/dashboard/inquiry') ? activeLinkStyles : ''}`}>Book with me</Link>
-      </div>
-
-      {/* Login/Create Account buttons */}
-      {user ? (
-        <>
+      <div className="hidden lg:flex font-serif text-sm items-center ml-auto">
+        <div className="flex items-center gap-6">
           <Link
             to="/"
             className={`${linkStyles} ${isActive("/") ? activeLinkStyles : ""}`}
@@ -147,33 +116,29 @@ function Navbar() {
           </Link>
           <Link
             to="/about"
-            className={`${linkStyles} ${
-              isActive("/about") ? activeLinkStyles : ""
-            }`}
+            className={`${linkStyles} ${isActive("/about") ? activeLinkStyles : ""
+              }`}
           >
             About
           </Link>
           <Link
             to="/testimonials"
-            className={`${linkStyles} ${
-              isActive("/testimonials") ? activeLinkStyles : ""
-            }`}
+            className={`${linkStyles} ${isActive("/testimonials") ? activeLinkStyles : ""
+              }`}
           >
             Testimonials
           </Link>
           <Link
             to="/portfolio"
-            className={`${linkStyles} ${
-              isActive("/portfolio") ? activeLinkStyles : ""
-            }`}
+            className={`${linkStyles} ${isActive("/portfolio") ? activeLinkStyles : ""
+              }`}
           >
             Portfolio
           </Link>
           <Link
             to="/services"
-            className={`${linkStyles} ${
-              isActive("/services") ? activeLinkStyles : ""
-            }`}
+            className={`${linkStyles} ${isActive("/services") ? activeLinkStyles : ""
+              }`}
           >
             Services
           </Link>
@@ -181,9 +146,8 @@ function Navbar() {
           {/* Special Services Dropdown Menu */}
           <div className="inline-block relative group">
             <button
-              className={`${linkStyles} ${
-                isSpecialServicesActive ? activeLinkStyles : ""
-              }`}
+              className={`${linkStyles} ${isSpecialServicesActive ? activeLinkStyles : ""
+                }`}
             >
               Special Services
             </button>
@@ -194,9 +158,8 @@ function Navbar() {
               <li className="px-3 py-1">
                 <Link
                   to="/services/weddings"
-                  className={`${linkStyles} text-black! ${
-                    isActive("/services/weddings") ? activeLinkStyles : ""
-                  }`}
+                  className={`${linkStyles} text-black! ${isActive("/services/weddings") ? activeLinkStyles : ""
+                    }`}
                 >
                   Weddings
                 </Link>
@@ -204,11 +167,10 @@ function Navbar() {
               <li className="whitespace-nowrap px-3 py-4">
                 <Link
                   to="/services/labor-and-delivery"
-                  className={`${linkStyles} text-black! ${
-                    isActive("/services/labor-and-delivery")
-                      ? activeLinkStyles
-                      : ""
-                  }`}
+                  className={`${linkStyles} text-black! ${isActive("/services/labor-and-delivery")
+                    ? activeLinkStyles
+                    : ""
+                    }`}
                 >
                   Labor & Delivery
                 </Link>
@@ -216,7 +178,12 @@ function Navbar() {
             </ul>
           </div>
 
-          {/* REMOVED: Desktop "Book with me" nav link */}
+          {/* Updated: Desktop "Book with me" nav link */}
+          {
+            user && roleId === userRoleId ?
+              (<Link to="/dashboard/inquiry" className={`${linkStyles} ${isActive('/dashboard/inquiry') ? activeLinkStyles : ''}`}>Book with me</Link>) :
+              (<></>)
+          }
         </div>
 
         {/* Login/Buttons */}
@@ -284,9 +251,8 @@ function Navbar() {
 
       {/* Mobile Sidebar menu */}
       <div
-        className={`lg:hidden fixed top-0 right-0 h-full w-80 bg-[#FFFDF4] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${
-          isMenuOpen ? "translate-x-0" : "translate-x-full"
-        } overflow-y-auto`}
+        className={`lg:hidden fixed top-0 right-0 h-full w-80 bg-[#FFFDF4] shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isMenuOpen ? "translate-x-0" : "translate-x-full"
+          } overflow-y-auto`}
       >
         {/* Close button */}
         <button
@@ -314,45 +280,40 @@ function Navbar() {
           <Link
             to="/"
             onClick={() => setIsMenuOpen(false)}
-            className={`${mobileLinkStyles} ${
-              isActive("/") ? "bg-[#7E4C3C] text-white" : ""
-            }`}
+            className={`${mobileLinkStyles} ${isActive("/") ? "bg-[#7E4C3C] text-white" : ""
+              }`}
           >
             Home
           </Link>
           <Link
             to="/about"
             onClick={() => setIsMenuOpen(false)}
-            className={`${mobileLinkStyles} ${
-              isActive("/about") ? "bg-[#7E4C3C] text-white" : ""
-            }`}
+            className={`${mobileLinkStyles} ${isActive("/about") ? "bg-[#7E4C3C] text-white" : ""
+              }`}
           >
             About
           </Link>
           <Link
             to="/testimonials"
             onClick={() => setIsMenuOpen(false)}
-            className={`${mobileLinkStyles} ${
-              isActive("/testimonials") ? "bg-[#7E4C3C] text-white" : ""
-            }`}
+            className={`${mobileLinkStyles} ${isActive("/testimonials") ? "bg-[#7E4C3C] text-white" : ""
+              }`}
           >
             Testimonials
           </Link>
           <Link
             to="/portfolio"
             onClick={() => setIsMenuOpen(false)}
-            className={`${mobileLinkStyles} ${
-              isActive("/portfolio") ? "bg-[#7E4C3C] text-white" : ""
-            }`}
+            className={`${mobileLinkStyles} ${isActive("/portfolio") ? "bg-[#7E4C3C] text-white" : ""
+              }`}
           >
             Portfolio
           </Link>
           <Link
             to="/services"
             onClick={() => setIsMenuOpen(false)}
-            className={`${mobileLinkStyles} ${
-              isActive("/services") ? "bg-[#7E4C3C] text-white" : ""
-            }`}
+            className={`${mobileLinkStyles} ${isActive("/services") ? "bg-[#7E4C3C] text-white" : ""
+              }`}
           >
             Services
           </Link>
@@ -361,15 +322,13 @@ function Navbar() {
           <div className="my-2">
             <button
               onClick={() => setIsSpecialServicesOpen(!isSpecialServicesOpen)}
-              className={`${mobileLinkStyles} w-full text-left flex justify-between items-center ${
-                isSpecialServicesActive ? "bg-[#7E4C3C] text-white" : ""
-              }`}
+              className={`${mobileLinkStyles} w-full text-left flex justify-between items-center ${isSpecialServicesActive ? "bg-[#7E4C3C] text-white" : ""
+                }`}
             >
               Special Services
               <svg
-                className={`w-5 h-5 transform transition-transform ${
-                  isSpecialServicesOpen ? "rotate-180" : ""
-                }`}
+                className={`w-5 h-5 transform transition-transform ${isSpecialServicesOpen ? "rotate-180" : ""
+                  }`}
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -387,22 +346,20 @@ function Navbar() {
                 <Link
                   to="/services/weddings"
                   onClick={() => setIsMenuOpen(false)}
-                  className={`${mobileLinkStyles} ${
-                    isActive("/services/weddings")
-                      ? "bg-[#7E4C3C] text-white"
-                      : ""
-                  }`}
+                  className={`${mobileLinkStyles} ${isActive("/services/weddings")
+                    ? "bg-[#7E4C3C] text-white"
+                    : ""
+                    }`}
                 >
                   Weddings
                 </Link>
                 <Link
                   to="/services/labor-and-delivery"
                   onClick={() => setIsMenuOpen(false)}
-                  className={`${mobileLinkStyles} ${
-                    isActive("/services/labor-and-delivery")
-                      ? "bg-[#7E4C3C] text-white"
-                      : ""
-                  }`}
+                  className={`${mobileLinkStyles} ${isActive("/services/labor-and-delivery")
+                    ? "bg-[#7E4C3C] text-white"
+                    : ""
+                    }`}
                 >
                   Labor & Delivery
                 </Link>
@@ -410,7 +367,18 @@ function Navbar() {
             )}
           </div>
 
-          <Link to={user && roleId === userRoleId ? "/dashboard/inquiry" : "/inquiry"} onClick={() => setIsMenuOpen(false)} className={`${mobileLinkStyles} ${(isActive('/inquiry') || isActive('/dashboard/inquiry')) ? 'bg-[#7E4C3C] text-white' : ''}`}>Book with me</Link>
+          {/* Updated: Mobile "Book with me" nav link */}
+          {
+            user && roleId === userRoleId ? (
+              <Link
+                to="/dashboard/inquiry"
+                onClick={() => setIsMenuOpen(false)}
+                className={`${mobileLinkStyles} ${isActive("/dashboard/inquiry") ? "bg-[#7E4C3C] text-white" : ""
+                  }`}
+              >
+                Book with me
+              </Link>) : <></>
+          }
 
           {/* Mobile Authentication buttons */}
           <div className="mt-8 space-y-3 px-4">
