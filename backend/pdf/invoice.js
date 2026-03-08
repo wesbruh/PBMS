@@ -139,7 +139,7 @@ router.get("/:invoiceId/pdf", async (req, res) => {
 
     // CLIENT INFO
     doc.fontSize(11);
-    doc.text(`Invoice Number: ${invoice.id}`, 50, 210);
+    doc.text(`Invoice Number: ${invoice.invoice_number}`, 50, 210);
     doc.text(`Invoice Date: ${invoice.created_at}`, 50, 225);
     doc.text(`Client: ${invoice.client_name}`, 50, 240);
     doc.text(`Email: ${invoice.client_email}`, 50, 255);
