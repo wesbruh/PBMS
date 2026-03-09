@@ -11,7 +11,6 @@ export default function QuestionnairesList() {
     setError("");
     setLoading(true);
     try {
-      // Join SessionType to display the human-readable session name
       const { data, error: fetchErr } = await supabase
         .from("QuestionnaireTemplate")
         .select("id, name, active, session_type_id, SessionType:session_type_id(name), schema_json")
@@ -31,13 +30,27 @@ export default function QuestionnairesList() {
   }, []);
 
   async function handleDelete(templateId) {
-    if (!window.confirm("Delete this template? This cannot be undone.")) return;
+    if (!window.confirm("Delete this template? Existing submitted questionnaires will keep their data but lose the template link.")) return;
+
     try {
+      // Step 1: Null out template_id on any questionnaire rows referencing this template.
+      // This is the safe in-code alternative to ON DELETE SET NULL if the FK
+      // constraint wasn't updated via SQL yet.
+      const { error: nullErr } = await supabase
+        .from("questionnaire")
+        .update({ template_id: null })
+        .eq("template_id", templateId);
+
+      if (nullErr) throw nullErr;
+
+      // Step 2: Now delete the template safely
       const { error: delErr } = await supabase
         .from("QuestionnaireTemplate")
         .delete()
         .eq("id", templateId);
+
       if (delErr) throw delErr;
+
       loadTemplates();
     } catch (e) {
       alert(`Failed to delete: ${e.message}`);
@@ -92,7 +105,8 @@ export default function QuestionnairesList() {
                       {t.SessionType?.name ?? "—"}
                     </td>
                     <td className="p-3 text-gray-500">
-                      {Array.isArray(t.schema_json) ? t.schema_json.length : 0} question{Array.isArray(t.schema_json) && t.schema_json.length === 1 ? "" : "s"}
+                      {Array.isArray(t.schema_json) ? t.schema_json.length : 0}
+                      {" "}question{Array.isArray(t.schema_json) && t.schema_json.length === 1 ? "" : "s"}
                     </td>
                     <td className="p-3">
                       {t.active ? (

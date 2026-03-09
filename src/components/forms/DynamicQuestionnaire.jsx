@@ -1,110 +1,203 @@
-import React from "react";
+// DynamicQuestionnaire.jsx
+// Renders questions from a QuestionnaireTemplate's schema_json.
+// Each question shape: { tempId, label, type, required, options }
+//
+// Supported types: short_text, long_text, text, textarea, date,
+//                  select, radio, checkbox
+// Any unknown type falls back to a short text input so nothing is invisible.
 
-const labelCaps = "text-[11px] tracking-[0.2em] text-[#7E4C3C] mb-2 block";
-const inputBase = "w-full rounded-md border border-black/10 bg-white/70 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]";
+const inputBase =
+  "w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none " +
+  "focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]";
 
-export default function DynamicQuestionnaire({ questions, answers, onChange }) {
-  const handleInputChange = (tempId, value) => {
+const labelCaps = "text-[11px] tracking-[0.2em] text-[#7E4C3C]";
+
+export default function DynamicQuestionnaire({ questions = [], answers = {}, onChange }) {
+  function handleChange(tempId, value) {
     onChange({ ...answers, [tempId]: value });
-  };
+  }
 
-  const handleCheckboxChange = (tempId, option, isChecked) => {
-    const current = answers[tempId] || [];
-    const next = isChecked 
-      ? [...current, option] 
-      : current.filter(o => o !== option);
-    handleInputChange(tempId, next);
-  };
+  function handleCheckbox(tempId, option, checked) {
+    const current = Array.isArray(answers[tempId]) ? answers[tempId] : [];
+    const updated  = checked
+      ? [...current, option]
+      : current.filter((v) => v !== option);
+    onChange({ ...answers, [tempId]: updated });
+  }
+
+  if (!questions.length) return null;
 
   return (
-    <div className="space-y-6 py-6 border-t border-[#E7DFCF] animate-in fade-in slide-in-from-top-4 duration-500">
-      <h3 className="font-serif text-xl text-brown">Session Details</h3>
-      <p className="text-xs text-neutral-500 -mt-4">Please answer a few questions to help me prepare.</p>
-      
-      {questions.map((q) => (
-        <div key={q.tempId}>
-          <label className={labelCaps}>
-            {q.label.toUpperCase()} {q.required && "*"}
-          </label>
+    <div className="rounded-xl border border-[#E7DFCF] bg-white/60 p-6 shadow-sm space-y-6">
+      {/* Section header */}
+      <div className="border-b border-[#E7DFCF] pb-4">
+        <h3 className="font-serif text-xl text-[#7E4C3C]">Session Details</h3>
+        <p className="mt-1 text-[12px] text-neutral-500">
+          Please answer a few questions to help me prepare.
+        </p>
+      </div>
 
-          {q.type === "short_text" && (
+      {questions.map((q) => (
+        <QuestionField
+          key={q.tempId}
+          q={q}
+          value={answers[q.tempId]}
+          onChangeValue={(val) => handleChange(q.tempId, val)}
+          onChangeCheckbox={(opt, checked) => handleCheckbox(q.tempId, opt, checked)}
+          inputBase={inputBase}
+          labelCaps={labelCaps}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ── Individual question renderer ──────────────────────────────────────────────
+function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, labelCaps }) {
+  const label = (
+    <p className={labelCaps}>
+      {(q.label ?? "").toUpperCase()}
+      {q.required && " *"}
+    </p>
+  );
+
+  // Normalise type to lowercase and trim so stray values like "Answer" still work
+  const type = (q.type ?? "short_text").toLowerCase().trim();
+
+  // ── Long text / textarea ──────────────────────────────────────────────────
+  if (type === "long_text" || type === "textarea") {
+    return (
+      <div>
+        {label}
+        <textarea
+          rows={4}
+          value={value ?? ""}
+          onChange={(e) => onChangeValue(e.target.value)}
+          className={`${inputBase} mt-1`}
+          placeholder={q.label ?? "Your answer…"}
+        />
+      </div>
+    );
+  }
+
+  // ── Date ──────────────────────────────────────────────────────────────────
+  if (type === "date") {
+    return (
+      <div>
+        {label}
+        <input
+          type="date"
+          value={value ?? ""}
+          onChange={(e) => onChangeValue(e.target.value)}
+          className={`${inputBase} mt-1`}
+        />
+      </div>
+    );
+  }
+
+  // ── Dropdown / select ─────────────────────────────────────────────────────
+  if (type === "select") {
+    const opts = Array.isArray(q.options) ? q.options.filter(Boolean) : [];
+    return (
+      <div>
+        {label}
+        <select
+          value={value ?? ""}
+          onChange={(e) => onChangeValue(e.target.value)}
+          className={`${inputBase} mt-1`}
+        >
+          <option value="">Select an option…</option>
+          {opts.map((o, i) => (
+            <option key={i} value={o}>{o}</option>
+          ))}
+        </select>
+      </div>
+    );
+  }
+
+  // ── Radio ─────────────────────────────────────────────────────────────────
+  if (type === "radio") {
+    const opts = Array.isArray(q.options) ? q.options.filter(Boolean) : [];
+    return (
+      <div>
+        {label}
+        <div className="mt-2 space-y-2">
+          {opts.length === 0 ? (
+            // Fallback if options missing — render a text input instead
             <input
               type="text"
-              className={inputBase}
-              required={q.required}
-              value={answers[q.tempId] || ""}
-              onChange={(e) => handleInputChange(q.tempId, e.target.value)}
+              value={value ?? ""}
+              onChange={(e) => onChangeValue(e.target.value)}
+              className={`${inputBase}`}
+              placeholder="Your answer…"
             />
-          )}
-
-          {q.type === "long_text" && (
-            <textarea
-              rows={3}
-              className={inputBase}
-              required={q.required}
-              value={answers[q.tempId] || ""}
-              onChange={(e) => handleInputChange(q.tempId, e.target.value)}
-            />
-          )}
-
-          {q.type === "select" && (
-            <select
-              className={inputBase}
-              required={q.required}
-              value={answers[q.tempId] || ""}
-              onChange={(e) => handleInputChange(q.tempId, e.target.value)}
-            >
-              <option value="">Select an option</option>
-              {q.options?.map((opt, i) => (
-                <option key={i} value={opt}>{opt}</option>
-              ))}
-            </select>
-          )}
-
-          {q.type === "radio" && (
-            <div className="space-y-2">
-              {q.options?.map((opt, i) => (
-                <label key={i} className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="radio"
-                    name={q.tempId}
-                    className="h-4 w-4 accent-brown"
-                    checked={answers[q.tempId] === opt}
-                    onChange={() => handleInputChange(q.tempId, opt)}
-                  />
-                  <span className="text-sm text-neutral-700">{opt}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          {q.type === "checkbox" && (
-            <div className="space-y-2">
-              {q.options?.map((opt, i) => (
-                <label key={i} className="flex items-center gap-3 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="h-4 w-4 accent-brown"
-                    checked={(answers[q.tempId] || []).includes(opt)}
-                    onChange={(e) => handleCheckboxChange(q.tempId, opt, e.target.checked)}
-                  />
-                  <span className="text-sm text-neutral-700">{opt}</span>
-                </label>
-              ))}
-            </div>
-          )}
-
-          {q.type === "date" && (
-            <input
-              type="date"
-              className={inputBase}
-              required={q.required}
-              value={answers[q.tempId] || ""}
-              onChange={(e) => handleInputChange(q.tempId, e.target.value)}
-            />
+          ) : (
+            opts.map((o, i) => (
+              <label key={i} className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name={q.tempId}
+                  value={o}
+                  checked={value === o}
+                  onChange={() => onChangeValue(o)}
+                  className="h-4 w-4 accent-[#7E4C3C]"
+                />
+                <span className="text-sm text-neutral-700">{o}</span>
+              </label>
+            ))
           )}
         </div>
-      ))}
+      </div>
+    );
+  }
+
+  // ── Checkbox ──────────────────────────────────────────────────────────────
+  if (type === "checkbox") {
+    const opts    = Array.isArray(q.options) ? q.options.filter(Boolean) : [];
+    const checked = Array.isArray(value) ? value : [];
+    return (
+      <div>
+        {label}
+        <div className="mt-2 space-y-2">
+          {opts.length === 0 ? (
+            <input
+              type="text"
+              value={checked[0] ?? ""}
+              onChange={(e) => onChangeValue([e.target.value])}
+              className={`${inputBase}`}
+              placeholder="Your answer…"
+            />
+          ) : (
+            opts.map((o, i) => (
+              <label key={i} className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  value={o}
+                  checked={checked.includes(o)}
+                  onChange={(e) => onChangeCheckbox(o, e.target.checked)}
+                  className="h-4 w-4 accent-[#7E4C3C]"
+                />
+                <span className="text-sm text-neutral-700">{o}</span>
+              </label>
+            ))
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Default fallback — catches "short_text", "text", "answer", or anything
+  //    unknown. Always renders a visible text input so no question disappears. ──
+  return (
+    <div>
+      {label}
+      <input
+        type="text"
+        value={value ?? ""}
+        onChange={(e) => onChangeValue(e.target.value)}
+        className={`${inputBase} mt-1`}
+        placeholder={q.label ?? "Your answer…"}
+      />
     </div>
   );
 }
