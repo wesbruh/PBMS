@@ -4,8 +4,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { supabase } from "../../lib/supabaseClient";
-import { useAuth } from "../../context/AuthContext"
+import { useAuth } from "../../context/AuthContext";
 import ContractDetail from "../../pages/Dashboard/ContractDetail";
+import DynamicQuestionnaire from "./DynamicQuestionnaire";
 
 const isTodayOrFuture = (value) => {
   if (!value) return false;
@@ -17,111 +18,97 @@ const isTodayOrFuture = (value) => {
 };
 
 const SESSION_TYPES = [
-  {
-    value: "maternity",
-    label: "Maternity",
-    img: "/images/Maternity5.jpg",
-  },
-  {
-    value: "newborn",
-    label: "Newborn",
-    img: "/images/Maternity6.jpg",
-  },
-  {
-    value: "family",
-    label: "Family",
-    img: "/images/temp_tc.jpg",
-  },
-  {
-    value: "weddings",
-    label: "Weddings",
-    img: "/images/Weddings1.jpeg",
-  },
+  { value: "maternity", label: "Maternity", img: "/images/Maternity5.jpg" },
+  { value: "newborn",   label: "Newborn",   img: "/images/Maternity6.jpg" },
+  { value: "family",    label: "Family",    img: "/images/temp_tc.jpg" },
+  { value: "weddings",  label: "Weddings",  img: "/images/Weddings1.jpeg" },
 ];
 
 const Schema = z.object({
-
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-
-
-  email: z.string().email("Enter a valid email"),
-  phone: z
+  firstName:   z.string().min(1, "First name is required"),
+  lastName:    z.string().min(1, "Last name is required"),
+  email:       z.string().email("Enter a valid email"),
+  phone:       z
     .string()
     .trim()
     .min(10, "Phone must be at least 10 digits")
     .max(20, "Phone seems too long")
     .regex(/^[0-9+\-\s()]*$/, "Digits and + - ( ) only"),
-
   sessionType: z.enum(["maternity", "newborn", "family", "weddings"], {
     required_error: "Select a session type",
   }),
-
-  date: z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
-  startTime: z.string(),
-
-  location: z.string().optional(),
-
-  message: z.string().max(1000, "Max 1000 characters").optional(),
+  date:        z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
+  startTime:   z.string(),
+  location:    z.string().optional(),
+  message:     z.string().max(1000, "Max 1000 characters").optional(),
 });
 
 export default function InquiryForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [emailLocked, setEmailLocked] = useState(false);
 
-  const [contractTemplates, setContractTemplates] = useState();
-  const [contract, setContract] = useState();
-  const [submitLock, setSubmitLock] = useState(true);
+  const [emailLocked,        setEmailLocked]        = useState(false);
+  const [contractTemplates,  setContractTemplates]  = useState({});
+  const [contract,           setContract]           = useState(null);
+  const [submitLock,         setSubmitLock]         = useState(true);
+  const [loading,            setLoading]            = useState(true);
 
-  const [loading, setLoading] = useState(true);
+  // Questionnaire state
+  const [activeQuestionnaire, setActiveQuestionnaire] = useState(null);
+  const [qAnswers,             setQAnswers]            = useState({});
+  const [qLoading,             setQLoading]            = useState(false);
 
-  // load all contract templates once
+  // ── Load all contract templates once ────────────────────────────────────────
   useEffect(() => {
     const loadContracts = async () => {
-      const response = await fetch("http://localhost:5001/api/contract/templates", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" }
-      });
-      const data = await response.json();
-      await data.forEach((template) => {
-        setContractTemplates(prev => ({ ...prev, [`${template.id}`]: { "body": template.body, "name": template.name } }));
-      });
+      try {
+        const response = await fetch("http://localhost:5001/api/contract/templates", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await response.json();
+        const map = {};
+        data.forEach((template) => {
+          map[`${template.id}`] = { body: template.body, name: template.name };
+        });
+        setContractTemplates(map);
+      } catch (err) {
+        console.error("Failed to load contract templates:", err);
+      }
     };
-
     loadContracts();
   }, []);
 
+  // ── Load / create default contract for this user ─────────────────────────────
   useEffect(() => {
     const getDefaultContract = async () => {
       if (!user) return;
-
-      const response = await fetch("http://localhost:5001/api/contract", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: user.id
-        })
-      });
-
-      const data = await response.json();
-      setContract(data);
-      setLoading(false);
+      try {
+        const response = await fetch("http://localhost:5001/api/contract", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user_id: user.id }),
+        });
+        const data = await response.json();
+        setContract(data);
+      } catch (err) {
+        console.error("Failed to load contract:", err);
+      } finally {
+        setLoading(false);
+      }
     };
-
     getDefaultContract();
   }, [user]);
 
+  // ── Update contract template ──────────────────────────────────────────────────
   const updateContractTemplate = async (templateId) => {
     try {
       const response = await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ "template_id": templateId }),
+        body: JSON.stringify({ template_id: templateId }),
       });
-
-      if (response.ok)
-        setContract({ ...contract, template_id: templateId })
+      if (response.ok) setContract({ ...contract, template_id: templateId });
     } catch (error) {
       console.error("Failed to update contract:", error);
     }
@@ -142,123 +129,180 @@ export default function InquiryForm() {
     mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
+      firstName:   "",
+      lastName:    "",
+      email:       "",
+      phone:       "",
       sessionType: "",
-      date: "",
-      startTime: "",
-      location: "",
-      message: "",
+      date:        "",
+      startTime:   "",
+      location:    "",
+      message:     "",
     },
   });
 
   const selectedSession = watch("sessionType");
+  const watchedDate     = watch("date");
+  const watchedTime     = watch("startTime");
+  const watchedLocation = watch("location");
 
-  // Prefill email + first/last name when logged in
+  // Show questionnaire only after date, time, AND location are filled
+  const canShowQuestionnaire =
+    !!selectedSession &&
+    !!watchedDate &&
+    !!watchedTime &&
+    !!watchedLocation?.trim();
+
+  // ── Prefill email + name when logged in ──────────────────────────────────────
   useEffect(() => {
     const prefillFromAuth = async () => {
       if (!user) return;
-
       if (user.email) {
         setValue("email", user.email, { shouldValidate: true, shouldDirty: false });
         setEmailLocked(true);
       }
-
       const first = user.user_metadata?.first_name?.trim() || "";
-      const last = user.user_metadata?.last_name?.trim() || "";
-
-      if (first && !getValues("firstName")?.trim()) {
+      const last  = user.user_metadata?.last_name?.trim()  || "";
+      if (first && !getValues("firstName")?.trim())
         setValue("firstName", first, { shouldValidate: true, shouldDirty: false });
-      }
-      if (last && !getValues("lastName")?.trim()) {
+      if (last && !getValues("lastName")?.trim())
         setValue("lastName", last, { shouldValidate: true, shouldDirty: false });
-      }
-
       await trigger(["email", "firstName", "lastName"]);
     };
-
     prefillFromAuth();
   }, [user, setValue, getValues, trigger]);
 
+  // ── Fetch questionnaire template when session type changes ───────────────────
+  useEffect(() => {
+    if (!selectedSession) {
+      setActiveQuestionnaire(null);
+      return;
+    }
+    const fetchQuestionnaire = async () => {
+      setQLoading(true);
+      try {
+        const { data: qTemplate, error } = await supabase
+          .from("questionnaires")
+          .select("id, title, questions:questions(*)")
+          .eq("session_type", selectedSession)
+          .eq("is_active", true)
+          .single();
+
+        if (error || !qTemplate) {
+          setActiveQuestionnaire(null);
+          return;
+        }
+
+        const formattedQuestions = qTemplate.questions.map((q) => ({
+          tempId:   q.id,
+          label:    q.label,
+          type:     q.type,
+          required: q.required,
+          options:  q.options,
+        }));
+
+        setActiveQuestionnaire({ id: qTemplate.id, questions: formattedQuestions });
+        setQAnswers({});
+      } catch (err) {
+        console.error("No questionnaire found for this type.", err);
+        setActiveQuestionnaire(null);
+      } finally {
+        setQLoading(false);
+      }
+    };
+    fetchQuestionnaire();
+  }, [selectedSession]);
+
+  // ── Submit ────────────────────────────────────────────────────────────────────
   const onSubmit = async (formData) => {
     if (submitLock) return;
+
+    // Validate required questionnaire answers
+    if (activeQuestionnaire) {
+      for (const q of activeQuestionnaire.questions) {
+        if (q.required && (!qAnswers[q.tempId] || qAnswers[q.tempId].length === 0)) {
+          alert(`Please answer the required question: ${q.label}`);
+          return;
+        }
+      }
+    }
+
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
+      const now      = new Date().toISOString();
 
-      {/*// 1) Upsert client by email (creates if new)
-      const { data: client, error: clientErr } = await supabase
-        .from("clients")
-        .upsert(
-          { email: formData.email, full_name: fullName, phone: formData.phone },
-          { onConflict: "email" }
-        )
-        .select("id, full_name, email")
-        .single();
-
-      if (clientErr) throw clientErr;*/}
-
-      // 2) Insert Session
-      const now = new Date().toISOString();
-      const { data: sessionData, error: sessionError } = await supabase.from("Session")
-        .insert(
-          {
-            client_id: user.id,
-            //session_type: formData.sessionType,
-            start_at: new Date(`${formData.date}T${formData.startTime}`).toISOString(),
-            end_at: new Date(`${formData.date}T${formData.startTime}`).toISOString(),
-            location_text: formData.location || null,
-            notes: formData.message || null,
-            status: "Pending",
-            created_at: now,
-            updated_at: now
-          })
+      // 1) Insert Session
+      const { data: sessionData, error: sessionError } = await supabase
+        .from("Session")
+        .insert({
+          client_id:     user.id,
+          start_at:      new Date(`${formData.date}T${formData.startTime}`).toISOString(),
+          end_at:        new Date(`${formData.date}T${formData.startTime}`).toISOString(),
+          location_text: formData.location || null,
+          notes:         formData.message  || null,
+          status:        "Pending",
+          created_at:    now,
+          updated_at:    now,
+        })
         .select()
         .single();
 
       if (sessionError) throw sessionError;
-
       const { id: sessionId } = sessionData;
-      console.log(sessionData);
-      console.log(sessionId);
-      // instantiate request body
-      const currLoc = window.location.href;
 
-      // create and retrieve checkout session information based on body
+      // 2) Save Questionnaire response if present
+      if (activeQuestionnaire) {
+        const { data: qInstance, error: qInstError } = await supabase
+          .from("questionnaire")
+          .insert({
+            session_id:   sessionId,
+            template_id:  activeQuestionnaire.id,
+            status:       "Submitted",
+            submitted_at: now,
+          })
+          .select()
+          .single();
+
+        if (qInstError) throw qInstError;
+
+        const { error: respError } = await supabase
+          .from("QuestionnaireResponse")
+          .insert({
+            questionnaire_id: qInstance.id,
+            answers_json:     qAnswers,
+          });
+
+        if (respError) throw respError;
+      }
+
+      // 3) Create Stripe checkout session
+      const currLoc = window.location.href;
       const response = await fetch("http://localhost:5001/api/payment/deposit", {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
-          from_url: currLoc,
-          apply_tax: true,
-          tax_rate: 15
-        })
+          from_url:   currLoc,
+          apply_tax:  true,
+          tax_rate:   15,
+        }),
       });
-
       const checkoutSession = await response.json();
 
       if (response.ok) {
-        // upsert deposit_cs_id into db and 
         await supabase
           .from("Session")
           .upsert({ id: sessionId, deposit_cs_id: checkoutSession.id });
 
-        // update is_active and session_id in db 
         await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
-          method: "PATCH",
+          method:  "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ "session_id": sessionId, "is_active": true }),
+          body: JSON.stringify({ session_id: sessionId, is_active: true }),
         });
 
-        // redirect to Stripe
         window.location.href = checkoutSession.url;
       } else {
-        await supabase
-          .from("Session")
-          .delete()
-          .eq("id", sessionId);
+        await supabase.from("Session").delete().eq("id", sessionId);
         alert("Stripe connection failed.");
       }
 
@@ -266,11 +310,11 @@ export default function InquiryForm() {
         replace: true,
         state: {
           fullName,
-          email: formData.email,
+          email:       formData.email,
           sessionType: formData.sessionType,
-          dateTime: `${formData.date} ${formData.startTime}`,
-          startTime: formData.startTime,
-          location: formData.location || "",
+          dateTime:    `${formData.date} ${formData.startTime}`,
+          startTime:   formData.startTime,
+          location:    formData.location || "",
         },
       });
     } catch (e) {
@@ -279,10 +323,10 @@ export default function InquiryForm() {
     }
   };
 
+  // ── Styles ────────────────────────────────────────────────────────────────────
   const inputBase =
     "w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none " +
     "focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]";
-
   const labelCaps = "text-[11px] tracking-[0.2em] text-[#7E4C3C]";
 
   if (loading) {
@@ -295,7 +339,8 @@ export default function InquiryForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-      {/* TOP: First/Last Name */}
+
+      {/* ── Name ─────────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <p className={labelCaps}>FIRST NAME *</p>
@@ -307,7 +352,6 @@ export default function InquiryForm() {
           />
           {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>}
         </div>
-
         <div>
           <p className={labelCaps}>LAST NAME *</p>
           <input
@@ -320,7 +364,7 @@ export default function InquiryForm() {
         </div>
       </div>
 
-      {/* EMAIL + PHONE */}
+      {/* ── Email + Phone ─────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <p className={labelCaps}>EMAIL *</p>
@@ -330,16 +374,16 @@ export default function InquiryForm() {
             placeholder="jane@example.com"
             readOnly={emailLocked}
             aria-readonly={emailLocked}
-            className={`${inputBase} ${errors.email ? "border-red-500" : "border-black/10"
-              } ${emailLocked ? "bg-neutral-100 text-neutral-600 cursor-not-allowed" : ""}`}
+            className={`${inputBase} ${errors.email ? "border-red-500" : "border-black/10"} ${
+              emailLocked ? "bg-neutral-100 text-neutral-600 cursor-not-allowed" : ""
+            }`}
             aria-invalid={!!errors.email}
           />
           <p className="mt-1 text-[11px] text-neutral-500">
-            We’ll use this email to confirm availability and send session details.
+            We'll use this email to confirm availability and send session details.
           </p>
           {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
         </div>
-
         <div>
           <p className={labelCaps}>PHONE NUMBER *</p>
           <input
@@ -352,42 +396,33 @@ export default function InquiryForm() {
         </div>
       </div>
 
-      {/* TYPE OF SESSION (image cards) */}
+      {/* ── Session Type ──────────────────────────────────────────────────────── */}
       <div>
         <p className={labelCaps}>TYPE OF SESSION</p>
-
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {SESSION_TYPES.map((s) => {
             const active = selectedSession === s.value;
             return (
               <label
                 key={s.value}
-                className={`group cursor-pointer rounded-lg border overflow-hidden bg-white/60 shadow-sm transition
-                  ${active ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20" : "border-black/10 hover:border-black/20"}`}
+                className={`group cursor-pointer rounded-lg border overflow-hidden bg-white/60 shadow-sm transition ${
+                  active ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20" : "border-black/10 hover:border-black/20"
+                }`}
               >
-                <input
-                  type="radio"
-                  value={s.value}
-                  {...register("sessionType")}
-                  className="sr-only"
-                />
-
+                <input type="radio" value={s.value} {...register("sessionType")} className="sr-only" />
                 <div className="h-28 w-full bg-neutral-100 overflow-hidden">
                   <img
                     src={s.img}
                     alt={s.label}
                     className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                    onError={(e) => {
-                      // fallback if image path is missing
-                      e.currentTarget.style.display = "none";
-                    }}
+                    onError={(e) => { e.currentTarget.style.display = "none"; }}
                   />
                 </div>
-
                 <div className="flex items-center gap-3 px-4 py-3">
                   <span
-                    className={`h-4 w-4 rounded-full border flex items-center justify-center ${active ? "border-[#7E4C3C]" : "border-black/30"
-                      }`}
+                    className={`h-4 w-4 rounded-full border flex items-center justify-center ${
+                      active ? "border-[#7E4C3C]" : "border-black/30"
+                    }`}
                   >
                     {active && <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />}
                   </span>
@@ -397,36 +432,34 @@ export default function InquiryForm() {
             );
           })}
         </div>
-
         {errors.sessionType && (
           <p className="mt-2 text-sm text-red-600">{errors.sessionType.message}</p>
         )}
       </div>
 
-      {/* DATE + LOCATION */}
+      {/* ── Date / Time + Location ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div>
-          <p className={labelCaps}>DATE</p>
-          <input
-            type="date"
-            min={minDate}
-            {...register("date")}
-            className={`${inputBase} ${errors.date ? "border-red-500" : "border-black/10"}`}
-            aria-invalid={!!errors.date}
-          />
-          {errors.date && (
-            <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
-          )}
-
-          <div className="animate-in fade-in duration-500">
+        <div className="space-y-3">
+          <div>
+            <p className={labelCaps}>DATE</p>
+            <input
+              type="date"
+              min={minDate}
+              {...register("date")}
+              className={`${inputBase} ${errors.date ? "border-red-500" : "border-black/10"}`}
+              aria-invalid={!!errors.date}
+            />
+            {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>}
+          </div>
+          <div>
+            <p className={labelCaps}>START TIME</p>
             <input
               type="time"
               {...register("startTime")}
-              className={`${inputBase}`}
+              className={`${inputBase} ${errors.startTime ? "border-red-500" : "border-black/10"}`}
             />
           </div>
         </div>
-
         <div>
           <p className={labelCaps}>
             LOCATION <span className="text-neutral-500 tracking-normal">(optional)</span>
@@ -443,78 +476,85 @@ export default function InquiryForm() {
         </div>
       </div>
 
-      {/* MESSAGE + CTA SIDE-BY-SIDE */}
-      <div className="grid grid-cols-1 gap-6 items-start">
-        <div>
-          <textarea
-            rows={5}
-            {...register("message")}
-            className={`${inputBase} ${errors.message ? "border-red-500" : "border-black/10"}`}
-            placeholder="Tell me about your vision..."
-            aria-invalid={!!errors.message}
-          />
-          <p className="mt-2 text-[11px] text-neutral-500 leading-relaxed">
-            Please share any details about the memories you’d like to create. Feel free to mention style preferences,
-            important moments, or unique ideas for your session.
-          </p>
-          {errors.message && <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>}
+      {/* ── Questionnaire (shown after date + time + location are filled) ──────── */}
+      {selectedSession && (
+        <div className="transition-all">
+          {!canShowQuestionnaire ? (
+            <p className="text-[12px] text-neutral-400 italic">
+              Fill in your date, time, and location above to unlock session questions.
+            </p>
+          ) : qLoading ? (
+            <p className="text-center text-xs text-neutral-400">Loading session questions...</p>
+          ) : activeQuestionnaire ? (
+            <DynamicQuestionnaire
+              questions={activeQuestionnaire.questions}
+              answers={qAnswers}
+              onChange={setQAnswers}
+            />
+          ) : null}
         </div>
-        <div className="grid grid-cols-1 gap-6">
-          <div className="text-xl flex flex-row font-serif text-brown border-b border-[#E7DFCF] pb-2">
-            <h2 className="flex w-full">Contract</h2>
-            <select
-              value={contract?.template_id || ""}
-              onChange={(e) => { updateContractTemplate(e.target.value) }}
-              className={`px-2 py-1 rounded-md text-sm font-semibold border}`}
-              disabled={contract?.status === "Signed"}
-            >
-              <option
-                disabled
-                value="">Select
-              </option>
-              {
-                Object.keys(contractTemplates)
-                  .map((key) => {
-                    return (
-                      <option
-                        key={key}
-                        value={key}>{contractTemplates[key].name}
-                      </option>
-                    )
-                  })
-              }
-            </select>
-          </div>
-          <ContractDetail
-            contract={contract}
-            contractTemplate={contractTemplates[contract?.template_id] || null}
-            onSigned={(contract) => {
-              setContract(contract);
-              setSubmitLock(false);
-            }}
-          />
-        </div>
+      )}
+
+      {/* ── Message ───────────────────────────────────────────────────────────── */}
+      <div>
+        <textarea
+          rows={5}
+          {...register("message")}
+          className={`${inputBase} ${errors.message ? "border-red-500" : "border-black/10"}`}
+          placeholder="Tell me about your vision..."
+          aria-invalid={!!errors.message}
+        />
+        <p className="mt-2 text-[11px] text-neutral-500 leading-relaxed">
+          Please share any details about the memories you'd like to create. Feel free to mention
+          style preferences, important moments, or unique ideas for your session.
+        </p>
+        {errors.message && <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>}
       </div>
+
+      {/* ── Contract ──────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 gap-6">
+        <div className="text-xl flex flex-row font-serif text-brown border-b border-[#E7DFCF] pb-2">
+          <h2 className="flex w-full">Contract</h2>
+          <select
+            value={contract?.template_id || ""}
+            onChange={(e) => updateContractTemplate(e.target.value)}
+            className="px-2 py-1 rounded-md text-sm font-semibold border"
+            disabled={contract?.status === "Signed"}
+          >
+            <option disabled value="">Select</option>
+            {Object.keys(contractTemplates).map((key) => (
+              <option key={key} value={key}>
+                {contractTemplates[key].name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <ContractDetail
+          contract={contract}
+          contractTemplate={contractTemplates[contract?.template_id] || null}
+          onSigned={(signedContract) => {
+            setContract(signedContract);
+            setSubmitLock(false);
+          }}
+        />
+      </div>
+
+      {/* ── Submit ────────────────────────────────────────────────────────────── */}
       <div className="space-y-6">
         <div className="rounded-xl border border-black/10 bg-white/60 p-5 shadow-sm">
           <button
             type="submit"
             disabled={isSubmitting || submitLock}
-            className="w-full h-12 rounded-md bg-brown hover:bg-[#AB8C4B] text-white border border-black transition font-serif
-                       disabled:opacity-40 disabled:cursor-not-allowed"
+            className="w-full h-12 rounded-md bg-brown hover:bg-[#AB8C4B] text-white border border-black transition font-serif disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isSubmitting ? "Submitting..." : "Submit My Inquiry"}
           </button>
-
           <div className="mt-4 flex items-center gap-3 text-sm text-neutral-700">
             <span className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-black/10 bg-white">
               ✉️
             </span>
-            <p className="text-[12px]">
-              I will follow up within 24 hours to confirm details.
-            </p>
+            <p className="text-[12px]">I will follow up within 24 hours to confirm details.</p>
           </div>
-
           <div className="mt-4 border-t border-black/10 pt-4 space-y-2 text-[12px] text-neutral-700">
             <div className="flex items-center gap-2">
               <span className="text-[#AB8C4B]">★</span>
@@ -522,11 +562,12 @@ export default function InquiryForm() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[#AB8C4B]">★</span>
-              <span>Serving Vacaville & surrounding areas</span>
+              <span>Serving Vacaville &amp; surrounding areas</span>
             </div>
           </div>
         </div>
       </div>
+
     </form>
   );
 }
