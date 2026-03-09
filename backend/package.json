@@ -1,6 +1,7 @@
 {
   "name": "backend",
   "version": "1.0.0",
+  "type": "module",
   "main": "server.js",
   "dependencies": {
     "@react-email/components": "^1.0.8",
@@ -109,5 +110,8 @@
   "description": "",
   "devDependencies": {
     "supabase": "^2.76.9"
+  },
+  "config": {
+    "engine-strict": false
   }
 }
