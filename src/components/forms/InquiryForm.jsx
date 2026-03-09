@@ -37,28 +37,28 @@ const Schema = z.object({
   sessionType: z.enum(["maternity", "newborn", "family", "weddings"], {
     required_error: "Select a session type",
   }),
-  date:        z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
-  startTime:   z.string(),
-  location:    z.string().optional(),
-  message:     z.string().max(1000, "Max 1000 characters").optional(),
+  date:      z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
+  startTime: z.string(),
+  location:  z.string().optional(),
+  message:   z.string().max(1000, "Max 1000 characters").optional(),
 });
 
 export default function InquiryForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [emailLocked,        setEmailLocked]        = useState(false);
-  const [contractTemplates,  setContractTemplates]  = useState({});
-  const [contract,           setContract]           = useState(null);
-  const [submitLock,         setSubmitLock]         = useState(true);
-  const [loading,            setLoading]            = useState(true);
+  const [emailLocked,       setEmailLocked]       = useState(false);
+  const [contractTemplates, setContractTemplates] = useState({});
+  const [contract,          setContract]          = useState(null);
+  const [submitLock,        setSubmitLock]        = useState(true);
+  const [loading,           setLoading]           = useState(true);
 
-  // Questionnaire state
-  const [activeQuestionnaire, setActiveQuestionnaire] = useState(null);
-  const [qAnswers,             setQAnswers]            = useState({});
-  const [qLoading,             setQLoading]            = useState(false);
+  // activeTemplate: { id: UUID (QuestionnaireTemplate PK), name, questions: [...] }
+  const [activeTemplate, setActiveTemplate] = useState(null);
+  const [qAnswers,        setQAnswers]       = useState({});
+  const [qLoading,        setQLoading]       = useState(false);
 
-  // ── Load all contract templates once ────────────────────────────────────────
+  // ── Load contract templates ───────────────────────────────────────────────────
   useEffect(() => {
     const loadContracts = async () => {
       try {
@@ -68,9 +68,7 @@ export default function InquiryForm() {
         });
         const data = await response.json();
         const map = {};
-        data.forEach((template) => {
-          map[`${template.id}`] = { body: template.body, name: template.name };
-        });
+        data.forEach((t) => { map[`${t.id}`] = { body: t.body, name: t.name }; });
         setContractTemplates(map);
       } catch (err) {
         console.error("Failed to load contract templates:", err);
@@ -79,7 +77,7 @@ export default function InquiryForm() {
     loadContracts();
   }, []);
 
-  // ── Load / create default contract for this user ─────────────────────────────
+  // ── Load / create default contract ───────────────────────────────────────────
   useEffect(() => {
     const getDefaultContract = async () => {
       if (!user) return;
@@ -100,7 +98,7 @@ export default function InquiryForm() {
     getDefaultContract();
   }, [user]);
 
-  // ── Update contract template ──────────────────────────────────────────────────
+  // ── Update contract template selection ───────────────────────────────────────
   const updateContractTemplate = async (templateId) => {
     try {
       const response = await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
@@ -129,15 +127,8 @@ export default function InquiryForm() {
     mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: {
-      firstName:   "",
-      lastName:    "",
-      email:       "",
-      phone:       "",
-      sessionType: "",
-      date:        "",
-      startTime:   "",
-      location:    "",
-      message:     "",
+      firstName: "", lastName: "", email: "", phone: "",
+      sessionType: "", date: "", startTime: "", location: "", message: "",
     },
   });
 
@@ -146,14 +137,14 @@ export default function InquiryForm() {
   const watchedTime     = watch("startTime");
   const watchedLocation = watch("location");
 
-  // Show questionnaire only after date, time, AND location are filled
+  // Questionnaire unlocks only once date + time + location are all filled
   const canShowQuestionnaire =
     !!selectedSession &&
     !!watchedDate &&
     !!watchedTime &&
     !!watchedLocation?.trim();
 
-  // ── Prefill email + name when logged in ──────────────────────────────────────
+  // ── Prefill from auth ─────────────────────────────────────────────────────────
   useEffect(() => {
     const prefillFromAuth = async () => {
       if (!user) return;
@@ -172,54 +163,84 @@ export default function InquiryForm() {
     prefillFromAuth();
   }, [user, setValue, getValues, trigger]);
 
-  // ── Fetch questionnaire template when session type changes ───────────────────
+  // ── Fetch active QuestionnaireTemplate when session type changes ──────────────
+  //
+  // Flow:
+  //   1. Look up SessionType row matching the selected session value string.
+  //   2. Find the active QuestionnaireTemplate for that session_type_id.
+  //   3. Parse schema_json → questions array for DynamicQuestionnaire.
+  //
   useEffect(() => {
     if (!selectedSession) {
-      setActiveQuestionnaire(null);
+      setActiveTemplate(null);
       return;
     }
-    const fetchQuestionnaire = async () => {
+
+    const fetchTemplate = async () => {
       setQLoading(true);
       try {
-        const { data: qTemplate, error } = await supabase
-          .from("questionnaires")
-          .select("id, title, questions:questions(*)")
-          .eq("session_type", selectedSession)
-          .eq("is_active", true)
+        // Step 1 — resolve SessionType id
+        const { data: stRow, error: stErr } = await supabase
+          .from("SessionType")
+          .select("id")
+          .ilike("name", `%${selectedSession}%`)
+          .limit(1)
           .single();
 
-        if (error || !qTemplate) {
-          setActiveQuestionnaire(null);
+        if (stErr || !stRow) {
+          console.warn("SessionType not found for:", selectedSession);
+          setActiveTemplate(null);
           return;
         }
 
-        const formattedQuestions = qTemplate.questions.map((q) => ({
-          tempId:   q.id,
-          label:    q.label,
-          type:     q.type,
-          required: q.required,
-          options:  q.options,
-        }));
+        // Step 2 — find active template for this session type
+        const { data: template, error: tErr } = await supabase
+          .from("QuestionnaireTemplate")
+          .select("id, name, schema_json")
+          .eq("session_type_id", stRow.id)
+          .eq("active", true)
+          .limit(1)
+          .single();
 
-        setActiveQuestionnaire({ id: qTemplate.id, questions: formattedQuestions });
+        if (tErr || !template) {
+          console.warn("No active QuestionnaireTemplate for:", selectedSession);
+          setActiveTemplate(null);
+          return;
+        }
+
+        // Step 3 — map schema_json to the shape DynamicQuestionnaire expects
+        // schema_json entry: { id, label, type, required, options, order }
+        // tempId = q.id so answers_json is keyed by the stable question id
+        const questions = (template.schema_json ?? [])
+          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+          .map((q) => ({
+            tempId:   q.id,
+            label:    q.label,
+            type:     q.type,
+            required: q.required ?? false,
+            options:  q.options  ?? null,
+          }));
+
+        setActiveTemplate({ id: template.id, name: template.name, questions });
         setQAnswers({});
       } catch (err) {
-        console.error("No questionnaire found for this type.", err);
-        setActiveQuestionnaire(null);
+        console.error("Error fetching QuestionnaireTemplate:", err);
+        setActiveTemplate(null);
       } finally {
         setQLoading(false);
       }
     };
-    fetchQuestionnaire();
+
+    fetchTemplate();
   }, [selectedSession]);
 
   // ── Submit ────────────────────────────────────────────────────────────────────
   const onSubmit = async (formData) => {
     if (submitLock) return;
 
-    // Validate required questionnaire answers
-    if (activeQuestionnaire) {
-      for (const q of activeQuestionnaire.questions) {
+    // Validate required questionnaire answers before anything hits the DB
+    if (activeTemplate) {
+      for (const q of activeTemplate.questions) {
         if (q.required && (!qAnswers[q.tempId] || qAnswers[q.tempId].length === 0)) {
           alert(`Please answer the required question: ${q.label}`);
           return;
@@ -231,7 +252,7 @@ export default function InquiryForm() {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
       const now      = new Date().toISOString();
 
-      // 1) Insert Session
+      // ── 1) Insert Session ───────────────────────────────────────────────────
       const { data: sessionData, error: sessionError } = await supabase
         .from("Session")
         .insert({
@@ -248,51 +269,66 @@ export default function InquiryForm() {
         .single();
 
       if (sessionError) throw sessionError;
-      const { id: sessionId } = sessionData;
+      const sessionId = sessionData.id;
 
-      // 2) Save Questionnaire response if present
-      if (activeQuestionnaire) {
+      // ── 2) Insert questionnaire instance ───────────────────────────────────
+      // Table name: lowercase "questionnaire" (as it appears in Supabase)
+      // template_id → valid QuestionnaireTemplate UUID fetched above ✓
+      if (activeTemplate) {
         const { data: qInstance, error: qInstError } = await supabase
-          .from("questionnaire")
+          .from("questionnaire")                    // ← lowercase as in Supabase
           .insert({
             session_id:   sessionId,
-            template_id:  activeQuestionnaire.id,
+            template_id:  activeTemplate.id,        // ← real QuestionnaireTemplate UUID
             status:       "Submitted",
             submitted_at: now,
+            created_at:   now,
+            // no `id` — Postgres generates via DEFAULT gen_random_uuid()
           })
-          .select()
+          .select("id")
           .single();
 
-        if (qInstError) throw qInstError;
+        if (qInstError) {
+          await supabase.from("Session").delete().eq("id", sessionId);
+          throw qInstError;
+        }
 
+        // ── 3) Insert QuestionnaireResponse ──────────────────────────────────
+        // answers_json keyed by question id from schema_json, e.g.:
+        // { "q_due_date": "2026-04-15", "q_partner": "Yes", ... }
         const { error: respError } = await supabase
           .from("QuestionnaireResponse")
           .insert({
             questionnaire_id: qInstance.id,
             answers_json:     qAnswers,
+            created_at:       now,
+            // no `id` — Postgres generates via DEFAULT gen_random_uuid()
           });
 
-        if (respError) throw respError;
+        if (respError) {
+          await supabase.from("Session").delete().eq("id", sessionId);
+          throw respError;
+        }
       }
 
-      // 3) Create Stripe checkout session
-      const currLoc = window.location.href;
-      const response = await fetch("http://localhost:5001/api/payment/deposit", {
+      // ── 4) Stripe deposit checkout ──────────────────────────────────────────
+      const stripeRes = await fetch("http://localhost:5001/api/payment/deposit", {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
-          from_url:   currLoc,
+          from_url:   window.location.href,
           apply_tax:  true,
           tax_rate:   15,
         }),
       });
-      const checkoutSession = await response.json();
+      const checkoutSession = await stripeRes.json();
 
-      if (response.ok) {
+      if (stripeRes.ok) {
         await supabase
           .from("Session")
-          .upsert({ id: sessionId, deposit_cs_id: checkoutSession.id });
+          .update({ deposit_cs_id: checkoutSession.id })
+          .eq("id", sessionId);
 
         await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
           method:  "PATCH",
@@ -303,7 +339,7 @@ export default function InquiryForm() {
         window.location.href = checkoutSession.url;
       } else {
         await supabase.from("Session").delete().eq("id", sessionId);
-        alert("Stripe connection failed.");
+        alert("Stripe connection failed. Please try again.");
       }
 
       navigate("/dashboard/inquiry/success", {
@@ -319,7 +355,7 @@ export default function InquiryForm() {
       });
     } catch (e) {
       console.error("Submit error:", e);
-      alert(`Sorry, something went wrong: ${e?.message || e}`);
+      alert(`Sorry, something went wrong: ${e?.message ?? e}`);
     }
   };
 
@@ -406,7 +442,9 @@ export default function InquiryForm() {
               <label
                 key={s.value}
                 className={`group cursor-pointer rounded-lg border overflow-hidden bg-white/60 shadow-sm transition ${
-                  active ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20" : "border-black/10 hover:border-black/20"
+                  active
+                    ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20"
+                    : "border-black/10 hover:border-black/20"
                 }`}
               >
                 <input type="radio" value={s.value} {...register("sessionType")} className="sr-only" />
@@ -476,7 +514,7 @@ export default function InquiryForm() {
         </div>
       </div>
 
-      {/* ── Questionnaire (shown after date + time + location are filled) ──────── */}
+      {/* ── Questionnaire ─────────────────────────────────────────────────────── */}
       {selectedSession && (
         <div className="transition-all">
           {!canShowQuestionnaire ? (
@@ -485,13 +523,22 @@ export default function InquiryForm() {
             </p>
           ) : qLoading ? (
             <p className="text-center text-xs text-neutral-400">Loading session questions...</p>
-          ) : activeQuestionnaire ? (
-            <DynamicQuestionnaire
-              questions={activeQuestionnaire.questions}
-              answers={qAnswers}
-              onChange={setQAnswers}
-            />
-          ) : null}
+          ) : activeTemplate ? (
+            <div>
+              <p className="text-[11px] tracking-[0.2em] text-[#7E4C3C] mb-3 uppercase">
+                {activeTemplate.name}
+              </p>
+              <DynamicQuestionnaire
+                questions={activeTemplate.questions}
+                answers={qAnswers}
+                onChange={setQAnswers}
+              />
+            </div>
+          ) : (
+            <p className="text-[12px] text-neutral-400 italic">
+              No questionnaire found for this session type.
+            </p>
+          )}
         </div>
       )}
 
