@@ -89,7 +89,7 @@ export default function InquirySuccess() {
               REQUEST RECEIVED
             </h1>
             <p className="mt-3 text-sm md:text-base text-neutral-600 max-w-xl mx-auto">
-              Thank you, {fullName || ""} 🤍  I’ll review your request and email/text you within 24 hours
+              Thank you, {fullName || ""} 🤍  I'll review your request and email/text you within 24 hours
               with availability and next steps.
             </p>
           </div>
@@ -113,7 +113,7 @@ export default function InquirySuccess() {
             {/* Details */}
             <div className="text-center">
               <h2 className="font-serif text-xl md:text-2xl text-[#7E4C3C]">
-                Here’s what I received
+                Here's what I received
               </h2>
 
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
@@ -139,7 +139,7 @@ export default function InquirySuccess() {
               </div>
 
               <p className="mt-6 text-[11px] text-neutral-500">
-                If you don’t see my email within 24 hours, check your spam/junk folder.
+                If you don't see my email within 24 hours, check your spam/junk folder.
               </p>
 
               {/* CTAs */}

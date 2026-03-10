@@ -11,7 +11,7 @@ export default function Inquiry() {
               Inquiry
             </h1>
             <p className="mt-3 text-sm md:text-base text-neutral-600 max-w-xl mx-auto">
-              Share a few details below and I’ll follow up with availability within 24 hours.
+              Share a few details below and I'll follow up with availability within 24 hours.
             </p>
           </div>
 
