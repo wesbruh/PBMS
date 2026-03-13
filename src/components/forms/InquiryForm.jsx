@@ -19,16 +19,16 @@ const isTodayOrFuture = (value) => {
 
 const SESSION_TYPES = [
   { value: "maternity", label: "Maternity", img: "/images/Maternity5.jpg" },
-  { value: "newborn",   label: "Newborn",   img: "/images/Maternity6.jpg" },
-  { value: "family",    label: "Family",    img: "/images/temp_tc.jpg" },
-  { value: "weddings",  label: "Weddings",  img: "/images/Weddings1.jpeg" },
+  { value: "newborn", label: "Newborn", img: "/images/Maternity6.jpg" },
+  { value: "family", label: "Family", img: "/images/temp_tc.jpg" },
+  { value: "weddings", label: "Weddings", img: "/images/Weddings1.jpeg" },
 ];
 
 const Schema = z.object({
-  firstName:   z.string().min(1, "First name is required"),
-  lastName:    z.string().min(1, "Last name is required"),
-  email:       z.string().email("Enter a valid email"),
-  phone:       z
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  email: z.string().email("Enter a valid email"),
+  phone: z
     .string()
     .trim()
     .min(10, "Phone must be at least 10 digits")
@@ -37,25 +37,25 @@ const Schema = z.object({
   sessionType: z.enum(["maternity", "newborn", "family", "weddings"], {
     required_error: "Select a session type",
   }),
-  date:      z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
+  date: z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
   startTime: z.string(),
-  location:  z.string().optional(),
-  message:   z.string().max(1000, "Max 1000 characters").optional(),
+  location: z.string().optional(),
+  message: z.string().max(1000, "Max 1000 characters").optional(),
 });
 
 export default function InquiryForm() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const [emailLocked,       setEmailLocked]       = useState(false);
+  const [emailLocked, setEmailLocked] = useState(false);
   const [contractTemplates, setContractTemplates] = useState({});
-  const [contract,          setContract]          = useState(null);
-  const [submitLock,        setSubmitLock]        = useState(true);
-  const [loading,           setLoading]           = useState(true);
+  const [contract, setContract] = useState(null);
+  const [submitLock, setSubmitLock] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   const [activeTemplate, setActiveTemplate] = useState(null);
-  const [qAnswers,        setQAnswers]       = useState({});
-  const [qLoading,        setQLoading]       = useState(false);
+  const [qAnswers, setQAnswers] = useState({});
+  const [qLoading, setQLoading] = useState(false);
 
   // ── Load contract templates ───────────────────────────────────────────────────
   useEffect(() => {
@@ -94,6 +94,7 @@ export default function InquiryForm() {
         setLoading(false);
       }
     };
+    
     getDefaultContract();
   }, [user]);
 
@@ -131,29 +132,29 @@ export default function InquiryForm() {
   });
 
   const selectedSession = watch("sessionType");
-  const watchedDate     = watch("date");
-  const watchedTime     = watch("startTime");
+  const selectedDate = watch("date");
 
   // ── FIX: location is optional — questionnaire unlocks with just date + time ──
-  const canShowQuestionnaire =
-    !!selectedSession &&
-    !!watchedDate &&
-    !!watchedTime;
+  const canShowQuestionnaire = !!selectedSession
 
   // ── Prefill from auth ─────────────────────────────────────────────────────────
   useEffect(() => {
     const prefillFromAuth = async () => {
       if (!user) return;
+
       if (user.email) {
         setValue("email", user.email, { shouldValidate: true, shouldDirty: false });
         setEmailLocked(true);
       }
-      const first = user.user_metadata?.first_name?.trim() || "";
-      const last  = user.user_metadata?.last_name?.trim()  || "";
+
+      const first = user?.user_metadata?.first_name?.trim() || "";
+      const last = user?.user_metadata?.last_name?.trim() || "";
+
       if (first && !getValues("firstName")?.trim())
         setValue("firstName", first, { shouldValidate: true, shouldDirty: false });
       if (last && !getValues("lastName")?.trim())
         setValue("lastName", last, { shouldValidate: true, shouldDirty: false });
+
       await trigger(["email", "firstName", "lastName"]);
     };
     prefillFromAuth();
@@ -196,11 +197,11 @@ export default function InquiryForm() {
         const questions = (template.schema_json ?? [])
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           .map((q) => ({
-            tempId:   q.id,
-            label:    q.label,
-            type:     q.type,
+            tempId: q.id,
+            label: q.label,
+            type: q.type,
             required: q.required ?? false,
-            options:  q.options  ?? null,
+            options: q.options ?? null,
           }));
 
         setActiveTemplate({ id: template.id, name: template.name, questions });
@@ -230,19 +231,19 @@ export default function InquiryForm() {
 
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`.trim();
-      const now      = new Date().toISOString();
+      const now = new Date().toISOString();
 
       const { data: sessionData, error: sessionError } = await supabase
         .from("Session")
         .insert({
-          client_id:     user.id,
-          start_at:      new Date(`${formData.date}T${formData.startTime}`).toISOString(),
-          end_at:        new Date(`${formData.date}T${formData.startTime}`).toISOString(),
+          client_id: user.id,
+          start_at: new Date(`${formData.date}T${formData.startTime}`).toISOString(),
+          end_at: new Date(`${formData.date}T${formData.startTime}`).toISOString(),
           location_text: formData.location || null,
-          notes:         formData.message  || null,
-          status:        "Pending",
-          created_at:    now,
-          updated_at:    now,
+          notes: formData.message || null,
+          status: "Pending",
+          created_at: now,
+          updated_at: now,
         })
         .select()
         .single();
@@ -254,11 +255,11 @@ export default function InquiryForm() {
         const { data: qInstance, error: qInstError } = await supabase
           .from("questionnaire")
           .insert({
-            session_id:   sessionId,
-            template_id:  activeTemplate.id,
-            status:       "Submitted",
+            session_id: sessionId,
+            template_id: activeTemplate.id,
+            status: "Submitted",
             submitted_at: now,
-            created_at:   now,
+            created_at: now,
           })
           .select("id")
           .single();
@@ -272,8 +273,8 @@ export default function InquiryForm() {
           .from("QuestionnaireResponse")
           .insert({
             questionnaire_id: qInstance.id,
-            answers_json:     qAnswers,
-            created_at:       now,
+            answers_json: qAnswers,
+            created_at: now,
           });
 
         if (respError) {
@@ -283,13 +284,13 @@ export default function InquiryForm() {
       }
 
       const stripeRes = await fetch("http://localhost:5001/api/payment/deposit", {
-        method:  "POST",
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionId,
-          from_url:   window.location.href,
-          apply_tax:  true,
-          tax_rate:   15,
+          from_url: window.location.href,
+          apply_tax: true,
+          tax_rate: 15,
         }),
       });
       const checkoutSession = await stripeRes.json();
@@ -301,7 +302,7 @@ export default function InquiryForm() {
           .eq("id", sessionId);
 
         await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
-          method:  "PATCH",
+          method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ session_id: sessionId, is_active: true }),
         });
@@ -316,11 +317,11 @@ export default function InquiryForm() {
         replace: true,
         state: {
           fullName,
-          email:       formData.email,
+          email: formData.email,
           sessionType: formData.sessionType,
-          dateTime:    `${formData.date} ${formData.startTime}`,
-          startTime:   formData.startTime,
-          location:    formData.location || "",
+          dateTime: `${formData.date} ${formData.startTime}`,
+          startTime: formData.startTime,
+          location: formData.location || "",
         },
       });
     } catch (e) {
@@ -379,9 +380,8 @@ export default function InquiryForm() {
             placeholder="jane@example.com"
             readOnly={emailLocked}
             aria-readonly={emailLocked}
-            className={`${inputBase} ${errors.email ? "border-red-500" : "border-black/10"} ${
-              emailLocked ? "bg-neutral-100 text-neutral-600 cursor-not-allowed" : ""
-            }`}
+            className={`${inputBase} ${errors.email ? "border-red-500" : "border-black/10"} ${emailLocked ? "bg-neutral-100 text-neutral-600 cursor-not-allowed" : ""
+              }`}
             aria-invalid={!!errors.email}
           />
           <p className="mt-1 text-[11px] text-neutral-500">
@@ -410,11 +410,10 @@ export default function InquiryForm() {
             return (
               <label
                 key={s.value}
-                className={`group cursor-pointer rounded-lg border overflow-hidden bg-white/60 shadow-sm transition ${
-                  active
-                    ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20"
-                    : "border-black/10 hover:border-black/20"
-                }`}
+                className={`group cursor-pointer rounded-lg border overflow-hidden bg-white/60 shadow-sm transition ${active
+                  ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20"
+                  : "border-black/10 hover:border-black/20"
+                  }`}
               >
                 <input type="radio" value={s.value} {...register("sessionType")} className="sr-only" />
                 <div className="h-28 w-full bg-neutral-100 overflow-hidden">
@@ -427,9 +426,8 @@ export default function InquiryForm() {
                 </div>
                 <div className="flex items-center gap-3 px-4 py-3">
                   <span
-                    className={`h-4 w-4 rounded-full border flex items-center justify-center ${
-                      active ? "border-[#7E4C3C]" : "border-black/30"
-                    }`}
+                    className={`h-4 w-4 rounded-full border flex items-center justify-center ${active ? "border-[#7E4C3C]" : "border-black/30"
+                      }`}
                   >
                     {active && <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />}
                   </span>
@@ -442,45 +440,6 @@ export default function InquiryForm() {
         {errors.sessionType && (
           <p className="mt-2 text-sm text-red-600">{errors.sessionType.message}</p>
         )}
-      </div>
-
-      {/* ── Date / Time + Location ────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-3">
-          <div>
-            <p className={labelCaps}>DATE</p>
-            <input
-              type="date"
-              min={minDate}
-              {...register("date")}
-              className={`${inputBase} ${errors.date ? "border-red-500" : "border-black/10"}`}
-              aria-invalid={!!errors.date}
-            />
-            {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>}
-          </div>
-          <div>
-            <p className={labelCaps}>START TIME</p>
-            <input
-              type="time"
-              {...register("startTime")}
-              className={`${inputBase} ${errors.startTime ? "border-red-500" : "border-black/10"}`}
-            />
-          </div>
-        </div>
-        <div>
-          <p className={labelCaps}>
-            LOCATION <span className="text-neutral-500 tracking-normal">(optional)</span>
-          </p>
-          <input
-            {...register("location")}
-            placeholder="Sacramento, CA"
-            className={`${inputBase} ${errors.location ? "border-red-500" : "border-black/10"}`}
-            aria-invalid={!!errors.location}
-          />
-          {errors.location && (
-            <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
-          )}
-        </div>
       </div>
 
       {/* ── Questionnaire — unlocks once session + date + time are set ───────── */}
@@ -510,6 +469,47 @@ export default function InquiryForm() {
           )}
         </div>
       )}
+
+      {/* ── Date / Time + Location ────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-3">
+          <div>
+            <p className={labelCaps}>DATE</p>
+            <input
+              type="date"
+              min={minDate}
+              {...register("date")}
+              className={`${inputBase} ${errors.date ? "border-red-500" : "border-black/10"}`}
+              aria-invalid={!!errors.date}
+            />
+            {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>}
+          </div>
+          {selectedDate ? (
+            <div>
+              <p className={labelCaps}>START TIME</p>
+              <input
+                type="time"
+                {...register("startTime")}
+                className={`${inputBase} ${errors.startTime ? "border-red-500" : "border-black/10"}`}
+              />
+            </div>) : (<></>)
+          }
+        </div>
+        <div>
+          <p className={labelCaps}>
+            LOCATION <span className="text-neutral-500 tracking-normal">(optional)</span>
+          </p>
+          <input
+            {...register("location")}
+            placeholder="Sacramento, CA"
+            className={`${inputBase} ${errors.location ? "border-red-500" : "border-black/10"}`}
+            aria-invalid={!!errors.location}
+          />
+          {errors.location && (
+            <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>
+          )}
+        </div>
+      </div>
 
       {/* ── Message ───────────────────────────────────────────────────────────── */}
       <div>

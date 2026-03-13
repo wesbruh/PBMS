@@ -72,8 +72,8 @@ app.get("/api/sessions/:id", async (req, res) => {
                 User:client_id (first_name, last_name),
                 SessionType:session_type_id (name)
             `)
-        .eq("id", id)
-        .single();
+      .eq("id", id)
+      .single();
 
     if (error) throw error;
     res.status(200).json(data);
@@ -126,25 +126,14 @@ app.post("/api/contract", async (req, res) => {
   const { user_id } = req.body;
   const now = new Date().toISOString();
   try {
-    const { data: selectData, error: selectError } = await supabase
+    // delete all current, inactive user contract entries
+    await supabase
       .from("Contract")
-      .select()
+      .delete()
       .eq("assigned_user_id", user_id)
-      .eq("is_active", false)
-      .single();
+      .eq("is_active", false);
 
-    const contractId = selectData?.id;
-
-    if (!selectError) {
-      const { error: deleteError } = await supabase
-        .from("Contract")
-        .delete()
-        .eq("id", contractId)
-        .single();
-
-      if (deleteError) throw deleteError;
-    }
-
+    // create new Contract table entry
     const { data: contractData, error: contractError } = await supabase
       .from("Contract")
       .insert({ assigned_user_id: user_id, status: "Draft", created_at: now, updated_at: now, is_active: false })
@@ -344,7 +333,7 @@ app.post("/api/payment/:type", async (req, res) => {
     }
   } else {
     const errorMessage = "Unknown Checkout Type";
-    console.error(`Error creating checkout session: ${errorMessage} - ${type}`, );
+    console.error(`Error creating checkout session: ${errorMessage} - ${type}`,);
     res.status(500).json({ error: errorMessage });
   }
 });
@@ -367,9 +356,10 @@ app.get("/api/checkout/:checkout_session_id", async (req, res) => {
 app.post("/api/intent/capture", async (req, res) => {
   try {
     const { payment_intent } = req.body;
-    const data = await stripe.paymentIntents.capture(payment_intent);
+    const data = await stripe.paymentIntents.capture({ id: payment_intent });
     res.status(200).json(data);
   } catch (error) {
+    console.error(req);
     console.error('Error capturing payment intent:', error);
     res.status(500).json({ error: error.message });
   }
