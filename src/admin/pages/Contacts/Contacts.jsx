@@ -150,7 +150,7 @@ function Contacts() {
     }
 
     const { data, error } = await supabase
-      .from("Contacts")
+      .from("Contact")
       .insert([{
         first_name: firstName,
         last_name: lastName,
@@ -185,7 +185,7 @@ function Contacts() {
     if (!selectedContact) return;
 
     const { error } = await supabase
-      .from("Contacts")
+      .from("Contact")
       .delete()
       .eq("email", selectedContact.email);
 
