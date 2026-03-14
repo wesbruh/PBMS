@@ -9,6 +9,7 @@ import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloa
 import { saveAs } from "file-saver";
 
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
+import { ta } from "zod/v4/locales";
 
 export default function ClientDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -57,7 +58,9 @@ export default function ClientDashboard() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        price: amountDue
+        price: amountDue,
+        apply_tax: true,
+        tax_rate: 0.05
       })
     });
 
@@ -118,7 +121,7 @@ export default function ClientDashboard() {
           if (user.id === client_id) {
             const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
             const status = await response.json().then((data) => { return data.session.payment_status });
-
+            
             // if session has been fully paid and processed
             if (status === "paid") {
               const now = new Date().toISOString();
@@ -144,13 +147,14 @@ export default function ClientDashboard() {
         }
       }
 
-      // 1) sessions for this user
+      // 1) active sessions for this user
       const { data: sessionRows, error: sesErr } = await supabase
         .from("Session")
         .select(
           "id, session_type_id, start_at, end_at, location_text, status, created_at, inquiry_id"
         )
         .eq("client_id", user.id)
+        .eq("is_active", true)
         .order("start_at", { ascending: false });
 
       if (sesErr) {
