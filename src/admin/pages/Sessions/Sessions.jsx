@@ -124,13 +124,13 @@ function Sessions() {
     } catch (error) {
       console.error("Failed", error);
     }
-  }
+  };
 
-  const confirmSession = async (sessionId, checkoutSessionId) => {
+  const confirmSession = (sessionId, checkoutSessionId) => {
     capturePaymentIntent(sessionId, checkoutSessionId);
     generateInvoice(sessionId);
     handleUpdate(sessionId, "status", "Confirmed");
-  }
+  };
 
   const handleUpdate = async (sessionId, field, value) => {
     // FIX: Convert time strings to proper ISO format for Supabase
