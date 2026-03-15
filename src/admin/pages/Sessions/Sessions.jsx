@@ -46,8 +46,8 @@ function Sessions() {
   const capturePaymentIntent = async (checkoutSessionId) => {
     try {
       const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
-      console.log("Payment Intent Status: ", status); // DEBUGGING
-      console.log("Payment Intent ID: ", paymentIntent); // DEBUGGING
+      //console.log("Payment Intent Status: ", status); // DEBUGGING
+      //console.log("Payment Intent ID: ", paymentIntent); // DEBUGGING
       if (status) {
         const response = await fetch(`http://localhost:5001/api/intent/capture`, {
           method: "POST",
@@ -60,7 +60,6 @@ function Sessions() {
       }
     } catch (error) {
       console.error("Error capturing payment intent:", error);
-      throw error;
     }
   }
 
@@ -96,7 +95,6 @@ function Sessions() {
         throw new Error("Failed to generate invoice");
     } catch (error) {
       console.error("Error generating invoice:", error);
-      throw error;
     }
   };
 
@@ -134,6 +132,40 @@ function Sessions() {
 
     handleUpdate(sessionId, "status", "Confirmed");
   };
+
+  const downloadInvoicePdf = async (session_id) => {
+    try {
+      const { data: invoiceData, error: invoiceError } = await supabase
+        .from("Invoice")
+        .select()
+        .eq("session_id", session_id)
+        .single();
+
+      if (invoiceError) throw new Error("Invoice not found.")
+
+      const pdfResponse = await fetch(
+        `http://localhost:5001/api/invoice/${invoiceData.id}/pdf`
+      );
+
+      const blob = await pdfResponse.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = `PBMSInvoice.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.error("Failed", error);
+    }
+  }
+
+  const confirmSession = async (sessionId, checkoutSessionId) => {
+    capturePaymentIntent(sessionId, checkoutSessionId);
+    generateInvoice(sessionId);
+    handleUpdate(sessionId, "status", "Confirmed");
+  }
 
   const handleUpdate = async (sessionId, field, value) => {
     // FIX: Convert time strings to proper ISO format for Supabase
