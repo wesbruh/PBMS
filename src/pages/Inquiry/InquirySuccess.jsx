@@ -51,8 +51,7 @@ export default function InquirySuccess() {
           .eq("id", sessionId)
           .single();
 
-        console.log(sessionData);
-        // error checks
+          // error checks
         if (user && sessionData.User.id !== user.id) throw new Error({ message: "Session not found or does not belong to user" });
 
         // set parameters

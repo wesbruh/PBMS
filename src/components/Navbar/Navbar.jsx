@@ -12,7 +12,7 @@ async function GetId(roleName) {
     .single();
 
   if (error) {
-    console.error(`Error retrieving or finding role "${roleName}"`);
+    // console.error(`Error retrieving or finding role "${roleName}"`); // DEBUGGING
     return null;
   }
 
