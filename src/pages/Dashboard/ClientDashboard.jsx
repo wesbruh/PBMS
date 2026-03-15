@@ -9,6 +9,7 @@ import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloa
 import { saveAs } from "file-saver";
 
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
+import { ta } from "zod/v4/locales";
 
 export default function ClientDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -57,7 +58,9 @@ export default function ClientDashboard() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        price: amountDue
+        price: amountDue,
+        apply_tax: true,
+        tax_rate: 5
       })
     });
 
@@ -66,16 +69,17 @@ export default function ClientDashboard() {
 
       try {
         // create entry in Payment Table
-        const { data: paymentData, error: paymentError } = await supabase
+        const { error: paymentError } = await supabase
           .from("Payment")
           .insert({
             invoice_id: invoiceId,
             provider: "Stripe",
             provider_payment_id: id,
-            amount: amountDue,
+            amount: amountDue + (amountDue * 0.05), // add tax to amount
             currency: "USD",
             status: "Pending",
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            type: "Rest"
           })
           .select()
           .single();
@@ -118,7 +122,7 @@ export default function ClientDashboard() {
           if (user.id === client_id) {
             const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
             const status = await response.json().then((data) => { return data.session.payment_status });
-
+            
             // if session has been fully paid and processed
             if (status === "paid") {
               const now = new Date().toISOString();
@@ -144,13 +148,14 @@ export default function ClientDashboard() {
         }
       }
 
-      // 1) sessions for this user
+      // 1) active sessions for this user
       const { data: sessionRows, error: sesErr } = await supabase
         .from("Session")
         .select(
           "id, session_type_id, start_at, end_at, location_text, status, created_at, inquiry_id"
         )
         .eq("client_id", user.id)
+        .eq("is_active", true)
         .order("start_at", { ascending: false });
 
       if (sesErr) {
