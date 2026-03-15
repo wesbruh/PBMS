@@ -60,7 +60,7 @@ export default function ClientDashboard() {
       body: JSON.stringify({
         price: amountDue,
         apply_tax: true,
-        tax_rate: 0.05
+        tax_rate: 5
       })
     });
 
@@ -69,16 +69,17 @@ export default function ClientDashboard() {
 
       try {
         // create entry in Payment Table
-        const { data: paymentData, error: paymentError } = await supabase
+        const { error: paymentError } = await supabase
           .from("Payment")
           .insert({
             invoice_id: invoiceId,
             provider: "Stripe",
             provider_payment_id: id,
-            amount: amountDue,
+            amount: amountDue + (amountDue * 0.05), // add tax to amount
             currency: "USD",
             status: "Pending",
-            created_at: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            type: "Rest"
           })
           .select()
           .single();
