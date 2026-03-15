@@ -127,45 +127,10 @@ function Sessions() {
   };
 
   const confirmSession = (sessionId, checkoutSessionId) => {
-    capturePaymentIntent(checkoutSessionId);
-    generateInvoice(sessionId)
-
-    handleUpdate(sessionId, "status", "Confirmed");
-  };
-
-  const downloadInvoicePdf = async (session_id) => {
-    try {
-      const { data: invoiceData, error: invoiceError } = await supabase
-        .from("Invoice")
-        .select()
-        .eq("session_id", session_id)
-        .single();
-
-      if (invoiceError) throw new Error("Invoice not found.")
-
-      const pdfResponse = await fetch(
-        `http://localhost:5001/api/invoice/${invoiceData.id}/pdf`
-      );
-
-      const blob = await pdfResponse.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-
-      a.href = url;
-      a.download = `PBMSInvoice.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } catch (error) {
-      console.error("Failed", error);
-    }
-  }
-
-  const confirmSession = async (sessionId, checkoutSessionId) => {
     capturePaymentIntent(sessionId, checkoutSessionId);
     generateInvoice(sessionId);
     handleUpdate(sessionId, "status", "Confirmed");
-  }
+  };
 
   const handleUpdate = async (sessionId, field, value) => {
     // FIX: Convert time strings to proper ISO format for Supabase
