@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import GoToTop from '../../GoToTop';
-import BookNowButton from "../../components/BookNowButton";
+import BookNowButton from "../../components/Buttons/BookNowButton";
 
 function Weddings() {
   const heroImg = "/images/temp_wedding_hero.jpg";
@@ -73,10 +73,10 @@ function Weddings() {
       {/* HERO */}
       <div className="relative w-full text-white">
         <img className="w-full object-cover h-[420px] md:h-[520px] lg:h-[620px]" src={heroImg} alt="" />
-        <div className="absolute inset-0 bg-black/30"/>
+        <div className="absolute inset-0 bg-black/30" />
         <div className="absolute inset-0 flex flex-col justify-center pl-10 md:pl-20">
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">WEDDING & ELOPEMENT PACKAGES</h1>
-          
+
         </div>
       </div>
 
@@ -91,14 +91,14 @@ function Weddings() {
           <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center rounded-3xl bg-white/60 backdrop-blur border border-black/5 shadow-sm p-6 md:p-10"
           >
             <div className={i % 2 === 1 ? "md:order-2" : "md:order-1"}>
-            <img src={p.img} alt={p.name} className="w-full h-[320px] md:h-[380px] object-cover rounded-3xl shadow-md" />
+              <img src={p.img} alt={p.name} className="w-full h-[320px] md:h-[380px] object-cover rounded-3xl shadow-md" />
             </div>
 
-              {/* Text*/}
-              <div className={i % 2 === 1 ? "md:order-1" : "md:order-2"}>
-                <div className="flex items-baseline justify-between gap-4">
-                  <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#2b2b2b]">{p.name}</h2>
-                  <p className="font-sans text-sm md:text-base tracking-widest uppercase text-[#7E4C3C]">{p.price}</p>
+            {/* Text*/}
+            <div className={i % 2 === 1 ? "md:order-1" : "md:order-2"}>
+              <div className="flex items-baseline justify-between gap-4">
+                <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#2b2b2b]">{p.name}</h2>
+                <p className="font-sans text-sm md:text-base tracking-widest uppercase text-[#7E4C3C]">{p.price}</p>
               </div>
               <ul className="mt-6 space-y-2 text-[15px] md:text-base leading-7 md:leading-8 text-neutral-700 font-sans">
                 {p.points.map((pt, idx) => (
@@ -109,13 +109,10 @@ function Weddings() {
                 ))}
               </ul>
               <div className="mt-8 flex gap-3">
-                <BookNowButton
-                 className="flex justify-center items-center w-full mt-6 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm rounded-3xl transition">
-                 BookNow
-               </BookNowButton>
-                </div>
+                <BookNowButton />
               </div>
             </div>
+          </div>
         ))}
       </div>
 
