@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import BookNowButton from "../../components/BookNowButton";
 
 function Services() {
  const heroImg = "/images/temp_img.jpg";
@@ -103,10 +104,11 @@ function Services() {
                    <li key={idx}>{pt}</li>
                  ))}
                </ul>
-               <Link to="/inquiry"
+               <BookNowButton
                  className="flex justify-center items-center w-full mt-6 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm rounded-3xl transition">
-                 Book Now
-               </Link>
+                 BookNow
+               </BookNowButton>
+               
              </div>
            </div>
          ))}
@@ -153,12 +155,6 @@ function Services() {
          <div className="flow-root my-24">
            <div className="flex flex-col float-left md:float-right lg:float-right pl-10 md:pr-13 lg:pr-15">
              <p className="font-mono text-white">YOUR ROOTS PHOTOGRAPHY</p>
-              <Link
-                to="/inquiry"
-                className="flex justify-center items-center w-full mx-auto mt-5 mb-6 md:mb-8 lg:mb-10
-                            bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm rounded-2xl transition">
-                 CONTACT ME!
-              </Link>
            </div>
          </div>
        </div>

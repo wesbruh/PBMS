@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import GoToTop from '../../GoToTop';
+import BookNowButton from "../../components/BookNowButton";
 
 function Labor() {
   const heroImg = "/images/temp_mother.jpg";
@@ -139,12 +140,10 @@ function Labor() {
                 ))}
               </ul>
               <div className="mt-8 flex gap-3">
-                <Link
-                  to="/inquiry"
-                  className="inline-flex items-center justify-center rounded-full bg-brown px-6 py-3 text-white text-sm hover:bg-[#AB8C4B] transition"
-                >
-                  Inquire
-                </Link>
+                <BookNowButton
+                    className="flex justify-center items-center w-full mt-6 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm rounded-3xl transition">
+                    BookNow
+                </BookNowButton>
              </div>
           </div>
           </div>
