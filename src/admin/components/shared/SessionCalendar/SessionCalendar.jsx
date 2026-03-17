@@ -3,19 +3,15 @@ import { supabase } from "../../../../lib/supabaseClient";
 import { DayPicker, getDefaultClassNames } from "react-day-picker";
 import "react-day-picker/dist/style.css";
 
-
-/// convert hour:min:sec timestamptz to "H:MM AM/PM"
-function formatTime(timestampStr) {
-  if (!timestampStr) {
-    return "";
-  }
-  const [hourStr, minStr] = timestampStr.split(":");
-  let hour = parseInt(hourStr, 10);
-  const min = minStr;
-  const ampm = hour >= 12 ? "PM" : "AM";
-  hour = hour % 12 || 12;
-  return `${hour}:${min} ${ampm}`;
-}
+/// convert hour:min:sec timestamptz to "H:MM AM/PM", pulled some from sessions.jsx
+const getLocalFormattedTime = (date) => {
+  const dateObj = new Date(date);
+  let hours = dateObj.getHours();
+  const minutes = dateObj.getMinutes();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12 || 12; // convert 0 to 12 for midnight
+  return `${hours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+};
 
 //main component
 function SessionCalendar() {
@@ -37,7 +33,7 @@ function SessionCalendar() {
       const { data, error: fetchError } = await supabase
         .from("Session")
         .select(
-          `id, start_at, status, User( first_name, last_name ), SessionType( name )`,
+          `id, start_at, status, location_text, User( first_name, last_name ), SessionType( name )`,
         )
         .eq("status", "Confirmed");
       if (fetchError) {
@@ -59,7 +55,8 @@ function SessionCalendar() {
             ? `${row.User.first_name} ${row.User.last_name}`
             : "Unknown Client",
           type: row.SessionType?.name ?? "Session",
-          time: formatTime(row.start_at),
+          location: row.location_text ?? "No location",
+          time: getLocalFormattedTime(row.start_at),
         });
       });
 
@@ -96,26 +93,36 @@ function SessionCalendar() {
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5 shadow-sm flex flex-col  min-w-0 h-full">
+    <div className="bg-white border border-gray-100 rounded-xl p-2 md:p-3 shadow-sm flex flex-col min-w-80">
       {/* card header */}
-      <div className="flex items-start justify-between mb-3 gap-2 shrink-0">
-        <div className="min-w-0">
-          <h2 className="text-sm font-semibold text-gray-800 truncate">
+      <div className="flex flex-wrap items-start justify-between mb-2">
+        <div className="min-w-0 ">
+          <h2 className="text-xs md:text-sm font-semibold text-gray-800">
             Upcoming Sessions
           </h2>
-          <p className="text-xs text-gray-400 truncate">
+          <p className="text-xs text-gray-400 ">
             Showing Confirmed Sessions only. Click on a date to view details.
           </p>
         </div>
         {/* session count badge, only shows when loaded in */}
         {!loading && !error && (
-          <span className="flex items-center gap-1 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse inline-block" />
+          <span className="flex items-center gap-1">
+            <span className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-amber-600 animate-pulse" />
             <span className="text-xs text-gray-400">
               {totalConfirmed} confirmed sessions
             </span>
           </span>
         )}
+      </div>
+
+      {/* legend  */}
+      <div className="flex flex-wrap items-center gap-2 pb-1 mb-1 border-b border-gray-100 ">
+        <span className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-amber-500 inline-block " />
+        <span className="text-xs text-gray-400 truncate">
+          Confirmed session
+        </span>
+        {/* <span className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-amber-100 border border-amber-300 inline-block ml-2" /> */}
+        <span className="text-xs font-bold text-decoration underline text-gray-400 truncate">Underlined date is Today.</span>
       </div>
 
       {/* error state */}
@@ -130,8 +137,8 @@ function SessionCalendar() {
         </div>
       ) : (
         // react-day-picker
-        <div className="grid grid-cols-1 md:grid-cols-2 min-h-0 border border-blue-500">
-          <div className="border border-green-500 rounded-xl">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-2 ">
+          {/* <div className="min-w-80! rounded-xl"> */}
           <DayPicker
             mode="single"
             selected={selected}
@@ -143,34 +150,23 @@ function SessionCalendar() {
             showOutsideDays={false}
             navLayout="around"
             captionLayout="label"
-             classNames={{
-              root: `${defaultClassNames.root} w-full shrink-0`,
-              today: "font-bold",
-              selected: "!bg-amber-200  rounded-md transition-all", 
-              // months: "flex flex-col",
-              // month: "w-full",
-              // month_caption: "flex items-center justify-between mb-2 px-1",
-              // caption_label: "text-sm font-semibold text-gray-700",
-              // nav: "flex items-center gap-1",
+            classNames={{
+              root: `${defaultClassNames.root} text-center overflow-x-auto max-w-76 border border-gray-100 rounded-xl shadow-md min-h-85`,
+              today: "text-decoration underline font-bold",
+              selected: "!bg-amber-200 rounded-4xl transition-all",
+              months: "w-full text-xs md:text-sm text-center",
+              month: "p-1 w-full text-xs md:text-sm text-center",
+              month_grid: "text-xs md:text-sm",
               chevron: "fill-amber-500 hover:fill-amber-700",
-              // month_grid: "w-full border-collapse",
-              // weekdays: "grid grid-cols-7 mb-1",
-              // weekday: "text-center text-xs font-medium text-gray-400 py-1",
-              // weeks: "w-full ",
-              // week: "grid grid-cols-7 gap-x-0.5 gap-y-0.5 mb-1",
-               day: "text-sm lg:text-md",
-              // day_button:"w-full h-full flex flex-col items-center py-1 rounded-lg text-xs text-gray-700 cursor-pointer hover:bg-gray-50 transition-all ",
-              // 
-              // outside: "opacity-30",
-              // disabled: "opacity-20 cursor-default",
+              day: "text-xs md:text-sm",
             }}
           />
-          </div>
+          {/* </div> */}
 
           {/* popover */}
           {selected && (
-            <div className="relative bg-white border border-red-500 rounded-xl p-3 shrink-0">
-              <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide truncate">
+            <div className="relative min-w-30 bg-white border border-gray-100 shadow-md rounded-xl p-3 ">
+              <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide ">
                 {selected.toLocaleDateString("en-US", {
                   month: "long",
                   day: "numeric",
@@ -183,13 +179,19 @@ function SessionCalendar() {
                   No confirmed sessions on this date.
                 </p>
               ) : (
-                <div className="max-h-32 overflow-y-auto space-y-2 pr-1">
+                <div className="max-h-32 overflow-x-auto overflow-y-auto space-y-2 pr-1 text-wrap">
                   {selectedSessions.map((s) => (
-                    <div key={s.id} className="mb-2 items-start gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1 shrink-0" />
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-gray-800 truncate">{s.clientName}</p>
-                        <p className="text-xs text-gray-500 truncate">{s.type} - {s.time}</p>
+                    <div
+                      key={s.id}
+                      className="mb-2 pb-1 items-start border-b border-gray-100 "
+                    >
+                      <div className="min-w-20">
+                        <p className="text-xs font-semibold text-gray-800">
+                          {s.clientName} - {s.type}
+                        </p>
+                        <p className="text-xs text-gray-500 ">
+                          {s.location} - {s.time}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -197,24 +199,8 @@ function SessionCalendar() {
               )}
             </div>
           )}
-          {/* legend  */}
-          <div className="flex items-center gap-2 mt-auto pt-2 border-t border-gray-100 shrink-0">
-            <span className="w-2 h-2 rounded-full bg-amber-500 inline-block shrink-0" />
-            <span className="text-xs text-gray-400 truncate">
-              Confirmed session
-            </span>
-            <span className="w-2 h-2 rounded-full bg-amber-100 border border-amber-300 inline-block ml-2 shrink-0" />
-            <span className="text-xs text-gray-400 truncate">Today</span>
-          </div>
         </div>
       )}
-      {/* style for dots on the days that have a session 
-            react-day-picker applies "rdp-day_session" to the button element*/}
-      {/* <style>{`
-            .rdp-day-session {
-            text: #f59e0b
-            }
-            `}</style> */}
     </div>
   );
 }
