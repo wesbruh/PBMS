@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 
+// will remove invoice total calculation stuff later if not needed
 // metric cards
 function MetricCard({ label, value, sub, accent, loading }) {
   const accentMap = {
@@ -13,7 +14,7 @@ function MetricCard({ label, value, sub, accent, loading }) {
   // pretty standard styling for desktop and mobile, truncates and uses hidden overflow if screen is reallyyy downsized
   return (
     <div
-      className={`rounded-xl border p-3 md:p-4 flex flex-col gap-1 min-w-0 overflow-hidden ${accentMap[accent]}`}
+      className={`rounded-xl border p-2 md:p-3 flex flex-col min-w-0 overflow-hidden ${accentMap[accent]}`}
     >
       <span className="text-xs font-semibold uppercase tracking-wide opacity-70 truncate">
         {label}
@@ -22,7 +23,7 @@ function MetricCard({ label, value, sub, accent, loading }) {
       {loading ? (
         <span className="h-8 w-24 bg-current opacity-10 rounded animate-pulse" />
       ) : (
-        <span className="text-lg md:text-2xl font-bold truncate">{value}</span>
+        <span className="text-md md:text-lg font-bold truncate">{value}</span>
       )}
       {sub && <span className="text-xs opacity-60 truncate">{sub}</span>}
     </div>
@@ -56,15 +57,15 @@ function MetricsGrid() {
       ] = await Promise.all([
         // 1) all time total of COMPLETED sessions
         supabase
-        .from("Session")
-        .select("*", { count: "exact", head: true })
-        .eq("status", "Completed"),
+          .from("Session")
+          .select("*", { count: "exact", head: true })
+          .eq("status", "Completed"),
         // 2) pending sessions waiting for admin confirmation
         supabase
           .from("Session")
           .select("*", { count: "exact", head: true })
           .eq("status", "Pending"),
-        // 3) pending invoices - unpaid  CHNAGEEEE TOOO CHECK FOR REMAINING BALANCE 
+        // 3) pending invoices - unpaid  CHNAGEEEE TOOO CHECK FOR REMAINING BALANCE
         supabase
           .from("Invoice")
           .select("*", { count: "exact", head: true })
@@ -104,7 +105,7 @@ function MetricsGrid() {
         (sum, row) => sum + (row.amount ?? 0),
         0,
       );
-      const totalRevenue = paymentRev; // invoiceRev + 
+      const totalRevenue = paymentRev; // invoiceRev +
 
       setMetrics({
         totalSessions: totalSessionsRes.count ?? 0,
@@ -129,7 +130,7 @@ function MetricsGrid() {
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-3 md:px-6 pt-5 pb-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 px-3 md:px-6 pt-3 pb-2">
       <MetricCard
         label="Total Completed Sessions"
         value={metrics.totalSessions}
@@ -146,14 +147,14 @@ function MetricsGrid() {
       />
       <MetricCard
         label="Pending Sessions"
-        value={metrics.pendingSessions}
+        value={metrics.pendingSessions ?? "None"}
         sub="Waiting for Confirmation"
         accent="amber"
         loading={loading}
       />
       <MetricCard
         label="Pending Invoices"
-        value={metrics.pendingPayment}
+        value={metrics.pendingPayment ?? "None"}
         sub="Awaiting Payment"
         accent="red"
         loading={loading}

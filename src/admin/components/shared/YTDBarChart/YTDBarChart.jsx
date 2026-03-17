@@ -205,12 +205,20 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
   };
   // adjust y-axis width, must be a fixed number and depends on y-tick size
   const yAxisWidth =
-    maxVal >= 1000000 ? 52 : maxVal >= maxVal >= 100000 ? 48 : 38;
+    maxVal >= 1000000
+      ? 65
+      : maxVal >= 100000
+        ? 55
+        : maxVal >= 10000
+          ? 50
+          : maxVal >= 1000
+            ? 45
+            : 38;
 
   return (
     <div
-      className="bg-white border border-gray-100 rounded-2xl p-4 md:p-5 shadow-sm flex flex-col overflow-hidden min-w-0"
-      style={{ minHeight: "380px" }}
+      className="bg-white border border-gray-100 rounded-xl p-4 md:p-5 shadow-sm flex flex-col overflow-hidden min-w-0"
+      style={{ minHeight: 0 }}
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-4 gap-2">
@@ -245,7 +253,7 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
       ) : (
         <>
           {/* Chart. the responsive container needs a defined height according to docs  */}
-          <div style={{ height: "220px" }}>
+          <div style={{ height: 272 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={data}
@@ -275,12 +283,12 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
                 />
                 <Tooltip
                   content={<CustomToolTip />}
-                  cursor={{ fill: "#fef3c7", radius: 4 }}
+                  cursor={{ fill: "#fef3c7", radius: [8, 8, 0, 0] }}
                 />
                 <Bar
                   dataKey="avg"
                   radius={[4, 4, 0, 0]}
-                  maxBarSize={40}
+                  maxBarSize={400}
                   shape={(props) => <CustomBar {...props} />}
                 />
               </BarChart>
@@ -302,7 +310,7 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
               </p>
             </div>
             {/* legend */}
-            <div className="ml-auto flex items-center gap-3 shrink-0">
+            <div className="ml-auto flex flex-wrap items-center gap-3 shrink-0">
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-sm bg-amber-500 inline-block" />
                 <span className="text-xs text-gray-400">Current</span>
