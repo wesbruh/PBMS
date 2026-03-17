@@ -2,7 +2,7 @@ import React from "react";
 
 export default function About() {
   
-  const hero = "/images/AboutMeImage1.jpg";
+  const hero = "/images/Aboutmeimage.jpg";
 
   return (
     <div className="bg-[url('/images/BackgroundBorder.png')] 
