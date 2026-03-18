@@ -12,14 +12,44 @@ Deno.serve(async (req: Request) => {
         return new Response("method not allowed", { status: 405 })
     }
 
-    try {
-        const { adminEmail, clientName, clientEmail, clientPhone, sessionDate, sessionTime, location, sessionType } = await req.json();
+    let adminEmail = "";
 
-        if (!adminEmail) {
-            return new Response(
-                JSON.stringify({ error: "Missing required fields: adminEmail" }),
-                { status: 400, headers: { "Content-Type": "application/json" } });
-        }
+    try {
+        const body = await req.json();
+        console.log("body:", JSON.stringify(body));
+        const { clientName, clientEmail, clientPhone, sessionDate, sessionTime, location, sessionType, notes } = body;
+        
+        adminEmail = body.adminEmail ?? ""
+
+        // validate rewuired fields
+       const missingFields: string[] = [];
+       if(!adminEmail) {
+        missingFields.push("adminEmail");
+       }
+       if(!clientName) {
+        missingFields.push("clientName");
+       }
+       if(!clientEmail) {
+        missingFields.push("clientEmail");
+       }
+       if(!sessionDate) {
+        missingFields.push("sessionDate");
+       }
+       if(!sessionTime) {
+        missingFields.push("sessionTime");
+       }
+       if(!location) {
+        missingFields.push("location");
+       }
+       if(!sessionType) {
+        missingFields.push("sessionType");
+       }
+       if(missingFields.length > 0) {
+        return new Response(
+            JSON.stringify({ error: `Missing required fields: ${missingFields.join(", ")}`}),
+            {status: 400, headers: {"Content-Type": "application/json" }}
+        );
+       }
 
         const adminBaseURL = Deno.env.get("CLIENT_BASE_URL") ?? "";
 
@@ -29,6 +59,8 @@ Deno.serve(async (req: Request) => {
             <head>
             <meta charset="UTF-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+            <meta name="color-scheme" content="light only" />
+            <meta name="supported-color-schemes" content="light only" />
             </head>
             <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Georgia, serif;">
             <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4; padding: 40px 0;">
@@ -78,7 +110,7 @@ Deno.serve(async (req: Request) => {
             <tr>
             <td style="padding: 12px 0;">
             <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Phone</span><br/>
-            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${clientPhone}</span>
+            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${clientPhone ?? "Not Provided"}</span>
             </td>
             </tr>
             </table>
@@ -95,7 +127,7 @@ Deno.serve(async (req: Request) => {
             <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
             <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Location</span><br/>
-            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${location ?? 'Not provided'}</span>
+            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${location ?? "Not provided"}</span>
             </td>
             </tr>
             <tr>
@@ -108,6 +140,12 @@ Deno.serve(async (req: Request) => {
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
             <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Time</span><br/>
             <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${sessionTime}</span>
+            </td>
+            </tr>
+            <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Special Requests / Notes</span><br/>
+            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${notes || "None"}</span>
             </td>
             </tr>
             <tr>
@@ -128,7 +166,6 @@ Deno.serve(async (req: Request) => {
             </td>
             </tr>
             </table>
-
             <div style="text-align: center; margin: 32px 0;">
             <a href="${adminBaseURL}/admin/sessions" style="
             display: inline-block;
@@ -170,15 +207,23 @@ Deno.serve(async (req: Request) => {
         const { data, error } = await resend.emails.send({
             from: "Your Roots Photography <noreply@yourrootsphotography.space>",
             to: adminEmail,
-            subject: "New Booking Request - ${clientName} - ${sessionDate}",
+            subject: `New Booking Request - ${clientName} - ${sessionDate}`,
             html,
         });
 
+        // now logs FAILED emails sent to admin in the user_email_log table
         if (error) {
-            return new Response(JSON.stringify({ error }), { status: 500 });
+            await supabase.from("user_email_log").insert({
+                email_address: adminEmail,
+                email_type: "admin_new_booking_request",
+                status: "Failed",
+                sent_at: new Date().toISOString(),
+                error_message: JSON.stringify(error),
+            });
+            return new Response(JSON.stringify({ error }), { status: 500, headers: { "Content-Type": "application/json" } });
         }
 
-        // log successful email send to the user_email_log table
+        // log SUCCESSFUL email send to admin in the user_email_log table
         await supabase.from("user_email_log").insert({
             email_address: adminEmail,
             email_type: "admin_new_booking_request",
@@ -190,6 +235,16 @@ Deno.serve(async (req: Request) => {
         return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: { "Content-Type": "application/json" } });
 
     } catch (err) {
-        return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
+        // now logs unexpected failure if we have an email address to log against
+        if(adminEmail) {
+            await supabase.from("user_email_log").insert({
+                email_address: adminEmail,
+                email_type: "admin_new_booking_request",
+                status: "Failed",
+                sent_at: new Date().toISOString(),
+                error_message: err instanceof Error ? err.message : "Unknown Error",
+            });
+        }
+        return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 });
