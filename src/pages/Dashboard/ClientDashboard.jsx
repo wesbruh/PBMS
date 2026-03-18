@@ -11,6 +11,8 @@ import { saveAs } from "file-saver";
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
 import { ta } from "zod/v4/locales";
 
+import SectionPager from "../../components/SectionPager";
+
 export default function ClientDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const checkoutSessionId = searchParams.get('checkout_session_id') || null;
@@ -51,6 +53,31 @@ export default function ClientDashboard() {
 
   // used to track download gallery progress
   const [downloadingGalleries, setDownloadingGalleries] = useState({});
+
+  // how many cards to show at once in each section
+  const ITEMS_PER_PAGE = 3;
+
+  // current page for each session section
+  const [pendingPage, setPendingPage] = useState(0);
+  const [upcomingPage, setUpcomingPage] = useState(0);
+  const [completedPage, setCompletedPage] = useState(0);
+
+  // current page for each invoice section
+  const [unpaidPage, setUnpaidPage] = useState(0);
+  const [paidPage, setPaidPage] = useState(0);
+
+  // reset session pagers when session data changes
+  useEffect(() => {
+    setPendingPage(0);
+    setUpcomingPage(0);
+    setCompletedPage(0);
+  }, [sessions]);
+
+  // reset invoice pagers when invoice data changes
+  useEffect(() => {
+    setUnpaidPage(0);
+    setPaidPage(0);
+  }, [invoices]);
 
   const handlePayment = async (invoice) => {
     const { id: invoiceId, remaining: amountDue } = invoice;
@@ -263,6 +290,57 @@ export default function ClientDashboard() {
     profile?.first_name || profile?.last_name
       ? `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim()
       : user?.email;
+
+  const pendingSessions = sessions.filter((s) => {
+    const status = s.status?.toLowerCase();
+    return status === "pending";
+  });
+
+  const upcomingSessions = sessions.filter((s) => {
+    const status = s.status?.toLowerCase();
+    return status === "confirmed";
+  });
+
+  const completedSessions = sessions.filter((s) => {
+    const status = s.status?.toLowerCase();
+    return status === "completed";
+  });
+
+  const unpaidInvoices = invoices.filter((inv) => {
+    const status = inv.status?.toLowerCase();
+    return status !== "paid";
+  });
+
+  const paidInvoices = invoices.filter((inv) => {
+    const status = inv.status?.toLowerCase();
+    return status === "paid";
+  });
+
+  // only show 4 items at a time in each section
+  const pendingVisible = pendingSessions.slice(
+    pendingPage * ITEMS_PER_PAGE,
+    pendingPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE
+  );
+
+  const upcomingVisible = upcomingSessions.slice(
+    upcomingPage * ITEMS_PER_PAGE,
+    upcomingPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE
+  );
+
+  const completedVisible = completedSessions.slice(
+    completedPage * ITEMS_PER_PAGE,
+    completedPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE
+  );
+
+  const unpaidVisible = unpaidInvoices.slice(
+    unpaidPage * ITEMS_PER_PAGE,
+    unpaidPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE
+  );
+
+  const paidVisible = paidInvoices.slice(
+    paidPage * ITEMS_PER_PAGE,
+    paidPage * ITEMS_PER_PAGE + ITEMS_PER_PAGE
+  );
 
   // Handle typing into fields, updates the edit form page when something else is typed
   function handleEditChange(e) {
@@ -677,19 +755,28 @@ export default function ClientDashboard() {
           </ul>
         )}
       </section>
+      {/* Sessions + Invoices */}
+<div className="space-y-6">
+  {/* Sessions */}
+  <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
+   <h2 className="text-lg font-serif text-brown mb-2">Your Sessions</h2>
+   <div className="border-b border-[#E7DFCF] mb-5"></div>
 
-      {/* grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Sessions */}
-        <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-          <h2 className="text-lg font-serif text-brown mb-3">Your Sessions</h2>
-          {sessions.length === 0 ? (
-            <p className="text-sm text-neutral-500">
-              You don’t have any sessions scheduled yet.
-            </p>
+    {sessions.length === 0 ? (
+      <p className="text-sm text-neutral-500">
+        You don’t have any sessions scheduled yet.
+      </p>
+    ) : (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Pending */}
+        <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
+          <h3 className="text-base font-serif text-brown mb-3">Pending</h3>
+          {pendingSessions.length === 0 ? (
+            <p className="text-sm text-neutral-500">No pending sessions.</p>
           ) : (
+            <div>
             <ul className="space-y-3">
-              {sessions.map((s) => (
+              {pendingVisible.map((s) => (
                 <li
                   key={s.id}
                   className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
@@ -704,80 +791,193 @@ export default function ClientDashboard() {
                         : "TBD"}
                     </p>
                   </div>
-                  <span className="text-xs px-2 py-1 rounded bg-neutral-100 border text-neutral-700">
+                  <span
+                    className={`text-xs px-2 py-1 rounded border font-medium ${
+                    s.status?.toLowerCase() === "confirmed"
+                    ? "bg-green-100 border-green-300 text-green-700"
+                    : s.status?.toLowerCase() === "completed"
+                    ? "bg-purple-100 text-purple-800 border-purple-200"
+                    : "bg-yellow-100 border-yellow-300 text-yellow-700"
+                    }`}
+                  >
                     {s.status ?? "pending"}
                   </span>
                 </li>
               ))}
+              
             </ul>
+            <SectionPager
+              page={pendingPage}
+              setPage={setPendingPage}
+              totalItems={pendingSessions.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+            </div>
           )}
-        </section>
+        </div>
 
-        {/* Invoices */}
-        <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-          <h2 className="text-lg font-serif text-brown mb-3">Invoices</h2>
-          {invoices.length === 0 ? (
-            <p className="text-sm text-neutral-500">
-              No invoices yet. You’ll see them here when they’re issued.
-            </p>
+        {/* Upcoming */}
+        <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
+          <h3 className="text-base font-serif text-brown mb-3">Upcoming</h3>
+          {upcomingSessions.length === 0 ? (
+            <p className="text-sm text-neutral-500">No upcoming sessions.</p>
           ) : (
+            <div>
             <ul className="space-y-3">
-              {invoices.map((inv) => (
+              {upcomingVisible.map((s) => (
+                <li
+                  key={s.id}
+                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+                >
+                  <div>
+                    <p className="text-sm text-brown font-semibold">
+                      {s.location_text || "Session"}
+                    </p>
+                    <p className="text-xs text-neutral-500">
+                      {s.start_at
+                        ? new Date(s.start_at).toLocaleString()
+                        : "TBD"}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-xs px-2 py-1 rounded border font-medium ${
+                    s.status?.toLowerCase() === "confirmed"
+                    ? "bg-green-100 border-green-300 text-green-700"
+                    : s.status?.toLowerCase() === "completed"
+                    ? "bg-purple-100 text-purple-800 border-purple-200"
+                    : "bg-yellow-100 border-yellow-300 text-yellow-700"
+                    }`}
+                  >
+                    {s.status ?? "pending"}
+                  </span>
+                </li>
+              ))}
+            
+            </ul>
+            <SectionPager
+              page={upcomingPage}
+              setPage={setUpcomingPage}
+              totalItems={upcomingSessions.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+            </div>
+          )}
+        </div>
+
+        {/* Completed */}
+        <div className="lg:pr-6">
+          <h3 className="text-base font-serif text-brown mb-3">Completed</h3>
+          {completedSessions.length === 0 ? (
+            <p className="text-sm text-neutral-500">No completed sessions.</p>
+          ) : (
+            <div>
+            <ul className="space-y-3">
+              {completedVisible.map((s) => (
+                <li
+                  key={s.id}
+                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+                >
+                  <div>
+                    <p className="text-sm text-brown font-semibold">
+                      {s.location_text || "Session"}
+                    </p>
+                    <p className="text-xs text-neutral-500">
+                      {s.start_at
+                        ? new Date(s.start_at).toLocaleString()
+                        : "TBD"}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-xs px-2 py-1 rounded border font-medium ${
+                    s.status?.toLowerCase() === "confirmed"
+                    ? "bg-green-100 border-green-300 text-green-700"
+                    : s.status?.toLowerCase() === "completed"
+                    ? "bg-purple-100 text-purple-800 border-purple-200"
+                    : "bg-yellow-100 border-yellow-300 text-yellow-700"
+                    }`}
+                  >
+                    {s.status ?? "pending"}
+                  </span>
+                </li>
+              ))}
+            
+            </ul>
+            <SectionPager
+              page={completedPage}
+              setPage={setCompletedPage}
+              totalItems={completedSessions.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+  </section>
+
+  {/* Invoices */}
+  <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
+   <h2 className="text-lg font-serif text-brown mb-2">Invoices</h2>
+   <div className="border-b border-[#E7DFCF] mb-5"></div>
+
+    {invoices.length === 0 ? (
+      <p className="text-sm text-neutral-500">
+        No invoices yet. You’ll see them here when they’re issued.
+      </p>
+    ) : (
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Unpaid */}
+        <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
+          <h3 className="text-base font-serif text-brown mb-3">Unpaid</h3>
+          {unpaidInvoices.length === 0 ? (
+            <p className="text-sm text-neutral-500">No unpaid invoices.</p>
+          ) : (
+            <div>
+            <ul className="space-y-3">
+              {unpaidVisible.map((inv) => (
                 <li
                   key={inv.id}
                   className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
                 >
                   <div className="flex-col w-full">
                     <div className="flex w-full">
-                      <div className='flex flex-row gap-3'>
+                      <div className="flex flex-row gap-3">
                         <p className="text-sm text-brown font-semibold">
                           Invoice No. {inv.invoice_number || inv.id.slice(0, 6)}
                         </p>
                         <a
-                          className='text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5'
+                          className="text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5"
                           aria-label="Preview"
                         >
                           <i className="fa-solid fa-eye"></i>
                         </a>
                         <DownloadInvoiceButton invoiceId={inv.id} />
                       </div>
+
                       <div className="flex relative mx-auto lg:mr-0">
                         <div className="flex lg:absolute lg:right-5">
-                          {
-                            inv.status === "Paid" ?
-                              <></> :
-                              <button
-                                type="button"
-                                onClick={() => handlePayment(inv)}
-                                className="px-2 py-1 md:px-4 flex bg-brown rounded text-xs md:text-sm text-white font-bold hover:bg-[#AB8C4B] cursor-pointer">Pay
-                              </button>
-                          }
+                          <button
+                            type="button"
+                            onClick={() => handlePayment(inv)}
+                            className="px-2 py-1 md:px-4 flex bg-brown rounded text-xs md:text-sm text-white font-bold hover:bg-[#AB8C4B] cursor-pointer"
+                          >
+                            Pay
+                          </button>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-3 lg:flex-row mx-2 mt-2">
-                      <div className='flex flex-row gap-2 items-center w-full lg:w-1/5 mr-4'>
-                        <span
-                          className={`flex w-3 h-3 rounded-full border ${inv.status === "Paid"
-                            ? "bg-green-100 border-green-300"
-                            : "bg-red-100 border-red-300"
-                            }`}
-                        >
-                          {" "}
-                        </span>
-                        <div className={`flex text-sm font-semibold ${inv.status === "Paid"
-                          ? "text-green-700"
-                          : "text-red-700"
-                          }`}>
+                      <div className="flex flex-row gap-2 items-center w-full lg:w-1/5 mr-4">
+                        <span className="flex w-3 h-3 rounded-full border bg-red-100 border-red-300"></span>
+                        <div className="flex text-sm font-semibold text-red-700">
                           {inv.status ?? "Unpaid"}
                         </div>
                       </div>
+
                       <div className="flex flex-col gap-3 lg:flex-row lg:gap-0 mx-2 mt-2 w-4/5 justify-between">
                         <div className="flex flex-col">
-                          <p className="text-sm text-neutral-700">
-                            Issue Date
-                          </p>
+                          <p className="text-sm text-neutral-700">Issue Date</p>
                           <p className="text-sm text-neutral-500">
                             {inv.issue_date
                               ? new Date(inv.issue_date).toLocaleDateString()
@@ -785,9 +985,7 @@ export default function ClientDashboard() {
                           </p>
                         </div>
                         <div className="flex flex-col">
-                          <p className="text-sm text-neutral-700">
-                            Due Date
-                          </p>
+                          <p className="text-sm text-neutral-700">Due Date</p>
                           <p className="text-sm text-neutral-500">
                             {inv.due_date
                               ? new Date(inv.due_date).toLocaleDateString()
@@ -795,12 +993,9 @@ export default function ClientDashboard() {
                           </p>
                         </div>
                         <div className="flex flex-col">
-                          <p className="text-sm text-neutral-700">
-                            Amount Due
-                          </p>
+                          <p className="text-sm text-neutral-700">Amount Due</p>
                           <p className="text-sm text-neutral-500">
-                            {/* When invoice is paid or remaining is NULL, read remaining as 0, otherwise read total */}
-                            ${((inv.status === "Paid") ? 0 : (inv.remaining ?? 0)).toFixed(2)}
+                            ${(inv.remaining ?? 0).toFixed(2)}
                           </p>
                         </div>
                       </div>
@@ -809,9 +1004,97 @@ export default function ClientDashboard() {
                 </li>
               ))}
             </ul>
+            <SectionPager
+              page={unPaidPage}
+              setPage={setUnPaidPage}
+              totalItems={unPaidInvoices.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+            </div>
           )}
-        </section>
+        </div>
 
+        {/* Paid */}
+        <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
+          <h3 className="text-base font-serif text-brown mb-3">Paid</h3>
+          {paidInvoices.length === 0 ? (
+            <p className="text-sm text-neutral-500">No paid invoices.</p>
+          ) : (
+            <div>
+            <ul className="space-y-3">
+              {paidVisible.map((inv) => (
+                <li
+                  key={inv.id}
+                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+                >
+                  <div className="flex-col w-full">
+                    <div className="flex w-full">
+                      <div className="flex flex-row gap-3">
+                        <p className="text-sm text-brown font-semibold">
+                          Invoice No. {inv.invoice_number || inv.id.slice(0, 6)}
+                        </p>
+                        <a
+                          className="text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5"
+                          aria-label="Preview"
+                        >
+                          <i className="fa-solid fa-eye"></i>
+                        </a>
+                        <DownloadInvoiceButton invoiceId={inv.id} />
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 lg:flex-row mx-2 mt-2">
+                      <div className="flex flex-row gap-2 items-center w-full lg:w-1/5 mr-4">
+                        <span className="flex w-3 h-3 rounded-full border bg-green-100 border-green-300"></span>
+                        <div className="flex text-sm font-semibold text-green-700">
+                          {inv.status ?? "Paid"}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-3 lg:flex-row lg:gap-0 mx-2 mt-2 w-4/5 justify-between">
+                        <div className="flex flex-col">
+                          <p className="text-sm text-neutral-700">Issue Date</p>
+                          <p className="text-sm text-neutral-500">
+                            {inv.issue_date
+                              ? new Date(inv.issue_date).toLocaleDateString()
+                              : "—"}
+                          </p>
+                        </div>
+                        <div className="flex flex-col">
+                          <p className="text-sm text-neutral-700">Due Date</p>
+                          <p className="text-sm text-neutral-500">
+                            {inv.due_date
+                              ? new Date(inv.due_date).toLocaleDateString()
+                              : "—"}
+                          </p>
+                        </div>
+                        <div className="flex flex-col">
+                          <p className="text-sm text-neutral-700">Amount Due</p>
+                          <p className="text-sm text-neutral-500">$0.00</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            
+            </ul>
+            <SectionPager
+              page={paidPage}
+              setPage={setPaidPage}
+              totalItems={paidInvoices.length}
+              itemsPerPage={ITEMS_PER_PAGE}
+            />
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+  </section>
+</div>
+
+      {/* grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Galleries */}
         <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
           <h2 className="text-lg font-serif text-brown mb-3">Galleries</h2>

@@ -26,6 +26,7 @@ export default function Login() {
 
   const [form, setForm] = useState({ email: "", password: "", });
   const [error, setError] = useState("");
+  const [errors, setErrors ] = useState({});
 
   // Forgot-password modal state 
   const [showReset, setShowReset] = useState(false);
@@ -70,16 +71,30 @@ export default function Login() {
 
   const onChange = (e) => {
     const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
+    setForm((f) => ({ ...f, [name]: value }));
     if (error) setError("");
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
-    if (!form.email || !form.password) {
-      setError("Please fill in all required fields!");
+    const newErrors = {};
+
+    if (!form.email.trim()) {
+      newErrors.email = "Email is required";
+    }
+
+    if (!form.password.trim()) {
+      newErrors.password = "Password is required";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      setError("");
       return;
     }
+
+    setErrors({});
 
     const { error } = await supabase.auth.signInWithPassword({
       email: form.email,
@@ -153,30 +168,55 @@ export default function Login() {
 
 
   return (
-    <div className=''>
-      <div className="mx-2 md:mx-4 lg:mx-5 my-10 flex flex-col items-center">
+    <div className="min-h-[calc(100vh-80px)] bg-[#FFFDF4]">
+      <div className="mx-4 md:mx-6 lg:mx-10 py-10 md:py-14 flex justify-center">
+        <div className="w-full max-w-3xl">
         {/* Headline in serif font */}
-        <h1 className="text-center text-3xl md:text-4xl lg:text-5xl font-serif font-extralight mb-8">
-          Log in to Your Account
-        </h1>
-        <form className="flex flex-col font-mono text-xs w-full max-w-xl" noValidate onSubmit={onSubmit}>
-          <label className="mb-4">
-            <p className="text-center text-brown py-3">EMAIL *</p>
+        <div className="text-center mb-8 md:mb-10">
+          <h1 className="text-center text-3xl md:text-5xl font-serif font-extralight tracking wide">
+            Log in to Your Account
+          </h1>
+          <p className="mt-5 text-sm md:text-base text-neutral-600 max-w-xl mx-auto">
+            Log in to manage your account and submit your session inquiry.
+          </p>
+        </div>
+
+        {/* Card */}
+        <div className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl shadow-sm px-5 md:px-8 py-8">
+          <form
+            className="flex flex-col gap-5 font-mono text-xs w-full"
+            noValidate
+            onSubmit={onSubmit}
+          >
+            {/* Email */}
+          <label>
+            <p className="text-brown py-2 tracking-widest text-[11px]">EMAIL *</p>
             <input
-              className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
+              className={`w-full rounded-md border border-neutral-200 px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50
+              ${errors.email ? "border-red-500" : "border-neutral-200"}`}
               id="email" name="email" type="email" autoComplete="email" required
-              value={form.email} onChange={onChange} />
+              value={form.email} onChange={onChange} placeholder = "jane@example.com" />
+              {errors.email && (
+              <p className="mt-2 text-red-600 text-xs">{errors.email}</p>
+              )}
           </label>
-          <label className="mb-4">
-            <p className="text-center text-brown py-3">PASSWORD *</p>
+
+            {/* Password */}
+          <label>
+            <p className="text-brown py-2 tracking-widest text-[11px]">PASSWORD *</p>
             <input
-              className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
+              className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
+              errors.password ? "border-red-500" : "border-neutral-200"
+              }`}
               id="password" name="password" type="password" autoComplete="current-password" required
-              value={form.password} onChange={onChange} />
+              value={form.password} onChange={onChange} placeholder = "••••••••" />
+              {errors.password && (
+              <p className="mt-2 text-red-600 text-xs">{errors.password}</p>
+            )}
           </label>
 
           {/* Forgot password link */}
-          <div className="text-center mt-2 mb-2">
+          <div className="text-center mt-2">
             <button
               type="button"
               onClick={openReset}
@@ -186,16 +226,18 @@ export default function Login() {
             </button>
           </div>
 
-          {error && <p className="text-center text-red-600 text-xs mt-3 mb-1">{error}</p>}
+          {error && <p className="text-center text-red-600 text-xs mt-2">{error}</p>}
 
-          <button className='flex justify-center items-center w-1/2 mx-auto mt-6 mb-6 md:mb-8 lg:mb-10
-                                        bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font sans border border-black rounded-md transition cursor-pointer'
+          <button className="flex justify-center items-center w-full md:w-1/2 mx-auto mt-4 mb-2
+                             bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-sans rounded-md transition cursor-pointer"
             type="submit"
             aria-label="login-button">
             Log In
           </button>
         </form>
       </div>
+    </div>
+  </div>
 
       {/* Modal popup for Forgot Password */}
       {showReset && (
