@@ -5,14 +5,18 @@ import { useAuth } from "../../../context/AuthContext";
 import { supabase } from "../../../lib/supabaseClient";
 
 async function GetId(roleName) {
-  const { data, error } = await supabase.from("Role").select("id").eq("name", `${roleName}`);
+  const { data, error } = await supabase
+    .from("Role")
+    .select("id")
+    .eq("name", roleName)
+    .single();
 
   if (error) {
-    console.error(`Error retrieving or finding role "${roleName}"`);
+    // console.error(`Error retrieving or finding role "${roleName}"`); // DEBUGGING
     return null;
   }
 
-  const roleId =  data[0]?.id;
+  const roleId = data.id;
 
   return roleId;
 }

@@ -27,7 +27,7 @@ app.use(express.json());
 
 // --- Admin Session Routes ---
 
-// Fetch all sessions with related User and Type data
+// Fetch all active sessions with related User and Type data
 app.get("/api/sessions", async (req, res) => {
   try {
     const { data, error } = await supabase
@@ -43,7 +43,8 @@ app.get("/api/sessions", async (req, res) => {
                 deposit_cs_id,
                 User:client_id (first_name, last_name),
                 SessionType:session_type_id (name)
-            `);
+            `)
+          .eq("is_active", true);
 
     if (error) throw error;
     res.status(200).json(data);
@@ -72,8 +73,8 @@ app.get("/api/sessions/:id", async (req, res) => {
                 User:client_id (first_name, last_name),
                 SessionType:session_type_id (name)
             `)
-        .eq("id", id)
-        .single();
+      .eq("id", id)
+      .single();
 
     if (error) throw error;
     res.status(200).json(data);
@@ -123,36 +124,40 @@ app.get("/api/contract/templates", async (_, res) => {
 
 // get basic contract
 app.post("/api/contract", async (req, res) => {
-  const { user_id } = req.body;
+  const { user_id, session_id } = req.body;
   const now = new Date().toISOString();
+
   try {
-    const { data: selectData, error: selectError } = await supabase
-      .from("Contract")
-      .select()
-      .eq("assigned_user_id", user_id)
-      .eq("is_active", false)
-      .single();
-
-    const contractId = selectData?.id;
-
-    if (!selectError) {
-      const { error: deleteError } = await supabase
+    if (session_id) {
+      // select Contract table entry
+      const { data: contractData, error: contractError } = await supabase
         .from("Contract")
-        .delete()
-        .eq("id", contractId)
+        .select()
+        .eq("assigned_user_id", user_id)
+        .eq("session_id", session_id)
+        .eq("is_active", false)
         .single();
 
-      if (deleteError) throw deleteError;
+      if (contractError) throw contractError;
+      res.status(200).json(contractData);
+    } else {
+      // delete all current, inactive user contract entries
+      await supabase
+        .from("Contract")
+        .delete()
+        .eq("assigned_user_id", user_id)
+        .eq("is_active", false);
+
+      // create new Contract table entry
+      const { data: contractData, error: contractError } = await supabase
+        .from("Contract")
+        .insert({ assigned_user_id: user_id, status: "Draft", created_at: now, updated_at: now, is_active: false })
+        .select()
+        .single();
+
+      if (contractError) throw contractError;
+      res.status(200).json(contractData);
     }
-
-    const { data: contractData, error: contractError } = await supabase
-      .from("Contract")
-      .insert({ assigned_user_id: user_id, status: "Draft", created_at: now, updated_at: now, is_active: false })
-      .select()
-      .single();
-
-    if (contractError) throw contractError;
-    res.status(200).json(contractData);
   } catch (error) {
     console.error("Error getting contract:", error);
     res.status(500).json({ error: "Internal Server Error" });
@@ -299,7 +304,7 @@ app.post("/api/payment/:type", async (req, res) => {
         payment_intent_data: {
           capture_method: 'manual',
         },
-        success_url: `http://localhost:5173/dashboard/inquiry/success?session_id=${session_id}`,
+        success_url: `http://localhost:5173/dashboard/inquiry?session_id=${session_id}&checkout_session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: from_url
       });
 
@@ -344,7 +349,7 @@ app.post("/api/payment/:type", async (req, res) => {
     }
   } else {
     const errorMessage = "Unknown Checkout Type";
-    console.error(`Error creating checkout session: ${errorMessage} - ${type}`, );
+    console.error(`Error creating checkout session: ${errorMessage} - ${type}`,);
     res.status(500).json({ error: errorMessage });
   }
 });
@@ -367,9 +372,12 @@ app.get("/api/checkout/:checkout_session_id", async (req, res) => {
 app.post("/api/intent/capture", async (req, res) => {
   try {
     const { payment_intent } = req.body;
-    const data = await stripe.paymentIntents.capture(payment_intent);
+    const { data, error} = await stripe.paymentIntents.capture(payment_intent);
+    
+    if (error) throw error;
     res.status(200).json(data);
   } catch (error) {
+    console.error(req);
     console.error('Error capturing payment intent:', error);
     res.status(500).json({ error: error.message });
   }

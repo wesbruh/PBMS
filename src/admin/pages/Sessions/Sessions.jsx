@@ -2,7 +2,10 @@ import { useState, useEffect } from "react";
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
-import Stripe from "stripe";
+import { supabase } from "../../../lib/supabaseClient.js"
+
+// constants for invoice generation logic
+const DEPOSIT_PERCENTAGE = 0.05;
 
 function Sessions() {
   const [sessions, setSessions] = useState([]);
@@ -24,6 +27,15 @@ function Sessions() {
     }
   };
 
+  const getLocalFormattedDate = (date) => {
+    const dateObj = new Date(date);
+    return dateObj.getFullYear() + "-" +
+      (dateObj.getMonth() + 1).toString().padStart(2, '0') + "-" +
+      (dateObj.getDate().toString().padStart(2, '0')) + "T" +
+      (dateObj.getHours().toString().padStart(2, '0')) + ":" +
+      (dateObj.getSeconds().toString().padStart(2, '0'));
+  }
+
   const getPaymentIntent = async (checkoutSessionId) => {
     if (!checkoutSessionId) return { status: null, paymentIntent: null }
     const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
@@ -31,18 +43,19 @@ function Sessions() {
     return { status: response.ok, paymentIntent };
   }
 
-  const capturePaymentIntent = async (sessionId, checkoutSessionId) => {
+  const capturePaymentIntent = async (checkoutSessionId) => {
     try {
       const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
+      //console.log("Payment Intent Status: ", status); // DEBUGGING
+      //console.log("Payment Intent ID: ", paymentIntent); // DEBUGGING
       if (status) {
         const response = await fetch(`http://localhost:5001/api/intent/capture`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id: sessionId, payment_intent: paymentIntent })
+          body: JSON.stringify({ payment_intent: paymentIntent })
         });
 
-        if (response.ok)
-          await handleUpdate(sessionId, 'status', 'Confirmed');
+        if (!response.ok) throw Error(await response.json().error);
         // console.error("Status: ", status); // DEBUGGING
       }
     } catch (error) {
@@ -50,34 +63,73 @@ function Sessions() {
     }
   }
 
-  const generateInvoice = async(session_id) => {
+  const generateInvoice = async (session_id) => {
+    try {
+      const { data: sessionData, error } = await supabase
+        .from("Session")
+        .select("start_at, SessionType(base_price)")
+        .eq("id", session_id)
+        .single();
 
-    try{
-      const response = await fetch(`http://localhost:5001/api/invoice/generate/${session_id}`,
-      { method: "POST" }
-    );
-        if(!response.ok){
-          throw new Error("Failed to generate invoice");
-        }
+      if (error) throw new Error("Session not found");
 
-        const invoice = await response.json();
-        const pdfResponse = await fetch(
-      `http://localhost:5001/api/invoice/${invoice.id}/pdf`
-    );
+      // calculate remaining balance after deposit for invoice generation
+      const remaining = (sessionData.SessionType.base_price) * (1 - DEPOSIT_PERCENTAGE);
 
-        const blob = await pdfResponse.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
+      // due on day of session date, can be changed to any other logic as needed
+      const date = new Date(sessionData.start_at);
+      const dueDate = `${date.getFullYear()}` + "-" +
+        `${(date.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
+        `${date.getDate().toString().padStart(2, '0')}`;
 
-        a.href = url;
-        a.download = `PBMSInvoice.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+      const response = await fetch(`http://localhost:5001/api/invoice/generate/${session_id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          remaining: remaining, // send remaining balance with tax for invoice generation
+          due_date: dueDate
+        })
+      });
 
-      } catch(error){
-        console.error("Error generating invoice:", error);
-      }
+      if (!response.ok)
+        throw new Error("Failed to generate invoice");
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+    }
+  };
+
+  const downloadInvoicePdf = async (session_id) => {
+    try {
+      const { data: invoiceData, error: invoiceError } = await supabase
+        .from("Invoice")
+        .select()
+        .eq("session_id", session_id)
+        .single();
+
+      if (invoiceError) throw new Error("Invoice not found.")
+
+      const pdfResponse = await fetch(
+        `http://localhost:5001/api/invoice/${invoiceData.id}/pdf`
+      );
+
+      const blob = await pdfResponse.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+
+      a.href = url;
+      a.download = `PBMSInvoice.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.error("Failed", error);
+    }
+  };
+
+  const confirmSession = (sessionId, checkoutSessionId) => {
+    capturePaymentIntent(sessionId, checkoutSessionId);
+    generateInvoice(sessionId);
+    handleUpdate(sessionId, "status", "Confirmed");
   };
 
   const handleUpdate = async (sessionId, field, value) => {
@@ -145,7 +197,7 @@ function Sessions() {
         <input
           type="datetime-local"
           className="border rounded px-1 text-sm"
-          defaultValue={val ? new Date(val).toISOString().slice(0, 16) : ""}
+          defaultValue={val ? getLocalFormattedDate(val) : ""}
           onChange={(e) => handleUpdate(row.id, 'start_at', e.target.value)}
         />
       )
@@ -157,7 +209,7 @@ function Sessions() {
         <input
           type="datetime-local"
           className="border rounded px-1 text-sm"
-          defaultValue={val ? new Date(val).toISOString().slice(0, 16) : ""}
+          defaultValue={val ? getLocalFormattedDate(val) : ""}
           onChange={(e) => handleUpdate(row.id, 'end_at', e.target.value)}
         />
       )
@@ -172,27 +224,26 @@ function Sessions() {
       )
     },
     {
-      key: 'deposit_cs_id',
-      label: 'Action',
+      key: 'actions',
+      label: 'Actions',
       render: (value, row) => (
-        (row.status === "Pending" && value) ?
+        (row.status === "Pending" && row.deposit_cs_id) ?
           <button
             type={"button"}
-            onClick={() => { capturePaymentIntent(row.id, value) }}
+            onClick={() => { confirmSession(row.id, row.deposit_cs_id) }}
             className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border`}
           >
             Confirm
           </button> :
-         (row.status === "Confirmed") ? (
-        <button
-          type="button"
-          onClick={() => generateInvoice(row.id)}
-        //className="hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border bg-gray-100 text-gray-800 border-gray-200"
-        className="hover:cursor-pointer px-3 py-1 rounded-md text-sm font-semibold bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
-        >
-          Generate Invoice
-        </button>
-        ) : <div></div>
+          (row.status === "Confirmed") ?
+            <button
+              type={"button"}
+              onClick={() => { downloadInvoicePdf(row.id) }}
+              className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border`}
+            >
+              Download
+            </button> :
+            <div></div>
       )
     }
   ];

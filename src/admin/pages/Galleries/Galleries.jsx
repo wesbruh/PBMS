@@ -3,7 +3,7 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import UploadGalleryModal from "./UploadGalleryModal.jsx";
-import { Upload, Eye } from "lucide-react";
+import { Upload, FolderCheck } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient.js";
 
 
@@ -53,8 +53,8 @@ function AdminGalleries() {
           )
         `,
         )
-        // Pick the statuses that mean “completed/pending”
-        .in("status", ["Completed", "Pending"])
+        // Pick the status that mean “confirmed” by the admin. later logic will be implemented to where the photo session needs to be 'completed' before the gallery record shows up in the upload gallery table.
+        .in("status", ["Confirmed"])
         .order("start_at", { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -175,20 +175,18 @@ function AdminGalleries() {
           ) : (
             <div className="flex flex-col gap-1">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  // Navigate to view gallery
-                  window.location.href = `/admin/galleries/view/${row.id}`;
-                }}
-                className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-sm font-medium cursor-pointer"
+                // button now does nothing, just for styling. keeping 'view gallery' logic if needed later 
+                // onClick={(e) => {
+                //   e.stopPropagation();
+                //   // Navigate to view gallery
+                //   window.location.href = `/admin/galleries/view/${row.id}`;
+                // }}
+                className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-green-700 rounded-md text-sm font-medium"
                 title="View uploaded gallery"
               >
-                <Eye size={16} />
-                View Gallery
-              </button>
-              <span className="text-xs text-green-600">
+                <FolderCheck size={16} />
                 Notified on {new Date(row.uploadDate || Date.now()).toLocaleDateString()}
-              </span>
+              </button>
             </div>
           )}
         </div>
@@ -242,45 +240,3 @@ function AdminGalleries() {
 }
 
 export default AdminGalleries;
-
-
-// OLD GALLERY STUFF THAT MIGHT NEED LATER ON
-// const { data, error } = await supabase.from("User")
-//   .select("id, email, first_name, last_name, phone");
-
-// function Admin() {
-
-//   return (
-//     <div className='flex my-10 md:my-14 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-white rounded-lg'>
-//       <div className='flex w-1/3'>
-//         <Sidebar />
-//       </div>
-//       <div className='flex w-2/3'>
-//         <Frame />
-//         <div className='relative flex flex-col m-10 gap-2'>
-//           {/* TEMPORARY: USE TO SEND PRACTICE NOTIFICATIONS TO USER BASED ON EMAIL/ID */}
-//           <h2 className="font-bold text-brown  text-2xl">Send Notification</h2>
-//           {(data.length === 0) ?
-//             <p>No users detected.</p> :
-//             <form className="flex flex-col font-normal">
-//               <label claassName="text-lg" for="user">Select a user:</label>
-
-//               <div className="flex flex-row gap-4">
-//                 <select
-//                   name="userDropdown"
-//                   id="userDropdown">
-//                   {/* submit user email as value / show user full name -- change to id or other values as needed */}
-//                   <option value={"OPTION_SELECT"} disabled>Choose an option</option>
-//                   {data.map((user) => (<option value={user.email}>{user.first_name} {user.last_name}</option>))}
-//                 </select>
-//                 <button className="px-2 border rounded-xl cursor-pointer hover:bg-neutral-200" type="submit">Submit</button>
-//               </div>
-//             </form>
-//           }
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default Admin

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import GoToTop from '../../GoToTop';
+import BookNowButton from "../../components/Buttons/BookNowButton";
 
 function Labor() {
   const heroImg = "/images/temp_mother.jpg";
@@ -92,7 +93,7 @@ function Labor() {
       <div className="relative w-full text-white">
         <img className="w-full object-cover h-[420px] md:h-[520px] lg:h-[620px]" src={heroImg} alt="" />
 
-         <div className="absolute inset-0 bg-black/35" />
+        <div className="absolute inset-0 bg-black/35" />
 
         <div className="absolute inset-0 flex flex-col justify-center pl-10 md:pl-20">
           <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">LABOR & DELIVERY PACKAGES</h1>
@@ -109,9 +110,9 @@ function Labor() {
         {packages.map((p, i) => (
           <div
             key={i}
-            className= "grid grid-cols-1 md:grid-cols-2 gap-10 items-center rounded-3xl bg-white/60 backdrop-blur border border-black/5 shadow-sm p-6 md:p-10"
+            className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center rounded-3xl bg-white/60 backdrop-blur border border-black/5 shadow-sm p-6 md:p-10"
           >
-             <div className={i % 2 === 1 ? "md:order-2" : "md:order-1"}>
+            <div className={i % 2 === 1 ? "md:order-2" : "md:order-1"}>
               <img
                 src={p.img}
                 alt={p.name}
@@ -119,7 +120,7 @@ function Labor() {
               />
             </div>
 
-             <div className={i % 2 === 1 ? "md:order-1" : "md:order-2"}>
+            <div className={i % 2 === 1 ? "md:order-1" : "md:order-2"}>
               <div className="flex items-baseline justify-between gap-4">
                 <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#2b2b2b]">
                   {p.name}
@@ -128,9 +129,9 @@ function Labor() {
                   {p.price}
                 </p>
               </div>
-            
-          
-            <ul className="mt-6 space-y-2 text-[15px] md:text-base leading-7 md:leading-8 text-neutral-700 font-sans">
+
+
+              <ul className="mt-6 space-y-2 text-[15px] md:text-base leading-7 md:leading-8 text-neutral-700 font-sans">
                 {p.points.map((pt, idx) => (
                   <li key={idx} className="flex gap-3">
                     <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#7E4C3C] shrink-0" />
@@ -139,14 +140,9 @@ function Labor() {
                 ))}
               </ul>
               <div className="mt-8 flex gap-3">
-                <Link
-                  to="/inquiry"
-                  className="inline-flex items-center justify-center rounded-full bg-brown px-6 py-3 text-white text-sm hover:bg-[#AB8C4B] transition"
-                >
-                  Inquire
-                </Link>
-             </div>
-          </div>
+                <BookNowButton />
+              </div>
+            </div>
           </div>
         ))}
       </div>
