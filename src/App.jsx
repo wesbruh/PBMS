@@ -21,6 +21,7 @@ import AuthHashRouter from './components/AuthHashRouter.jsx';
 import ContractsPage from "./pages/Dashboard/Contracts.jsx";
 import ContractView from "./pages/Dashboard/ContractView.jsx";
 import IdleLogout from './components/IdleLogout.jsx';
+import AdminNotificationToast from './components/AdminNotificationToast.jsx';
 
 // Protected Admin Routes
 import AdminRoute from './admin/components/shared/ProtectedRoute.jsx';
@@ -54,6 +55,7 @@ function AppContent() {
   return (
     <div className='min-h-screen flex flex-col'>
       <IdleLogout />
+      <AdminNotificationToast />
 
       <Navbar />
 

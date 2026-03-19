@@ -1,115 +1,89 @@
-// src/admin/components/shared/Sidebar/Sidebar.jsx
-
 import { Link, useLocation } from "react-router-dom";
-import {
-  Home, Camera, Calendar, Contact2, Image as ImageIcon,
-  Bell, Banknote, ReceiptText, Settings, Layers,
-} from "lucide-react";
+import { Home, Camera, Calendar, Contact2, Image as ImageIcon, Bell, BellDot, Banknote, ReceiptText, Settings } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 
 function Sidebar() {
+  // determines location of user based on current page
   const location = useLocation();
+
   const [hasUnread, setHasUnread] = useState(false);
 
-  useEffect(() => {
-    const checkUnread = async () => {
-      const { count } = await supabase
-        .from("Notification")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "sent");
-      setHasUnread((count ?? 0) > 0);
-    };
+  const checkUnread = async () => {
+    const { count } = await supabase
+      .from("Notification")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "sent");
+    setHasUnread((count ?? 0) > 0);
+  };
 
+  useEffect(() => {
     checkUnread();
 
+    // Listen to both INSERT and UPDATE events so when notifications.jsx
+    // marks them as "read" the sidebar re-checks and clears the BellDot
     const channel = supabase
       .channel("sidebar-unread")
-      .on("postgres_changes", { event: "*", schema: "public", table: "Notification" }, checkUnread)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "Notification" }, checkUnread)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "Notification" }, checkUnread)
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "Notification" }, checkUnread)
       .subscribe();
 
     return () => supabase.removeChannel(channel);
   }, []);
 
-  const isActive = (path) => location.pathname.substring("/admin".length) === path;
+  // Re-check unread count whenever the route changes
+  // This catches the case where the admin navigates to /notifications
+  // and the mark-as-read runs before the real-time event fires
+  useEffect(() => {
+    checkUnread();
+  }, [location.pathname]);
 
-  const linkStyles =
-    "ml-8 mt-2 tracking-wide flex items-center gap-3 relative " +
-    "after:content-[''] after:absolute after:left-[-16px] after:w-0 after:h-full " +
-    "after:bg-[#AB8C4B] hover:after:w-1 hover:after:rounded after:transition-all after:duration-0 text-white ";
+  // helper functions to indicate if the page link is an active page
+  const isActive = (path) => location.pathname.substring('/admin'.length) == path;
+
+  // shared styles for navbar links
+  const linkStyles = "ml-8 mt-2 tracking-wide flex items-center gap-3 relative after:content-[''] after:absolute after:left-[-16px] after:w-0 after:h-full after:bg-[#AB8C4B] hover:after:w-1 hover:after:rounded after:transition-all after:duration-0 text-white ";
   const activeLinkStyles = "after:w-1 after:bg-white after:h-full after:rounded";
 
   return (
-    <div className="lg:text-lg md:text-md sm:text-md flex w-full bg-brown rounded-lg">
-      <div className="w-30 md:w-full">
-        <nav className="my-auto">
-          <div className="flex flex-col w-full">
-
-            <div className="flex m-3">
-              <Link to="/admin" className={`${linkStyles} ${isActive("") ? activeLinkStyles : ""}`}>
-                <Home size={24} />Home
-              </Link>
+    <div className='lg:text-lg md:text-md sm:text-md flex w-full bg-brown rounded-lg'>
+      <div className='w-30 md:w-full'>
+        <nav className='my-auto'>
+          <div className='flex flex-col w-full'>
+            <div className='flex m-3'>
+              <Link to="/admin" className={`${linkStyles} ${isActive('') ? activeLinkStyles : ''}`}><Home size={24} />Home</Link>
             </div>
-
-            <div className="flex m-3">
-              <Link to="/admin/sessions" className={`${linkStyles} ${isActive("/sessions") ? activeLinkStyles : ""}`}>
-                <Layers size={24} />Sessions &amp; Packages
-              </Link>
+            <div className='flex m-3'>
+              <Link to="/admin/sessions" className={`${linkStyles} ${isActive('/sessions') ? activeLinkStyles : ''}`}><Camera size={24} />Sessions</Link>
             </div>
-
-            <div className="flex m-3">
-              <Link to="/admin/bookings" className={`${linkStyles} ${isActive("/bookings") ? activeLinkStyles : ""}`}>
-                <Camera size={24} />Sessions
-              </Link>
+            <div className='flex m-3'>
+              <Link to="/admin/availability" className={`${linkStyles} ${isActive('/availability') ? activeLinkStyles : ''}`}><Calendar size={24} />Availability</Link>
             </div>
-
-            <div className="flex m-3">
-              <Link to="/admin/availability" className={`${linkStyles} ${isActive("/availability") ? activeLinkStyles : ""}`}>
-                <Calendar size={24} />Availability
-              </Link>
+            <div className='flex m-3'>
+              <Link to="/admin/contacts" className={`${linkStyles} ${isActive('/contacts') ? activeLinkStyles : ''}`}><Contact2 size={24} />Contacts</Link>
             </div>
-
-            <div className="flex m-3">
-              <Link to="/admin/contacts" className={`${linkStyles} ${isActive("/contacts") ? activeLinkStyles : ""}`}>
-                <Contact2 size={24} />Contacts
-              </Link>
+            <div className='flex m-3'>
+              <Link to="/admin/galleries" className={`${linkStyles} ${isActive('/galleries') ? activeLinkStyles : ''}`}><ImageIcon size={24} />Galleries</Link>
             </div>
-
-            <div className="flex m-3">
-              <Link to="/admin/galleries" className={`${linkStyles} ${isActive("/galleries") ? activeLinkStyles : ""}`}>
-                <ImageIcon size={24} />Galleries
-              </Link>
-            </div>
-
-            <div className="flex m-3">
+            <div className='flex m-3'>
               <Link
                 to="/admin/notifications"
-                className={`${linkStyles} ${isActive("/notifications") ? activeLinkStyles : ""} ${hasUnread ? "font-bold" : ""}`}
+                className={`${linkStyles} ${isActive('/notifications') ? activeLinkStyles : ''}`}
               >
-                <Bell size={24} />
+                {hasUnread ? <BellDot size={24} /> : <Bell size={24} />}
                 Notifications
-                {hasUnread && <span className="ml-1.5 w-2 h-2 rounded-full bg-white flex-shrink-0" />}
               </Link>
             </div>
-
-            <div className="flex m-3">
-              <Link to="/admin/payments" className={`${linkStyles} ${isActive("/payments") ? activeLinkStyles : ""}`}>
-                <Banknote size={24} />Payments and Invoices
-              </Link>
+            <div className='flex m-3'>
+              <Link to="/admin/payments" className={`${linkStyles} ${isActive('/payments') ? activeLinkStyles : ''}`}><Banknote size={24} />Payments and Invoices</Link>
             </div>
-
-            <div className="flex m-3">
-              <Link to="/admin/forms/questionnaires" className={`${linkStyles} ${isActive("/forms/questionnaires") ? activeLinkStyles : ""}`}>
-                <ReceiptText size={24} />Forms and Contracts
-              </Link>
+            <div className='flex m-3'>
+              <Link to="/admin/forms/questionnaires" className={`${linkStyles} ${isActive('/forms/questionnaires') ? activeLinkStyles : ''}`}><ReceiptText size={24} />Forms and Contracts</Link>
             </div>
-
-            <div className="flex mt-3 mb-3 ml-3">
-              <Link to="/admin/settings" className={`${linkStyles} ${isActive("/settings") ? activeLinkStyles : ""}`}>
-                <Settings size={24} />Personal Settings
-              </Link>
+            <div className='flex mt-3 mb-3 ml-3'>
+              <Link to="/admin/settings" className={`${linkStyles} ${isActive('/settings') ? activeLinkStyles : ''}`}><Settings size={24} />Personal Settings</Link>
             </div>
-
           </div>
         </nav>
       </div>
