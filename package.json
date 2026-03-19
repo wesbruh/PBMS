@@ -10,6 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fullcalendar/core": "^6.1.20",
+    "@fullcalendar/daygrid": "^6.1.20",
+    "@fullcalendar/react": "^6.1.20",
     "@hookform/resolvers": "^5.2.2",
     "@stripe/react-stripe-js": "^5.6.0",
     "@stripe/stripe-js": "^8.8.0",
@@ -29,10 +32,12 @@
     "pg": "^8.16.3",
     "prop-types": "^15.8.1",
     "react": "^19.1.1",
+    "react-day-picker": "^9.14.0",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.66.0",
     "react-router-dom": "^7.9.4",
     "react-signature-canvas": "^1.1.0-alpha.2",
+    "recharts": "^3.8.0",
     "stripe": "^20.4.0",
     "tailwindcss": "^4.1.16",
     "zod": "^4.3.6"

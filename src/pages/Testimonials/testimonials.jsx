@@ -1,18 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function Testimonials() {
-  { /* Slideshow Gallery */ }
   const [itr, setItr] = useState(0);
 
-  const prev = () => {
-    setItr((itr) => (itr === 0 ? 7 : itr - 1));
-  };
-
-  const next = () => {
-    setItr((itr) => (itr === 7 ? 0 : itr + 1));
-  };
-
-  const temp_img = "/images/temp_img.jpg"
   const temp_list = [
     { client: "Izzy & Andrew", img: "/images/temp_ia.jpg", test: "You're so genuine and easy to vibe with! Having you behind the camera felt so normal!" },
     { client: "Hana & Westley", img: "/images/temp_hw.jpg", test: "You provided such beautiful photos that truly captured the essence of our love. Not only we’re the photos lovely, but the experience was fun- stress free and candid. You made us feel amazing about ourselves." },
@@ -22,64 +12,99 @@ function Testimonials() {
     { client: "Shelly", img: "/images/temp_s.jpg", test: "You made it so easy! You captured exactly what my daughter wanted." },
     { client: "Tina", img: "/images/temp_t.jpg", test: "Had our first session in September.. you were amazing" },
     { client: "Lexi Padilla", img: "/images/temp_lp.jpg", test: "Loveddd it, felt so comfortable. I cant wait for our next one!" }
-  ]
-  const temp_booking = "/images/temp_booking.jpg"
+  ];
+
+  const prev = () => {
+    setItr((prevItr) => (prevItr === 0 ? temp_list.length - 1 : prevItr - 1));
+  };
+
+  const next = () => {
+    setItr((prevItr) => (prevItr === temp_list.length - 1 ? 0 : prevItr + 1));
+  };
+
+  const temp_img = "/images/temp_img.jpg";
+  const temp_booking = "/images/temp_booking.jpg";
+  const GOOGLE_REVIEW_URL = "https://www.google.com/maps/place/Your+Roots+Photography/@38.8726015,-122.7047573,902583m/data=!3m1!1e3!4m8!3m7!1s0x4b67897ec0df59c9:0x7cba12b3c02b0bfa!8m2!3d38.898041!4d-120.0651799!9m1!1b1!16s%2Fg%2F11x3305chs?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D";
+  const YELP_REVIEW_URL = "https://www.yelp.com/writeareview/biz/63rzO6QWzrNijm7j-_00lw?return_url=%2Fbiz%2F63rzO6QWzrNijm7j-_00lw&review_origin=biz-details-war-button";
+  const WIDGET_SCRIPT_SRC = "https://elfsightcdn.com/platform.js";
+  const ELFSIGHT_APP_CLASS = "elfsight-app-6489279b-8ef7-45be-926b-6b213c14ba84";
+
+  useEffect(() => {
+    const existingScript = document.querySelector(`script[src="${WIDGET_SCRIPT_SRC}"]`);
+    if (!existingScript) {
+      const script = document.createElement("script");
+      script.src = WIDGET_SCRIPT_SRC;
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
 
   return (
-    <div className=''>
+    <div className='overflow-x-hidden'>
+      {/* Hero Section */}
       <div className='mx-2 md:mx-4 lg:mx-5 my-10 md:my-14'>
-        <div className=''>
-          <div className='relative justify-center-safe h-auto w-full 
-                        text-center text-white font-serif'>
-            <img className='object-cover h-135 md:h-100 lg:h-145 w-full' src={temp_img} />
-            <div className='flex flex-row space-x-4 
-                          absolute top-0 left-0 pl-10 md:pl-13 lg:pl-15
-                          lg:max-w-1/5 py-10 lg:py-15 
-                          text-sm'>
-              <p>love.</p>
-              <p>memories.</p>
-              <p className='lg:pr-100'>forever.</p>
+        <div className='relative justify-center-safe h-auto w-full text-center text-white font-serif'>
+          <img className='object-cover h-135 md:h-100 lg:h-145 w-full' src={temp_img} alt="Testimonials hero" />
+          <div className='flex flex-row space-x-4 absolute top-0 left-0 pl-10 md:pl-13 lg:pl-15 lg:max-w-1/5 py-10 lg:py-15 text-sm'>
+            <p>love.</p>
+            <p>memories.</p>
+            <p className='lg:pr-100'>forever.</p>
+          </div>
+          <div className='absolute inset-0 flex items-center justify-center'>
+            <div className='text-center text-4xl md:text-5xl lg:text-6xl text-shadow-sm font-extralight w-11/12 md:w-7/12 lg:w-10/24'>
+              <p>Love notes from people I've photographed</p>
             </div>
-            <div className='absolute inset-0 flex items-center justify-center'>
-              <div className='text-center text-4xl md:text-5xl lg:text-6xl text-shadow-sm font-extralight
-                            w-11/12 md:w-7/12 lg:w-10/24'>
-                <p>Love notes from people I've photographed</p>
+          </div>
+        </div>
+
+        {/* Review Links Section */}
+        <div className='my-10 flex flex-col justify-center items-center px-4'>
+          <div className='w-full max-w-6xl text-center'>
+            <p className='font-mono text-sm tracking-wide text-brown mb-4'>CLIENT REVIEWS</p>
+            <h2 className='font-serif text-3xl md:text-4xl text-brown mb-4'>Read what clients are saying</h2>
+            <p className='font-mono text-sm md:text-base text-gray-600 max-w-3xl mx-auto mb-8 leading-7'>
+              Browse live Google and Yelp reviews from past clients, or leave a review if we’ve worked together.
+            </p>
+
+            <div className='flex flex-col md:flex-row justify-center gap-4 mb-10'>
+              <a
+                href={GOOGLE_REVIEW_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className='flex justify-center items-center min-w-56 px-6 h-12 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-mono rounded-md transition-colors'
+              >
+                LEAVE A GOOGLE REVIEW
+              </a>
+
+              <a
+                href={YELP_REVIEW_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className='flex justify-center items-center min-w-56 px-6 h-12 border border-brown text-brown hover:bg-[#f5f1e8] text-sm font-mono rounded-md transition-colors'
+              >
+                LEAVE A YELP REVIEW
+              </a>
+            </div>
+
+            <div className='w-full bg-white rounded-sm min-h-40'>
+              <div className='px-2 md:px-4 lg:px-6 py-4'>
+                <div className={ELFSIGHT_APP_CLASS} data-elfsight-app-lazy></div>
               </div>
             </div>
           </div>
         </div>
-        <div className='my-10 flex flex-col justify-center items-center'>
-          <form className='flex flex-col font-mono text-xs' noValidate>
-            <label>
-              <p className=' text-center text-brown py-3'>NAME *</p>
-              <input className='text-center border-neutral-200 border-b py-3 text-sm'
-                id="name" name="name" type="text" size="64" autoComplete="off" autoCorrect="off" required />
-            </label>
-
-            <label>
-              <p className='mt-6 text-center text-brown pb-5'>MESSAGE *</p>
-              <textarea className='w-full h-20 min-h-20 text-center border-neutral-200 border-b focus:outline-none text-sm leading-8'
-                id="message" type="text" maxLength="5000" rows="5" autoComplete="off" required />
-            </label>
-            <button className='flex justify-center items-center w-1/2 mx-auto mt-15 mb-6 md:mb-8 lg:mb-10
-                             bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm'
-              type="submit" >
-              LEAVE A REVIEW!
-            </button>
-          </form>
-        </div>
       </div>
+
+      {/* Featured Testimonials Slider */}
       <div className='flex flex-col bg-[#887C62] text-white'>
         <div className='mt-8 md:mt-12 lg:mt-18'></div>
         <div className='flex flex-col md:flex-row lg:flex-row mx-5'>
           <div className='flex flex-col w-full md:h-80 lg:h-120 md:w-3/8 lg:w-3/8 md:mx-5 lg:mx-10'>
             <div className='font-mono font-extralight flex flex-col justify-between'>
-              <p className='flex text-sm md:text-lg mt-5 md:mt-10 lg:mt-20 mb-5 md:mb-12 lg:mb-20'>
-                TESTIMONIALS
-              </p>
+              <p className='flex text-sm md:text-lg mt-5 md:mt-10 lg:mt-20 mb-5 md:mb-12 lg:mb-20'>TESTIMONIALS</p>
               <div className='flex md:h-44 lg:h-47 items-center'>
-                <p className='flex text-xs md:text-lg my-10 md:my-15 lg:my-25 w-4/5 md:w-full lg:w-full'>
-                  &quot;{temp_list[itr].test}&quot;
+                <p className='flex text-xs md:text-lg my-10 md:my-15 lg:my-25 w-4/5 md:w-full lg:w-full italic'>
+                  "{temp_list[itr].test}"
                 </p>
               </div>
             </div>
@@ -87,45 +112,57 @@ function Testimonials() {
               <p className='text-2xl md:text-3xl lg:text-3xl font-serif'>{temp_list[itr].client}</p>
             </div>
           </div>
+
           <div className='flex flex-col mr-0 md:mr-5 lg:mr-10 w-full md:w-5/8 lg:w-5/8'>
-            <div className='relative h-full w-full overflow-auto'>
-              <div className='absolute right-0 flex flex-row border-red-400 h-full w-full'>
-                <button onClick={prev} className="cursor-pointer bg-transparent text-transparent w-1/2">Previous</button>
-                <button onClick={next} className="cursor-pointer bg-transparent text-transparent w-1/2">Next</button>
+            <div className='relative h-full w-full'>
+              {/* Overlay Navigation Buttons */}
+              <div className='absolute inset-0 flex flex-row z-10'>
+                <button 
+                  onClick={prev} 
+                  className="w-1/2 h-full cursor-pointer bg-transparent"
+                  aria-label="Previous slide"
+                />
+                <button 
+                  onClick={next} 
+                  className="w-1/2 h-full cursor-pointer bg-transparent"
+                  aria-label="Next slide"
+                />
               </div>
-              <img className='object-cover object-[0%_60%] h-70 md:h-80 lg:h-100 w-full'
-                src={temp_list[itr].img} />
+              <img 
+                className='object-cover object-[0%_60%] h-70 md:h-80 lg:h-100 w-full transition-opacity duration-500' 
+                src={temp_list[itr].img} 
+                alt={temp_list[itr].client} 
+              />
             </div>
+
             <div className='w-full h-auto'>
-              <div className='flex w-full h-auto font-sans font-extralight text-2xl mt-8 md:mt-10 lg:mt-12 mb-8 md:mb-10 lg:mb-12 justify-between'>
-                <button type="button" onClick={prev} className="cursor-pointer">&larr;</button>
-                <div className='flex flex-row py-2 text-xs'>
+              <div className='flex w-full h-auto font-sans font-extralight text-2xl mt-8 md:mt-10 lg:mt-12 mb-8 md:mb-10 lg:mb-12 justify-between items-center'>
+                <button onClick={prev} className="p-2 hover:opacity-60 transition-opacity">←</button>
+                <div className='flex flex-row py-2 text-xs font-mono'>
                   <p>{itr + 1}</p>
-                  <p className='pl-3 pr-3'>/</p>
-                  <p>8</p>
+                  <p className='px-3'>/</p>
+                  <p>{temp_list.length}</p>
                 </div>
-                <button type="button" onClick={next} className="cursor-pointer">&rarr;</button>
+                <button onClick={next} className="p-2 hover:opacity-60 transition-opacity">→</button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Booking Footer Section */}
       <div className='relative h-100 md:h-110 lg:h-120 w-full'>
-        <img className='absolute w-full object-cover object-[30%_35%] h-100 md:h-110 lg:h-120'
-          src={temp_booking} />
-        <div className='absolute flex flex-col my-25 w-full justify-between'>
-          <div className='flex pl-10 md:pl-13 lg:pl-15 h-1/3'>
-            <p className='text-white text-2xl md:text-3xl lg:text-4xl font-serif'>Let's get you booked!</p>
-          </div>
-          <div className="flow-root my-24">
-            <div className='flex flex-col float-left md:float-right lg:float-right pl-10 md:pr-13 lg:pr-15'>
-              <p className='font-mono text-white'>YOUR ROOTS PHOTOGRAPHY</p>
-              <a className='flex justify-center items-center w-full mx-auto mt-5 mb-6 md:mb-8 lg:mb-10
-                             bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm'
-                href="mailto:Your.rootsphotography@gmail.com">
-                CONTACT ME!
-              </a>
-            </div>
+        <img className='absolute inset-0 w-full h-full object-cover object-[30%_35%]' src={temp_booking} alt="Booking section" />
+        <div className='absolute inset-0 flex flex-col justify-between py-20 px-10 md:px-13 lg:px-15'>
+          <p className='text-white text-3xl md:text-4xl lg:text-5xl font-serif'>Let's get you booked!</p>
+          <div className='flex flex-col items-start md:items-end'>
+            <p className='font-mono text-white text-sm tracking-widest'>YOUR ROOTS PHOTOGRAPHY</p>
+            <a
+              className='flex justify-center items-center min-w-56 mt-5 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-mono rounded-md transition-colors'
+              href="mailto:Your.rootsphotography@gmail.com"
+            >
+              CONTACT ME!
+            </a>
           </div>
         </div>
       </div>
@@ -133,4 +170,4 @@ function Testimonials() {
   );
 }
 
-export default Testimonials
+export default Testimonials;
