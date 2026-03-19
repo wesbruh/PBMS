@@ -26,17 +26,12 @@ const SESSION_TYPES = [
 ];
 
 const Schema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Enter a valid email"),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string(),
   phone: z
     .string()
-    .trim()
-    .min(10, "Phone must be at least 10 digits")
-    .max(20, "Phone seems too long")
-    .regex(/^[0-9+\-\s()]*$/, "Digits and + - ( ) only")
-    .optional()
-    .or(z.literal("")),
+    .trim(),
   sessionType: z.enum(["maternity", "newborn", "family", "weddings"], {
     required_error: "Select a session type",
   }),
@@ -54,9 +49,6 @@ export default function InquiryForm() {
   const [sessionId, setSessionId] = useState(null);
   const [checkoutSessionId, setCheckoutSessionId] = useState(null);
   const [loadingParams, setLoadingParams] = useState(true);
-
-  const [emailLocked, setEmailLocked] = useState(false);
-  const [phoneLocked, setPhoneLocked] = useState(false);
 
   const [contractTemplates, setContractTemplates] = useState({});
   const [contract, setContract] = useState(null);
@@ -221,15 +213,15 @@ export default function InquiryForm() {
           setQAnswers(resData?.answers_json || {})
           setQALoading(true);
 
-          if (firstName) setValue("firstName", firstName, { shouldValidate: true, shouldDirty: false });
-          if (lastName) setValue("lastName", lastName, { shouldValidate: true, shouldDirty: false });
-          if (user.email) setValue("email", user.email, { shouldValidate: true, shouldDirty: false });
-          if (user.phone) setValue("phone", user.phone, { shouldValidate: true, shouldDirty: false });
-          if (date) setValue("date", date, { shouldValidate: true, shouldDirty: false });
-          if (startTime) setValue("startTime", startTime, { shouldValidate: true, shouldDirty: false });
-          if (sessionType) setValue("sessionType", sessionType, { shouldValidate: true, shouldDirty: false });
-          if (location) setValue("location", location, { shouldValidate: true, shouldDirty: false });
-          if (message) setValue("message", message, { shouldValidate: true, shouldDirty: false });
+          if (firstName) setValue("firstName", firstName);
+          if (lastName) setValue("lastName", lastName);
+          if (user.email) setValue("email", user.email);
+          if (user.phone) setValue("phone", user.phone);
+          if (date) setValue("date", date);
+          if (startTime) setValue("startTime", startTime);
+          if (sessionType) setValue("sessionType", sessionType);
+          if (location) setValue("location", location);
+          if (message) setValue("message", message);
 
           await trigger(["firstName", "lastName", "email", "phone", "date", "startTime", "sessionType", "location"]);
           setSubmitLock(false);
@@ -240,20 +232,11 @@ export default function InquiryForm() {
         const first = user?.first_name?.trim() || "";
         const last = user?.last_name?.trim() || "";
 
-        if (first && !getValues("firstName")?.trim())
-          setValue("firstName", first, { shouldValidate: true, shouldDirty: false });
-        if (last && !getValues("lastName")?.trim())
-          setValue("lastName", last, { shouldValidate: true, shouldDirty: false });
-
-        if (user.email) {
-          setValue("email", user.email, { shouldValidate: true, shouldDirty: false });
-          setEmailLocked(true);
-        }
-
-        if (user.phone) {
-          setValue("phone", user.phone, { shouldValidate: true, shouldDirty: false });
-          setPhoneLocked(true);
-        }
+        if (first) setValue("firstName", first);
+        if (last) setValue("lastName", last);
+        if (user.email) setValue("email", user.email);
+        if (user.phone)
+          setValue("phone", user.phone);
 
         await trigger(["firstName", "lastName", "email", "phone"]);
       }
@@ -395,15 +378,15 @@ export default function InquiryForm() {
       }
 
       // create Stripe checkout session
-      const response = await fetch("http://localhost:5001/api/payment/deposit", {
+      const response = await fetch("http://localhost:5001/api/checkout/deposit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id: sessionData.id,
           from_url: window.location.href,
           product_data: {
-            name: `${sessionTypeData.name} Session Deposit`,
-            description: sessionTypeData.description || "",
+            name: `${sessionTypeData.name} Session - Deposit`,
+            description: sessionTypeData.description,
           },
           price: (sessionTypeData.base_price) * 0.05, // 5% deposit
           apply_tax: true,
@@ -516,23 +499,17 @@ export default function InquiryForm() {
           <p className={labelCaps}>FIRST NAME *</p>
           <input
             {...register("firstName")}
-            placeholder="Jane"
-            readOnly={!submitLock}
-            className={`${inputBase} ${errors.firstName ? "border-red-500" : "border-black/10"}`}
-            aria-invalid={!!errors.firstName}
+            readOnly={true}
+            className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
           />
-          {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>}
         </div>
         <div>
           <p className={labelCaps}>LAST NAME *</p>
           <input
             {...register("lastName")}
-            placeholder="Doe"
-            readOnly={!submitLock}
-            className={`${inputBase} ${errors.lastName ? "border-red-500" : "border-black/10"}`}
-            aria-invalid={!!errors.lastName}
-          />
-          {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>}
+            readOnly={true}
+            className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
+            />
         </div>
       </div>
 
@@ -543,31 +520,25 @@ export default function InquiryForm() {
           <input
             type="email"
             {...register("email")}
-            placeholder="jane@example.com"
-            readOnly={!submitLock || emailLocked}
-            aria-readonly={emailLocked}
-            className={`${inputBase} ${errors.email ? "border-red-500" : "border-black/10"} ${emailLocked ? "bg-neutral-100 text-neutral-600 cursor-not-allowed" : ""
-              }`}
-            aria-invalid={!!errors.email}
+            readOnly={true}
+            aria-readonly={true}
+            className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
           />
           <p className="mt-1 text-[11px] text-neutral-500">
             We'll use this email to confirm availability and send session details.
           </p>
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
         </div>
         <div>
           <p className={labelCaps}>
-            PHONE NUMBER <span className="text-neutral-500 tracking-normal">(optional)</span>
+            PHONE NUMBER
           </p>
           <input
             {...register("phone")}
-            placeholder="123-456-7890"
-            readOnly={!submitLock || phoneLocked}
-            aria-readonly={phoneLocked}
-            className={`${inputBase} ${errors.phone ? "border-red-500" : "border-black/10"}`}
-            aria-invalid={!!errors.phone}
+            placeholder="No phone number provided."
+            readOnly={true}
+            aria-readonly={true}
+            className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
           />
-          {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
         </div>
       </div>
 
@@ -772,38 +743,3 @@ export default function InquiryForm() {
     </form>
   );
 }
-
-
-/*
-
-      const stripeRes = await fetch("http://localhost:5001/api/payment/deposit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sessionId,
-          from_url: window.location.href,
-          apply_tax: true,
-          tax_rate: 5,
-        }),
-      });
-      
-      const checkoutSession = await stripeRes.json();
-
-      if (stripeRes.ok) {
-        await supabase
-          .from("Session")
-          .update({ deposit_cs_id: checkoutSession.id })
-          .eq("id", sessionId);
-
-        await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ session_id: sessionId, is_active: true }),
-        });
-
-        window.location.href = checkoutSession.url;
-      } else {
-        await supabase.from("Session").delete().eq("id", sessionId);
-        alert("Stripe connection failed. Please try again.");
-      }
-*/

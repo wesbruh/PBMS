@@ -9,7 +9,7 @@ export default function SignUpSuccess() {
 
   const [secondsLeft, setSecondsLeft] = useState(REDIRECT_SECONDS);
 
-  const nextPath = useMemo(() => "/inquiry", []);
+  const nextPath = useMemo(() => "/dashboard/inquiry", []);
 
   useEffect(() => {
     const t = setInterval(() => {
@@ -74,7 +74,7 @@ export default function SignUpSuccess() {
               <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   type="button"
-                  onClick={() => navigate("/inquiry")}
+                  onClick={() => navigate("/dashboard/inquiry")}
                   className="px-8 h-12 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-serif border border-black rounded-md transition"
                 >
                   Continue to Booking
