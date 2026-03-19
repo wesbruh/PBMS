@@ -1,16 +1,14 @@
 // src/pages/Dashboard/ClientDashboard.jsx 
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
-import { useSearchParams } from "react-router-dom";
 
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
 import { saveAs } from "file-saver";
 
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
 import DownloadReceipt from "../../components/InvoiceButton/DownloadReceipt";
-import { ta } from "zod/v4/locales";
 
 import SectionPager from "../../components/SectionPager";
 
@@ -150,7 +148,7 @@ export default function ClientDashboard() {
           if (user.id === client_id) {
             const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
             const status = await response.json().then((data) => { return data.session.payment_status });
-            
+
             // if session has been fully paid and processed
             if (status === "paid") {
               const now = new Date().toISOString();
@@ -180,7 +178,7 @@ export default function ClientDashboard() {
       const { data: sessionRows, error: sesErr } = await supabase
         .from("Session")
         .select(
-          "id, session_type_id, start_at, end_at, location_text, status, created_at, inquiry_id"
+          "id, session_type_id, start_at, end_at, location_text, status, created_at"
         )
         .eq("client_id", user.id)
         .eq("is_active", true)
@@ -757,346 +755,340 @@ export default function ClientDashboard() {
         )}
       </section>
       {/* Sessions + Invoices */}
-<div className="space-y-6">
-  {/* Sessions */}
-  <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-   <h2 className="text-lg font-serif text-brown mb-2">Your Sessions</h2>
-   <div className="border-b border-[#E7DFCF] mb-5"></div>
+      <div className="space-y-6">
+        {/* Sessions */}
+        <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
+          <h2 className="text-lg font-serif text-brown mb-2">Your Sessions</h2>
+          <div className="border-b border-[#E7DFCF] mb-5"></div>
 
-    {sessions.length === 0 ? (
-      <p className="text-sm text-neutral-500">
-        You don’t have any sessions scheduled yet.
-      </p>
-    ) : (
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Pending */}
-        <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
-          <h3 className="text-base font-serif text-brown mb-3">Pending</h3>
-          {pendingSessions.length === 0 ? (
-            <p className="text-sm text-neutral-500">No pending sessions.</p>
+          {sessions.length === 0 ? (
+            <p className="text-sm text-neutral-500">
+              You don’t have any sessions scheduled yet.
+            </p>
           ) : (
-            <div>
-            <ul className="space-y-3">
-              {pendingVisible.map((s) => (
-                <li
-                  key={s.id}
-                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Pending */}
+              <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
+                <h3 className="text-base font-serif text-brown mb-3">Pending</h3>
+                {pendingSessions.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No pending sessions.</p>
+                ) : (
                   <div>
-                    <p className="text-sm text-brown font-semibold">
-                      {s.location_text || "Session"}
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      {s.start_at
-                        ? new Date(s.start_at).toLocaleString()
-                        : "TBD"}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded border font-medium ${
-                    s.status?.toLowerCase() === "confirmed"
-                    ? "bg-green-100 border-green-300 text-green-700"
-                    : s.status?.toLowerCase() === "completed"
-                    ? "bg-purple-100 text-purple-800 border-purple-200"
-                    : "bg-yellow-100 border-yellow-300 text-yellow-700"
-                    }`}
-                  >
-                    {s.status ?? "pending"}
-                  </span>
-                </li>
-              ))}
-              
-            </ul>
-            <SectionPager
-              page={pendingPage}
-              setPage={setPendingPage}
-              totalItems={pendingSessions.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-            />
-            </div>
-          )}
-        </div>
-
-        {/* Upcoming */}
-        <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
-          <h3 className="text-base font-serif text-brown mb-3">Upcoming</h3>
-          {upcomingSessions.length === 0 ? (
-            <p className="text-sm text-neutral-500">No upcoming sessions.</p>
-          ) : (
-            <div>
-            <ul className="space-y-3">
-              {upcomingVisible.map((s) => (
-                <li
-                  key={s.id}
-                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                >
-                  <div>
-                    <p className="text-sm text-brown font-semibold">
-                      {s.location_text || "Session"}
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      {s.start_at
-                        ? new Date(s.start_at).toLocaleString()
-                        : "TBD"}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded border font-medium ${
-                    s.status?.toLowerCase() === "confirmed"
-                    ? "bg-green-100 border-green-300 text-green-700"
-                    : s.status?.toLowerCase() === "completed"
-                    ? "bg-purple-100 text-purple-800 border-purple-200"
-                    : "bg-yellow-100 border-yellow-300 text-yellow-700"
-                    }`}
-                  >
-                    {s.status ?? "pending"}
-                  </span>
-                </li>
-              ))}
-            
-            </ul>
-            <SectionPager
-              page={upcomingPage}
-              setPage={setUpcomingPage}
-              totalItems={upcomingSessions.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-            />
-            </div>
-          )}
-        </div>
-
-        {/* Completed */}
-        <div className="lg:pr-6">
-          <h3 className="text-base font-serif text-brown mb-3">Completed</h3>
-          {completedSessions.length === 0 ? (
-            <p className="text-sm text-neutral-500">No completed sessions.</p>
-          ) : (
-            <div>
-            <ul className="space-y-3">
-              {completedVisible.map((s) => (
-                <li
-                  key={s.id}
-                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                >
-                  <div>
-                    <p className="text-sm text-brown font-semibold">
-                      {s.location_text || "Session"}
-                    </p>
-                    <p className="text-xs text-neutral-500">
-                      {s.start_at
-                        ? new Date(s.start_at).toLocaleString()
-                        : "TBD"}
-                    </p>
-                  </div>
-                  <span
-                    className={`text-xs px-2 py-1 rounded border font-medium ${
-                    s.status?.toLowerCase() === "confirmed"
-                    ? "bg-green-100 border-green-300 text-green-700"
-                    : s.status?.toLowerCase() === "completed"
-                    ? "bg-purple-100 text-purple-800 border-purple-200"
-                    : "bg-yellow-100 border-yellow-300 text-yellow-700"
-                    }`}
-                  >
-                    {s.status ?? "pending"}
-                  </span>
-                </li>
-              ))}
-            
-            </ul>
-            <SectionPager
-              page={completedPage}
-              setPage={setCompletedPage}
-              totalItems={completedSessions.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-            />
-            </div>
-          )}
-        </div>
-      </div>
-    )}
-  </section>
-
-  {/* Invoices */}
-  <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-   <h2 className="text-lg font-serif text-brown mb-2">Invoices</h2>
-   <div className="border-b border-[#E7DFCF] mb-5"></div>
-
-    {invoices.length === 0 ? (
-      <p className="text-sm text-neutral-500">
-        No invoices yet. You’ll see them here when they’re issued.
-      </p>
-    ) : (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Unpaid */}
-        <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
-          <h3 className="text-base font-serif text-brown mb-3">Unpaid</h3>
-          {unpaidInvoices.length === 0 ? (
-            <p className="text-sm text-neutral-500">No unpaid invoices.</p>
-          ) : (
-            <div>
-            <ul className="space-y-3">
-              {unpaidVisible.map((inv) => (
-                <li
-                  key={inv.id}
-                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                >
-                  <div className="flex-col w-full">
-                    <div className="flex w-full">
-                      <div className="flex flex-row gap-3">
-                        <p className="text-sm text-brown font-semibold">
-                          Invoice No. {inv.invoice_number || inv.id.slice(0, 6)}
-                        </p>                  
-                        </p>
-                        <a
-                          className="text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5"
-                          aria-label="Preview"
+                    <ul className="space-y-3">
+                      {pendingVisible.map((s) => (
+                        <li
+                          key={s.id}
+                          className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
                         >
-                          <i className="fa-solid fa-eye"></i>
-                        </a>
-                        <DownloadInvoiceButton invoiceId={inv.id} />
-                        {inv.status === "Paid" && (
-                          <DownloadReceipt invoiceId={inv.id} />
-                        )}
-                      </div>
-
-                      <div className="flex relative mx-auto lg:mr-0">
-                        <div className="flex lg:absolute lg:right-5">
-                          <button
-                            type="button"
-                            onClick={() => handlePayment(inv)}
-                            className="px-2 py-1 md:px-4 flex bg-brown rounded text-xs md:text-sm text-white font-bold hover:bg-[#AB8C4B] cursor-pointer"
+                          <div>
+                            <p className="text-sm text-brown font-semibold">
+                              {s.location_text || "Session"}
+                            </p>
+                            <p className="text-xs text-neutral-500">
+                              {s.start_at
+                                ? new Date(s.start_at).toLocaleString()
+                                : "TBD"}
+                            </p>
+                          </div>
+                          <span
+                            className={`text-xs px-2 py-1 rounded border font-medium ${s.status?.toLowerCase() === "confirmed"
+                                ? "bg-green-100 border-green-300 text-green-700"
+                                : s.status?.toLowerCase() === "completed"
+                                  ? "bg-purple-100 text-purple-800 border-purple-200"
+                                  : "bg-yellow-100 border-yellow-300 text-yellow-700"
+                              }`}
                           >
-                            Pay
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                            {s.status ?? "pending"}
+                          </span>
+                        </li>
+                      ))}
 
-                    <div className="flex flex-col gap-3 lg:flex-row mx-2 mt-2">
-                      <div className="flex flex-row gap-2 items-center w-full lg:w-1/5 mr-4">
-                        <span className="flex w-3 h-3 rounded-full border bg-red-100 border-red-300"></span>
-                        <div className="flex text-sm font-semibold text-red-700">
-                          {inv.status ?? "Unpaid"}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-3 lg:flex-row lg:gap-0 mx-2 mt-2 w-4/5 justify-between">
-                        <div className="flex flex-col">
-                          <p className="text-sm text-neutral-700">Issue Date</p>
-                          <p className="text-sm text-neutral-500">
-                            {inv.issue_date
-                              ? new Date(inv.issue_date).toLocaleDateString()
-                              : "—"}
-                          </p>
-                        </div>
-                        <div className="flex flex-col">
-                          <p className="text-sm text-neutral-700">Due Date</p>
-                          <p className="text-sm text-neutral-500">
-                            {inv.due_date
-                              ? new Date(inv.due_date).toLocaleDateString()
-                              : "—"}
-                          </p>
-                        </div>
-                        <div className="flex flex-col">
-                          <p className="text-sm text-neutral-700">Amount Due</p>
-                          <p className="text-sm text-neutral-500">
-                            ${(inv.remaining ?? 0).toFixed(2)}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+                    </ul>
+                    <SectionPager
+                      page={pendingPage}
+                      setPage={setPendingPage}
+                      totalItems={pendingSessions.length}
+                      itemsPerPage={ITEMS_PER_PAGE}
+                    />
                   </div>
-                </li>
-              ))}
-            </ul>
-            <SectionPager
-              page={unPaidPage}
-              setPage={setUnPaidPage}
-              totalItems={unPaidInvoices.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-            />
-            </div>
-          )}
-        </div>
+                )}
+              </div>
 
-        {/* Paid */}
-        <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
-          <h3 className="text-base font-serif text-brown mb-3">Paid</h3>
-          {paidInvoices.length === 0 ? (
-            <p className="text-sm text-neutral-500">No paid invoices.</p>
-          ) : (
-            <div>
-            <ul className="space-y-3">
-              {paidVisible.map((inv) => (
-                <li
-                  key={inv.id}
-                  className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                >
-                  <div className="flex-col w-full">
-                    <div className="flex w-full">
-                      <div className="flex flex-row gap-3">
-                        <p className="text-sm text-brown font-semibold">
-                          Invoice No. {inv.invoice_number || inv.id.slice(0, 6)}
-                        </p>
-                        <a
-                          className="text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5"
-                          aria-label="Preview"
+              {/* Upcoming */}
+              <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
+                <h3 className="text-base font-serif text-brown mb-3">Upcoming</h3>
+                {upcomingSessions.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No upcoming sessions.</p>
+                ) : (
+                  <div>
+                    <ul className="space-y-3">
+                      {upcomingVisible.map((s) => (
+                        <li
+                          key={s.id}
+                          className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
                         >
-                          <i className="fa-solid fa-eye"></i>
-                        </a>
-                        <DownloadInvoiceButton invoiceId={inv.id} />
-                      </div>
-                    </div>
+                          <div>
+                            <p className="text-sm text-brown font-semibold">
+                              {s.location_text || "Session"}
+                            </p>
+                            <p className="text-xs text-neutral-500">
+                              {s.start_at
+                                ? new Date(s.start_at).toLocaleString()
+                                : "TBD"}
+                            </p>
+                          </div>
+                          <span
+                            className={`text-xs px-2 py-1 rounded border font-medium ${s.status?.toLowerCase() === "confirmed"
+                                ? "bg-green-100 border-green-300 text-green-700"
+                                : s.status?.toLowerCase() === "completed"
+                                  ? "bg-purple-100 text-purple-800 border-purple-200"
+                                  : "bg-yellow-100 border-yellow-300 text-yellow-700"
+                              }`}
+                          >
+                            {s.status ?? "pending"}
+                          </span>
+                        </li>
+                      ))}
 
-                    <div className="flex flex-col gap-3 lg:flex-row mx-2 mt-2">
-                      <div className="flex flex-row gap-2 items-center w-full lg:w-1/5 mr-4">
-                        <span className="flex w-3 h-3 rounded-full border bg-green-100 border-green-300"></span>
-                        <div className="flex text-sm font-semibold text-green-700">
-                          {inv.status ?? "Paid"}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-3 lg:flex-row lg:gap-0 mx-2 mt-2 w-4/5 justify-between">
-                        <div className="flex flex-col">
-                          <p className="text-sm text-neutral-700">Issue Date</p>
-                          <p className="text-sm text-neutral-500">
-                            {inv.issue_date
-                              ? new Date(inv.issue_date).toLocaleDateString()
-                              : "—"}
-                          </p>
-                        </div>
-                        <div className="flex flex-col">
-                          <p className="text-sm text-neutral-700">Due Date</p>
-                          <p className="text-sm text-neutral-500">
-                            {inv.due_date
-                              ? new Date(inv.due_date).toLocaleDateString()
-                              : "—"}
-                          </p>
-                        </div>
-                        <div className="flex flex-col">
-                          <p className="text-sm text-neutral-700">Amount Due</p>
-                          <p className="text-sm text-neutral-500">$0.00</p>
-                        </div>
-                      </div>
-                    </div>
+                    </ul>
+                    <SectionPager
+                      page={upcomingPage}
+                      setPage={setUpcomingPage}
+                      totalItems={upcomingSessions.length}
+                      itemsPerPage={ITEMS_PER_PAGE}
+                    />
                   </div>
-                </li>
-              ))}
-            
-            </ul>
-            <SectionPager
-              page={paidPage}
-              setPage={setPaidPage}
-              totalItems={paidInvoices.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-            />
+                )}
+              </div>
+
+              {/* Completed */}
+              <div className="lg:pr-6">
+                <h3 className="text-base font-serif text-brown mb-3">Completed</h3>
+                {completedSessions.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No completed sessions.</p>
+                ) : (
+                  <div>
+                    <ul className="space-y-3">
+                      {completedVisible.map((s) => (
+                        <li
+                          key={s.id}
+                          className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+                        >
+                          <div>
+                            <p className="text-sm text-brown font-semibold">
+                              {s.location_text || "Session"}
+                            </p>
+                            <p className="text-xs text-neutral-500">
+                              {s.start_at
+                                ? new Date(s.start_at).toLocaleString()
+                                : "TBD"}
+                            </p>
+                          </div>
+                          <span
+                            className={`text-xs px-2 py-1 rounded border font-medium ${s.status?.toLowerCase() === "confirmed"
+                                ? "bg-green-100 border-green-300 text-green-700"
+                                : s.status?.toLowerCase() === "completed"
+                                  ? "bg-purple-100 text-purple-800 border-purple-200"
+                                  : "bg-yellow-100 border-yellow-300 text-yellow-700"
+                              }`}
+                          >
+                            {s.status ?? "pending"}
+                          </span>
+                        </li>
+                      ))}
+
+                    </ul>
+                    <SectionPager
+                      page={completedPage}
+                      setPage={setCompletedPage}
+                      totalItems={completedSessions.length}
+                      itemsPerPage={ITEMS_PER_PAGE}
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           )}
-        </div>
+        </section>
+
+        {/* Invoices */}
+        <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
+          <h2 className="text-lg font-serif text-brown mb-2">Invoices</h2>
+          <div className="border-b border-[#E7DFCF] mb-5"></div>
+
+          {invoices.length === 0 ? (
+            <p className="text-sm text-neutral-500">
+              No invoices yet. You’ll see them here when they’re issued.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Unpaid */}
+              <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
+                <h3 className="text-base font-serif text-brown mb-3">Unpaid</h3>
+                {unpaidInvoices.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No unpaid invoices.</p>
+                ) : (
+                  <div>
+                    <ul className="space-y-3">
+                      {unpaidVisible.map((inv) => (
+                        <li
+                          key={inv.id}
+                          className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+                        >
+                          <div className="flex-col w-full">
+                            <div className="flex w-full">
+                              <div className="flex flex-row gap-3">
+                                <p className="text-sm text-brown font-semibold">
+                                  Invoice No. {inv.invoice_number || inv.id.slice(0, 6)}
+                                </p>
+                                <a
+                                  className="text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5"
+                                  aria-label="Preview"
+                                >
+                                </a>
+                                <DownloadInvoiceButton invoiceId={inv.id} />
+                              </div>
+
+                              <div className="flex relative mx-auto lg:mr-0">
+                                <div className="flex lg:absolute lg:right-5">
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePayment(inv)}
+                                    className="px-2 py-1 md:px-4 flex bg-brown rounded text-xs md:text-sm text-white font-bold hover:bg-[#AB8C4B] cursor-pointer"
+                                  >
+                                    Pay
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3 lg:flex-row mx-2 mt-2">
+                              <div className="flex flex-row gap-2 items-center w-full lg:w-1/5 mr-4">
+                                <span className="flex w-3 h-3 rounded-full border bg-red-100 border-red-300"></span>
+                                <div className="flex text-sm font-semibold text-red-700">
+                                  {inv.status ?? "Unpaid"}
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col gap-3 lg:flex-row lg:gap-0 mx-2 mt-2 w-4/5 justify-between">
+                                <div className="flex flex-col">
+                                  <p className="text-sm text-neutral-700">Issue Date</p>
+                                  <p className="text-sm text-neutral-500">
+                                    {inv.issue_date
+                                      ? new Date(inv.issue_date).toLocaleDateString()
+                                      : "—"}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col">
+                                  <p className="text-sm text-neutral-700">Due Date</p>
+                                  <p className="text-sm text-neutral-500">
+                                    {inv.due_date
+                                      ? new Date(inv.due_date).toLocaleDateString()
+                                      : "—"}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col">
+                                  <p className="text-sm text-neutral-700">Amount Due</p>
+                                  <p className="text-sm text-neutral-500">
+                                    ${(inv.remaining ?? 0).toFixed(2)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                    <SectionPager
+                      page={unpaidPage}
+                      setPage={setUnpaidPage}
+                      totalItems={unpaidInvoices.length}
+                      itemsPerPage={ITEMS_PER_PAGE}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Paid */}
+              <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
+                <h3 className="text-base font-serif text-brown mb-3">Paid</h3>
+                {paidInvoices.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No paid invoices.</p>
+                ) : (
+                  <div>
+                    <ul className="space-y-3">
+                      {paidVisible.map((inv) => (
+                        <li
+                          key={inv.id}
+                          className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
+                        >
+                          <div className="flex-col w-full">
+                            <div className="flex w-full">
+                              <div className="flex flex-row gap-3">
+                                <p className="text-sm text-brown font-semibold">
+                                  Invoice No. {inv.invoice_number || inv.id.slice(0, 6)}
+                                </p>
+                                <a
+                                  className="text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5"
+                                  aria-label="Preview"
+                                >
+                                </a>
+                                <DownloadInvoiceButton invoiceId={inv.id} />
+                                {inv.status === "Paid" && (
+                                  <DownloadReceipt invoiceId={inv.id} />
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3 lg:flex-row mx-2 mt-2">
+                              <div className="flex flex-row gap-2 items-center w-full lg:w-1/5 mr-4">
+                                <span className="flex w-3 h-3 rounded-full border bg-green-100 border-green-300"></span>
+                                <div className="flex text-sm font-semibold text-green-700">
+                                  {inv.status ?? "Paid"}
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col gap-3 lg:flex-row lg:gap-0 mx-2 mt-2 w-4/5 justify-between">
+                                <div className="flex flex-col">
+                                  <p className="text-sm text-neutral-700">Issue Date</p>
+                                  <p className="text-sm text-neutral-500">
+                                    {inv.issue_date
+                                      ? new Date(inv.issue_date).toLocaleDateString()
+                                      : "—"}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col">
+                                  <p className="text-sm text-neutral-700">Due Date</p>
+                                  <p className="text-sm text-neutral-500">
+                                    {inv.due_date
+                                      ? new Date(inv.due_date).toLocaleDateString()
+                                      : "—"}
+                                  </p>
+                                </div>
+                                <div className="flex flex-col">
+                                  <p className="text-sm text-neutral-700">Amount Due</p>
+                                  <p className="text-sm text-neutral-500">$0.00</p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </li>
+                      ))}
+
+                    </ul>
+                    <SectionPager
+                      page={paidPage}
+                      setPage={setPaidPage}
+                      totalItems={paidInvoices.length}
+                      itemsPerPage={ITEMS_PER_PAGE}
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </section>
       </div>
-    )}
-  </section>
-</div>
 
       {/* grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
