@@ -269,7 +269,7 @@ app.post("/api/availability/blocks", async (req, res) => {
 /* Stripe */
 
 // create and retrieve Stripe Checkout Session information
-app.post("/api/payment/:type", async (req, res) => {
+app.post("/api/checkout/:type", async (req, res) => {
   const { type } = req.params;
   const { session_id, from_url, product_data, price, apply_tax, tax_rate } = req.body
 
