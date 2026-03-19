@@ -1,11 +1,13 @@
 import express from "express";
 import PDFDocument from "pdfkit";
 import { supabase } from "../supabaseClient.js";
+import { fileURLToPath } from "url";
+import path from "path"
 
 const router = express.Router();
 
 // Invoice for Sessions
-const TAX_RATE = 0.05; // 5% tax rate, can be adjusted as needed
+const TAX_RATE = 0.0725; // 5% tax rate, can be adjusted as needed
 
 router.post("/generate/:session_id", async (req, res) => {
   try {
@@ -20,7 +22,7 @@ router.post("/generate/:session_id", async (req, res) => {
 
     if (sessionError) return res.status(404).json({ message: "Session not found" });
 
-    const invoiceNumber = `INV-${Date.now()}`;
+    //const invoiceNumber = `INV-${String(invoiceData.id).padStart(5, "0")}`;
     const now = new Date();
     const issueDate = `${now.getFullYear().toString()}` + "-" +
                       `${(now.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
@@ -30,7 +32,7 @@ router.post("/generate/:session_id", async (req, res) => {
       .from("Invoice")
       .insert({
         session_id: session_id,
-        invoice_number: invoiceNumber,
+        //invoice_number: invoiceNumber,
         issue_date: issueDate,
         due_date: due_date,
         remaining: remaining,
@@ -52,7 +54,18 @@ router.post("/generate/:session_id", async (req, res) => {
       throw insertError;
     }
 
-    res.json(invoiceData);
+    const invoiceNumber = `INV-${String(invoiceData.id).padStart(5, "0")}`;
+
+    const { data: updatedInvoice, error: updateError } = await supabase
+      .from("Invoice")
+      .update({ invoice_number: invoiceNumber })
+      .eq("id", invoiceData.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+
+    res.json(updatedInvoice);
 
   } catch (err) {
     console.error("Invoice generation error:", err);
@@ -70,8 +83,8 @@ router.get("/:invoice_id/pdf", async (req, res) => {
       .select(`
         id, invoice_number, issue_date, due_date, remaining, created_at, items,
         Session(
-          SessionType(base_price),
-          User(first_name, last_name, email)
+          SessionType(name, base_price),
+          User(first_name, last_name, email, phone)
         )
       `)
       .eq("id", invoice_id)
@@ -81,9 +94,24 @@ router.get("/:invoice_id/pdf", async (req, res) => {
     if (error) return res.status(404).json({ message: "Invoice not found" });
 
     const { User: userData, SessionType: sessionTypeData } = invoiceData.Session;
+    const createdDate = new Date(invoiceData.created_at).toLocaleDateString(
+      "en-US",
+      {
+        year: "numeric", month: "long", day: "numeric",
+  });
 
     // PDF Creation
+
+
     const doc = new PDFDocument({ margin: 50 });
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+    const logoPath = path.join(__dirname, "../../public/logo1.png");
+
+    const beige = "#f4f1eb";
+    doc.rect(0, 0, doc.page.width, doc.page.height).fill(beige);
+    doc.image(logoPath, 30, 50, { width: 100 });
+    
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -93,64 +121,63 @@ router.get("/:invoice_id/pdf", async (req, res) => {
 
     doc.pipe(res);
 
-    /*OLD Invoice Content
-    
-    doc.fontSize(22).text("INVOICE", { align: "left" }).moveDown();
-
-    doc.fontSize(12).text(`Invoice Number: ${invoice.id}`);
-    doc.text(`Invoice Date: ${invoice.created_at}`);
-    doc.text(`Client Name: ${invoice.client_name}`);
-    doc.text(`Client Email: ${invoice.client_email}`);
-    doc.moveDown();
-
-    doc.fontSize(14).text("Items:", { underline: true });
-    doc.moveDown(0.5);
-
-    if (Array.isArray(invoice.items)) {
-      invoice.items.forEach((item) => {
-        doc.fontSize(12).text(
-          `${item.description} — Qty: ${item.quantity} — $${item.price}`
-        );
-      });
-    } else {
-      doc.text("No items found.");
-    }
-
-    doc.moveDown();
-    doc.fontSize(14).text(`Subtotal: $${invoice.subtotal}`);
-    doc.text(`Tax: $${invoice.tax}`);
-    doc.text(`Total: $${invoice.total}`);
-
-    doc.end();*/
-
     //PDF Design layout
     doc
       .fontSize(20)
-      .text("PBMS Photography", { align: "left" })
+      //.text("Your Roots Photography", { align: "left" }, 50, 90)
       .fontSize(10)
       .fillColor("#555")
-      .text("123 Business St.")
-      .text("Sacramento, CA 95819")
-      .text("Email: support@pbms.com")
+      //.text("123 Business St.", 50, 160)
+      .text("Your Roots Photography", 50, 160)
+      .text("your.rootsphotography@gmail.com")
+      .text("(707) 514 6456")
       .moveDown();
 
-    doc.moveTo(50, 150).lineTo(550, 150).stroke();
+    doc.moveTo(50, 230).lineTo(550, 230).stroke();
 
     // TITLE
     doc
       .fontSize(22)
       .fillColor("black")
-      .text("INVOICE", 50, 170);
+      .text("INVOICE", 50, 250);
+
+    const dueDate = new Date(invoiceData.due_date).toLocaleDateString(
+      "en-US",
+      { year: "numeric", month: "long", day: "numeric" }
+    );
+    
+    //Invoice Information
+    const labelX = 320;
+    const valueX = 330;
+
+    doc.fontSize(9);
+    doc.fillColor("gray");
+
+    doc.text("Invoice Number:", labelX, 80, { width: 120, align: "right" });
+    doc.text(invoiceData.invoice_number, valueX + 120, 80);
+
+    doc.text("Invoice Date:", labelX, 90, { width: 120, align: "right" });
+    doc.text(createdDate, valueX + 120, 90);
+
+    doc.fontSize(11);
+    doc.fillColor("black");
+
+    doc.text("Payment Due:", labelX, 100, { width: 120, align: "right" });
+    doc.text(dueDate, valueX + 120, 100);
 
     // CLIENT INFO
     doc.fontSize(11);
-    doc.text(`Invoice Number: ${invoiceData.invoice_number}`, 50, 210);
-    doc.text(`Invoice Date: ${invoiceData.created_at}`, 50, 225);
-    doc.text(`Client: ${userData.first_name} ${userData.last_name}`, 50, 240);
-    doc.text(`Email: ${userData.email}`, 50, 255);
+    //doc.text(`Invoice Number: ${invoiceData.invoice_number}`, 50, 280);
+    //doc.text(`Invoice Date: ${createdDate}`, 50, 295);
+    doc.fillColor("gray");
+    doc.text("To:", 50, 290);
+    doc.fillColor("black");
+    doc.text(`${userData.first_name} ${userData.last_name}`, 50, 310);
+    doc.text(`${userData.email}`, 50, 325);
+    doc.text(`${userData.phone}`, 50, 340);
 
     // TABLE HEADER
-    const tableTop = 300;
+    const tableTop = 380;
 
     doc
       .fontSize(12)
@@ -164,25 +191,24 @@ router.get("/:invoice_id/pdf", async (req, res) => {
 
     // ITEMS
     doc.font("Helvetica").fontSize(11);
-    let posY = tableTop + 40;
 
-    if (Array.isArray(invoiceData.items)) {
-      invoiceData.items.forEach((item) => {
-        doc
-          .text(item.description, 50, posY)
-          .text(item.quantity, 300, posY, { width: 50, align: "right" })
-          .text(`$${item.price}`, 350, posY, { width: 100, align: "right" })
-          .text(`$${item.quantity * item.price}`, 450, posY, {
-            width: 100,
-            align: "right",
-          });
+let posY = tableTop + 40;
 
-        posY += 25;
-      });
-    } else {
-      doc.text("No items found.", 50, posY);
-      posY += 20;
-    }
+const serviceName = invoiceData.Session.SessionType.name;
+const price = invoiceData.Session.SessionType.base_price;
+const quantity = 1;
+const total = price * quantity;
+
+doc
+  .text(serviceName, 50, posY)
+  .text(quantity, 300, posY, { width: 50, align: "right" })
+  .text(`$${price.toFixed(2)}`, 350, posY, { width: 100, align: "right" })
+  .text(`$${total.toFixed(2)}`, 450, posY, {
+    width: 100,
+    align: "right",
+  });
+
+posY += 25;
 
     // TOTALS
     doc
@@ -199,7 +225,7 @@ router.get("/:invoice_id/pdf", async (req, res) => {
     doc
       .fontSize(10)
       .fillColor("#555")
-      .text("Thank you for choosing Your Roots Photography!", 50, 720, { align: "center" });
+      .text("Thank you for choosing Your Roots Photography!", 50, 680, { width: 500, align: "center" });
 
     doc.end();
 

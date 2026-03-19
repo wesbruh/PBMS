@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
-
-import { useNavigate } from "react-router-dom";
-import { supabase } from "../../../lib/supabaseClient.js";
 
 function Contacts() {
   const navigate = useNavigate();
@@ -81,17 +80,21 @@ function Contacts() {
       setLoading(true);
       setErrorMsg("");
 
-      const { data, error } = await supabase
-        .from("User")
-        .select("id, first_name, last_name, email, phone");
+      const response = await fetch("http://localhost:5001/api/profiles", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
 
-      if (error) {
+      if (!response.ok) {
+        const { error } = await response.json();
         console.error(error);
-        setErrorMsg(error.message || "Failed to load contacts.");
+        setErrorMsg("Failed to load contacts.");
         setContacts([]);
         setLoading(false);
         return;
       }
+
+      const data = await response.json();
 
       const mapped = (data || []).map((row) => ({
         userid: row.id ?? "",
@@ -149,30 +152,36 @@ function Contacts() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("Contact")
-      .insert([{
-        first_name: firstName,
-        last_name: lastName,
-        email: email,
-        phone: phoneRaw,
-      }])
-      .select();
+    const contactPayload = {
+      first_name: firstName,
+      last_name: lastName,
+      email: email,
+      phone: phoneRaw
+    }
 
-    if (error) {
-      setAddErrorMsg(error.message || "Failed to add contact.");
+    const response = await fetch(`http://localhost:5001/api/contact/add`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(contactPayload)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      setAddErrorMsg(errorData.error || "Failed to add contact.");
       return;
     }
+
+    const data = await response.json();
 
     // Add new contact to table without reloading
     setContacts((prev) => [
       ...prev,
       {
-        firstName: data[0].first_name,
-        lastName: data[0].last_name,
-        email: data[0].email,
-        phone: data[0].phone,
-      },
+        firstName: data.first_name,
+        lastName: data.last_name,
+        email: data.email,
+        phone: data.phone,
+      }
     ]);
 
     // Reset and close modal
@@ -184,13 +193,14 @@ function Contacts() {
   const handleDeleteContact = async () => {
     if (!selectedContact) return;
 
-    const { error } = await supabase
-      .from("Contact")
-      .delete()
-      .eq("email", selectedContact.email);
+    const response = await fetch(`http://localhost:5001/api/contact/${selectedContact.email}`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+    });
 
-    if (error) {
-      setErrorMsg(error.message);
+    if (!response.ok) {
+      const errorData = await response.json();
+      setErrorMsg(errorData.error);
       return;
     }
 

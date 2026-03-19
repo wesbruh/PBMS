@@ -33,22 +33,16 @@ const isTodayOrFuture = (value) => {
 };
 
 const Schema = z.object({
-  firstName:   z.string().min(1, "First name is required"),
-  lastName:    z.string().min(1, "Last name is required"),
-  email:       z.string().email("Enter a valid email"),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string(),
   phone: z
     .string()
-    .trim()
-    .min(10, "Phone must be at least 10 digits")
-    .max(20, "Phone seems too long")
-    .regex(/^[0-9+\-\s()]*$/, "Digits and + - ( ) only")
-    .optional()
-    .or(z.literal("")),
-  sessionTypeId: z.string().min(1, "Select a session type"),
-  date:          z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
-  startTime:     z.string().min(1, "Select a start time"),
-  location:      z.string().optional(),
-  message:       z.string().max(1000, "Max 1000 characters").optional(),
+    .trim(),
+  date: z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
+  startTime: z.string(),
+  location: z.string().optional(),
+  message: z.string().max(1000, "Max 1000 characters").optional(),
 });
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -61,9 +55,6 @@ export default function InquiryForm() {
   const [sessionId,          setSessionId]          = useState(null);
   const [checkoutSessionId,  setCheckoutSessionId]  = useState(null);
   const [loadingParams,      setLoadingParams]      = useState(true);
-
-  const [emailLocked, setEmailLocked] = useState(false);
-  const [phoneLocked, setPhoneLocked] = useState(false);
 
   const [contractTemplates, setContractTemplates] = useState({});
   const [contract,          setContract]          = useState(null);
@@ -216,7 +207,7 @@ export default function InquiryForm() {
     reValidateMode: "onChange",
     defaultValues: {
       firstName: "", lastName: "", email: "", phone: "",
-      sessionTypeId: "", date: "", startTime: "", location: "", message: "",
+      date: "", startTime: "", location: "", message: ""
     },
   });
 
@@ -270,11 +261,10 @@ export default function InquiryForm() {
   // ── Fetch questionnaire template when session type changes ────────────────
   useEffect(() => {
     if (!selectedSessionType) {
-      setActiveTemplate(null);
       return;
     }
+
     const fetchTemplate = async () => {
-      setQLoading(true);
       try {
         const { data: template, error: tErr } = await supabase
           .from("QuestionnaireTemplate")
@@ -298,16 +288,14 @@ export default function InquiryForm() {
         setActiveTemplate({ id: template.id, name: template.name, questions });
 
         if (qALoading) setQALoading(false);
-        else setQAnswers({});
       } catch (err) {
         console.error("Error fetching QuestionnaireTemplate:", err);
         setActiveTemplate(null);
-      } finally {
-        setQLoading(false);
       }
     };
+
     fetchTemplate();
-  }, [selectedSessionType]);
+  }, [selectedSessionType, qALoading]);
 
   // ── Prefill form (from auth + Stripe return) ──────────────────────────────
   useEffect(() => {
@@ -347,21 +335,21 @@ export default function InquiryForm() {
               .select()
               .eq("questionnaire_id", qInstance.id)
               .single();
-
+            
             setQAnswers(resData?.answers_json || {});
             setQALoading(true);
           } catch (_) { /* no questionnaire saved yet */ }
 
-          setValue("firstName",   user?.first_name?.trim() || "", { shouldValidate: true, shouldDirty: false });
-          setValue("lastName",    user?.last_name?.trim()  || "", { shouldValidate: true, shouldDirty: false });
-          setValue("email",       user.email               || "", { shouldValidate: true, shouldDirty: false });
-          setValue("phone",       user.phone               || "", { shouldValidate: true, shouldDirty: false });
+          setValue("firstName",   user?.first_name?.trim());
+          setValue("lastName",    user?.last_name?.trim());
+          setValue("email",       user.email);
+          setValue("phone",       user.phone);
           setValue("date",        datePart,                        { shouldValidate: true, shouldDirty: false });
           setValue("startTime",   timePart,                        { shouldValidate: true, shouldDirty: false });
           if (sessionData.location_text) setValue("location", sessionData.location_text, { shouldValidate: true, shouldDirty: false });
           if (sessionData.notes)         setValue("message",  sessionData.notes,         { shouldValidate: true, shouldDirty: false });
 
-          await trigger(["firstName", "lastName", "email", "phone", "date", "startTime", "sessionTypeId", "location"]);
+          await trigger(["firstName", "lastName", "email", "phone", "date", "startTime", "location"]);
           setSubmitLock(false);
         } catch (error) {
           console.error("Error pre-filling from session:", error);
@@ -371,17 +359,11 @@ export default function InquiryForm() {
         const first = user?.first_name?.trim() || "";
         const last  = user?.last_name?.trim()  || "";
 
-        if (first) setValue("firstName", first, { shouldValidate: true, shouldDirty: false });
-        if (last)  setValue("lastName",  last,  { shouldValidate: true, shouldDirty: false });
+        if (first) setValue("firstName", first);
+        if (last)  setValue("lastName",  last);
 
-        if (user.email) {
-          setValue("email", user.email, { shouldValidate: true, shouldDirty: false });
-          setEmailLocked(true);
-        }
-        if (user.phone) {
-          setValue("phone", user.phone, { shouldValidate: true, shouldDirty: false });
-          setPhoneLocked(true);
-        }
+        if (user.email) setValue("email", user.email);
+        if (user.phone) setValue("phone", user.phone);
 
         await trigger(["firstName", "lastName", "email", "phone"]);
       }
@@ -444,35 +426,19 @@ export default function InquiryForm() {
           throw qInstError;
         }
 
-        // One row per answer (relational, not blob)
-        const responseRows = activeTemplate.questions.map((q) => {
-          const raw        = qAnswers[q.tempId];
-          const type       = (q.type ?? "short_text").toLowerCase().trim();
-          const isCheckbox = type === "checkbox";
-          return {
-            questionnaire_id: qInstance.id,
-            question_id:      q.tempId,
-            question_label:   q.label,
-            question_type:    q.type,
-            answer:           isCheckbox ? null : (raw ?? null),
-            answer_array:     isCheckbox ? (Array.isArray(raw) ? raw : []) : null,
-            created_at:       now,
-          };
-        });
-
         const { error: respError } = await supabase
           .from("QuestionnaireResponse")
-          .insert(responseRows);
+          .insert({questionnaire_id: qInstance.id, answers_json: qAnswers})
 
         if (respError) {
           await supabase.from("Session").delete().eq("id", sessionData.id);
           throw respError;
         }
       }
-
-      // Stripe checkout
-      const response = await fetch("http://localhost:5001/api/payment/deposit", {
-        method:  "POST",
+      
+      // create Stripe checkout session
+      const response = await fetch("http://localhost:5001/api/checkout/deposit", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           session_id:   sessionData.id,
@@ -589,23 +555,17 @@ export default function InquiryForm() {
           <p className={labelCaps}>FIRST NAME *</p>
           <input
             {...register("firstName")}
-            placeholder="Jane"
-            readOnly={!submitLock}
-            className={`${inputBase} ${errors.firstName ? "border-red-500" : "border-black/10"}`}
-            aria-invalid={!!errors.firstName}
+            readOnly={true}
+            className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
           />
-          {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName.message}</p>}
         </div>
         <div>
           <p className={labelCaps}>LAST NAME *</p>
           <input
             {...register("lastName")}
-            placeholder="Doe"
-            readOnly={!submitLock}
-            className={`${inputBase} ${errors.lastName ? "border-red-500" : "border-black/10"}`}
-            aria-invalid={!!errors.lastName}
-          />
-          {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName.message}</p>}
+            readOnly={true}
+            className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
+            />
         </div>
       </div>
 
@@ -616,28 +576,25 @@ export default function InquiryForm() {
           <input
             type="email"
             {...register("email")}
-            placeholder="jane@example.com"
-            readOnly={!submitLock || emailLocked}
-            className={`${inputBase} ${errors.email ? "border-red-500" : "border-black/10"} ${emailLocked ? "bg-neutral-100 text-neutral-600 cursor-not-allowed" : ""}`}
-            aria-invalid={!!errors.email}
+            readOnly={true}
+            aria-readonly={true}
+            className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
           />
           <p className="mt-1 text-[11px] text-neutral-500">
             We'll use this email to confirm availability and send session details.
           </p>
-          {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
         </div>
         <div>
           <p className={labelCaps}>
-            PHONE NUMBER <span className="text-neutral-500 tracking-normal">(optional)</span>
+            PHONE NUMBER
           </p>
           <input
             {...register("phone")}
-            placeholder="123-456-7890"
-            readOnly={!submitLock || phoneLocked}
-            className={`${inputBase} ${errors.phone ? "border-red-500" : "border-black/10"}`}
-            aria-invalid={!!errors.phone}
+            placeholder="No phone number provided."
+            readOnly={true}
+            aria-readonly={true}
+            className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
           />
-          {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
         </div>
       </div>
 
@@ -794,7 +751,9 @@ export default function InquiryForm() {
               <p className="text-[11px] tracking-[0.2em] text-[#7E4C3C] mb-3 uppercase">
                 {activeTemplate.name}
               </p>
+              {console.log(qAnswers)}
               <DynamicQuestionnaire
+                key={qAnswers}
                 questions={activeTemplate.questions}
                 answers={qAnswers}
                 onChange={setQAnswers}

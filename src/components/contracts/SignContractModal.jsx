@@ -1,15 +1,5 @@
 import { useRef, useState, useEffect } from "react";
 import SignatureCanvas from "react-signature-canvas";
-import { supabase } from "../../lib/supabaseClient";
-
-function dataUrlToBlob(dataUrl) {
-  const [meta, b64] = dataUrl.split(",");
-  const mime = meta.match(/data:(.*);base64/)[1];
-  const bin = atob(b64);
-  const arr = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
-  return new Blob([arr], { type: mime });
-}
 
 export default function SignContractModal({ open, onClose, contract, contractTemplate, onSigned }) {
   const sigRef = useRef(null);
@@ -33,35 +23,40 @@ export default function SignContractModal({ open, onClose, contract, contractTem
 
       // 1) Get PNG from canvas
       const dataUrl = sigRef.current.toDataURL("image/png");
-      const blob = dataUrlToBlob(dataUrl);
 
       // 2) Upload to Supabase Storage
       const filePath = `signatures/${contract.id}-${crypto.randomUUID()}.png`;
-      const { error: uploadErr } = await supabase
-        .storage
-        .from("Signed-contracts")
-        .upload(filePath, blob, { upsert: true });
-      if (uploadErr) throw uploadErr;
+      const signResponse = await fetch(`http://localhost:5001/api/contract/${contract.id}/sign`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ file_path: filePath, data_url: dataUrl })
+      });
+
+      if (!signResponse.ok) {
+        const errorData = await signResponse.json();
+        throw errorData.error;
+      }
 
       // 3) Get a public URL
-      const { data: pub } = supabase.storage.from("Signed-contracts").getPublicUrl(filePath);
-      const signedUrl = pub?.publicUrl;
+      const data = await signResponse.json();
+
+      const signedUrl = data.publicUrl;
 
       // 4) Mark contract as signed
-      const { error: updErr } = await supabase
-        .from("Contract")
-        .update({ signed_at: new Date().toISOString(), status: "Signed", signed_pdf_url: signedUrl })
-        .eq("id", contract.id)
+      const contractResponse = await fetch(`http://localhost:5001/api/contract/${contract.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signed_at: new Date().toISOString(), status: "Signed", signed_pdf_url: signedUrl })
+      });
 
-      if (updErr) throw updErr;
+      if (!contractResponse.ok) {
+        const errorData = await contractResponse.json();
+        throw errorData.error;
+      }
 
       // 5) return contract as signed
-      const { data: contractData } = await supabase
-        .from("Contract")
-        .select()
-        .eq("id", contract.id)
-        .single();
-
+      const contractData = await contractResponse.json()
+    
       onSigned(contractData);
       onClose();
       alert("Contract signed!");

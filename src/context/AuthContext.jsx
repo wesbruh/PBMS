@@ -9,7 +9,6 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null); // row from "User" table
-  const [roleId, setRoleId] = useState(null); // roleId from "UserRole" table
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,45 +24,25 @@ export function AuthProvider({ children }) {
         setSession(session ?? null);
       }
 
-      // if logged in, try to load the row from "User" and roleId from "UserRole"
+      // if logged in, try to load the row from "User" and user's role name
       if (session?.user?.id && !ignore) {
-        const { data, error } = await supabase
-          .from("User")
-          .select("id, email, first_name, last_name, phone")
-          .eq("id", session.user.id)
-          .maybeSingle();
+        const response = await fetch(`http://localhost:5001/api/profile/${session.user.id}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
 
         if (!ignore) {
-          if (!error) {
-            setProfile(data);
-          } else {
-            // it's ok if there is no custom row yet
-            setProfile(null);
+          if (response.ok) {
+            const data = await response.json();
+
+            if (!data) setProfile(null);
+
+            const { role_name, ...rest } = data;
+            setProfile({ ...rest, roleName: role_name });
           }
         }
       } else if (!ignore) {
         setProfile(null);
-      }
-
-      // if logged in, try to load the roleId from "UserRole"
-      if (session?.user?.id && !ignore) {
-
-        const { data, error } = await supabase
-          .from("UserRole")
-          .select("role_id")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
-
-        if (!ignore) {
-          if (!error) {
-            setRoleId(data?.role_id);
-          }
-          else {
-            setRoleId(null);
-          }
-        }
-      } else if (!ignore) {
-        setRoleId(null);
       }
 
       if (!ignore) setLoading(false);
@@ -78,25 +57,22 @@ export function AuthProvider({ children }) {
       setSession(newSession);
       if (!newSession) {
         setProfile(null);
-        setRoleId(null);
       } else {
         // reload profile when session changes
         (async () => {
-          const { data } = await supabase
-            .from("User")
-            .select("id, email, first_name, last_name, phone")
-            .eq("id", newSession.user.id)
-            .maybeSingle();
-          setProfile(data ?? null);
-        })();
+          const response = await fetch(`http://localhost:5001/api/profile/${newSession.user.id}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
 
-        (async () => {
-          const { data } = await supabase
-            .from("UserRole")
-            .select("role_id")
-            .eq("user_id", newSession.user.id)
-            .maybeSingle();
-          setRoleId(data?.role_id ?? null);
+          if (response.ok) {
+            const data = await response.json();
+
+            if (!data) setProfile(null);
+
+            const { role_name, ...rest } = data;
+            setProfile({ ...rest, roleName: role_name });
+          }
         })();
       }
     });
@@ -111,7 +87,6 @@ export function AuthProvider({ children }) {
     session,
     user: session?.user ?? null,
     profile,
-    roleId,
     // Ensure profile information can be updated
     setProfile,
     loading,
