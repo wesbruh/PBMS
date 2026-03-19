@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext"
 import { useNavigate } from "react-router-dom";
-import SignContractModal from "../../components/contracts/SignContractModal";
 
 function fmt(d) { try { return new Date(d).toLocaleDateString(); } catch { return ""; } }
 
@@ -19,17 +17,20 @@ export default function ContractsPage() {
 
       setLoading(true);
 
-      const { data, error } = await supabase
-        .from("Contract")
-        .select("id, status, assigned_user_id, created_at, updated_at, signed_at, ContractTemplate ( name, body )")
-        .eq("assigned_user_id", user.id)
-        .order("created_at", { ascending: false });
+      const response = await fetch(`http://localhost:5001/api/contract/${user.id}`, {
+        method: "GET",
+        headers: { "Content-Tyoe": "application/json" }
+      })
 
-      if (error) console.error(error);
-
-      setRows(data || []);
-
-      setLoading(false);
+      if (!response.ok) {
+        console.error("");
+        setRows([]);
+        setLoading(false);
+      } else {
+        const data = await response.json();
+        setRows(data);
+        setLoading(false);
+      }
     };
 
     fetchContracts();
@@ -79,7 +80,6 @@ export default function ContractsPage() {
 
 function ContractRow({ contract, template, navigate }) {
   const statusKey = contract.status;
-
   const badge =
     {
       draft: "bg-yellow-50 text-yellow-800 ring-yellow-200",

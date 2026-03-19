@@ -2,11 +2,13 @@ import { useState, useRef } from "react";
 import { X, Upload, ImagePlus, Image as ImageIcon, Trash2, CheckCircle, FolderOpen, Star} from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient.js";
 import "./UploadGalleryModal.css";
-import { set } from "zod";
+import { useAuth } from "../../../context/AuthContext.jsx";
 
 const MAX_MESSAGE_LENGTH = 1000; // Max character length for personalized messages, includes spaces, punctuation, etc.
 
 const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
+  const { profile: user } = useAuth();
+  
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -254,33 +256,12 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
     setError(null);
 
     try {
-      // 1) Get the current user (admin)
-      const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
-
-      if (userError) {
+      // 1) check user profile
+      if (!user) {
         throw new Error("You must be logged in to upload galleries.");
       }
 
-      // 2) Check if user is admin (adjusted with Erds 2/7/26)
-      const { data: userRoleData, error: profileError } = await supabase
-        .from("UserRole")
-        .select("role_id")
-        .eq("user_id", user.id)
-        .single();
-
-      const RoleId = userRoleData[0]?.role_id ?? null;
-      const { data: roleData, error: roleError } = await supabase
-        .from("Role")
-        .select("id")
-        .eq("name", "Admin")
-        .single();
-
-      const AdminId = roleData[0]?.id ?? null;
-
-      if (profileError || AdminId !== RoleId) {
+      if (user.roleName !== "Admin") {
         throw new Error("Only admins can upload galleries.");
       }
 

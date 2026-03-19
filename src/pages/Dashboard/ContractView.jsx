@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext"
 import ContractDetail from "./ContractDetail";
 
@@ -22,18 +21,19 @@ export default function ContractView() {
     }
 
     async function fetchContract() {
-      const { data, error } = await supabase
-        .from("Contract")
-        .select("id, template_id, status, created_at, updated_at, signed_pdf_url, template_id")
-        .eq("id", contractId)
-        .eq("assigned_user_id", user.id)
-        .maybeSingle();
+      const response = await fetch(`http://localhost:5001/api/contract/${contractId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.id })
+      });
 
-      if (error) {
+      if (!response.ok) {
         console.error("Contract does not exist or belong to this user.");
         return;
       }
-
+      
+      const data = await response.json();
+      console.log(data)
       setContract(data)
     };
 
@@ -46,17 +46,17 @@ export default function ContractView() {
     }
 
     async function fetchContractTemplate() {
-      const { data, error } = await supabase
-        .from("ContractTemplate")
-        .select("id, body, name")
-        .eq("id", contract.template_id)
-        .maybeSingle();
+      const response = await fetch(`https://localhost:5001/api/contract/templates/${contract.template_id}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
 
-      if (error) {
+      if (!response.ok) {
         console.error("Contract Template does not exist.");
         return;
       }
-
+      
+      const data = await response.json()
       setContractTemplate(data)
     };
 

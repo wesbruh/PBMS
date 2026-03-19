@@ -1,25 +1,24 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { supabase } from "../../../../lib/supabaseClient";
 
 const OPTION_TYPES = ["select", "radio", "checkbox"];
 
 const TYPE_OPTIONS = [
   { value: "short_text", label: "Short text" },
-  { value: "long_text",  label: "Long text / Paragraph" },
-  { value: "select",     label: "Dropdown" },
-  { value: "radio",      label: "Radio (pick one)" },
-  { value: "checkbox",   label: "Checkboxes (pick many)" },
-  { value: "date",       label: "Date" },
+  { value: "long_text", label: "Long text / Paragraph" },
+  { value: "select", label: "Dropdown" },
+  { value: "radio", label: "Radio (pick one)" },
+  { value: "checkbox", label: "Checkboxes (pick many)" },
+  { value: "date", label: "Date" },
 ];
 
 // Must match the `name` column in your SessionType table (case-insensitive match used)
 // AND the `value` strings in InquiryForm's SESSION_TYPES array
 const SESSION_TYPE_OPTIONS = [
   { value: "maternity", label: "Maternity" },
-  { value: "newborn",   label: "Newborn" },
-  { value: "family",    label: "Family" },
-  { value: "weddings",  label: "Weddings" },
+  { value: "newborn", label: "Newborn" },
+  { value: "family", label: "Family" },
+  { value: "weddings", label: "Weddings" },
 ];
 
 export default function QuestionnaireEditor({ mode }) {
@@ -27,12 +26,12 @@ export default function QuestionnaireEditor({ mode }) {
   const navigate = useNavigate();
   const isEdit = mode === "edit";
 
-  const [name,        setName]        = useState("");
+  const [name, setName] = useState("");
   const [sessionType, setSessionType] = useState("");
-  const [saving,      setSaving]      = useState(false);
-  const [loading,     setLoading]     = useState(isEdit);
-  const [error,       setError]       = useState("");
-  const [questions,   setQuestions]   = useState([]);
+  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(isEdit);
+  const [error, setError] = useState("");
+  const [questions, setQuestions] = useState([]);
 
   // ── Question helpers ──────────────────────────────────────────────────────────
   function newTempId() {
@@ -58,7 +57,7 @@ export default function QuestionnaireEditor({ mode }) {
 
   function moveQuestion(tempId, direction) {
     setQuestions((prev) => {
-      const idx     = prev.findIndex((q) => q.tempId === tempId);
+      const idx = prev.findIndex((q) => q.tempId === tempId);
       const swapIdx = direction === "up" ? idx - 1 : idx + 1;
       if (idx === -1 || swapIdx < 0 || swapIdx >= prev.length) return prev;
       const next = [...prev];
@@ -105,35 +104,45 @@ export default function QuestionnaireEditor({ mode }) {
       setError("");
       setLoading(true);
       try {
-        const { data, error: fetchErr } = await supabase
-          .from("QuestionnaireTemplate")
-          .select("id, name, session_type_id, schema_json, active")
-          .eq("id", id)
-          .single();
+        const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        })
 
-        if (fetchErr) throw fetchErr;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw (errorData.error);
+        }
 
-        setName(data.name ?? "");
+        const qTemplate = await response.json();
+        setName(qTemplate.name ?? "");
 
         // Resolve session_type_id → string value for the dropdown
-        if (data.session_type_id) {
-          const { data: stRow } = await supabase
-            .from("SessionType")
-            .select("name")
-            .eq("id", data.session_type_id)
-            .single();
-          setSessionType((stRow?.name ?? "").toLowerCase());
+        if (qTemplate.session_type_id) {
+          const response = await fetch(`http://localhost:5001/api/sessions/type`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ "session_type_id": qTemplate.session_type_id })
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw (errorData.error);
+          }
+
+          const data = await response.json();
+          setSessionType((data?.name ?? "").toLowerCase());
         }
 
         // schema_json holds the questions array
-        const qs = (data.schema_json ?? []).map((q) => ({
-          tempId:   q.id,                              // stable key stored in schema
-          label:    q.label    ?? "",
-          type:     q.type     ?? "short_text",
-          required: q.required ?? false,
-          options:  Array.isArray(q.options) ? q.options : [],
+        const questions = (qTemplate.schema_json ?? []).map((question) => ({
+          tempId: question.id,                              // stable key stored in schema
+          label: question.label ?? "",
+          type: question.type ?? "short_text",
+          required: question.required ?? false,
+          options: Array.isArray(question.options) ? question.options : [],
         }));
-        setQuestions(qs);
+        setQuestions(questions);
       } catch (e) {
         setError(e.message || "Failed to load template.");
       } finally {
@@ -149,7 +158,7 @@ export default function QuestionnaireEditor({ mode }) {
     if (!name.trim()) return "Template name is required.";
     if (!sessionType) return "Session type is required.";
     for (let i = 0; i < questions.length; i++) {
-      const q   = questions[i];
+      const q = questions[i];
       const num = i + 1;
       if (!q.label?.trim()) return `Question ${num}: label is required.`;
       if (OPTION_TYPES.includes(q.type)) {
@@ -168,12 +177,12 @@ export default function QuestionnaireEditor({ mode }) {
     return questions
       .filter((q) => q.label?.trim())
       .map((q, index) => ({
-        id:       q.tempId,
-        label:    q.label.trim(),
-        type:     q.type,
+        id: q.tempId,
+        label: q.label.trim(),
+        type: q.type,
         required: q.required,
-        order:    index,
-        options:  OPTION_TYPES.includes(q.type)
+        order: index,
+        options: OPTION_TYPES.includes(q.type)
           ? (q.options ?? []).map((o) => (o ?? "").trim()).filter(Boolean)
           : null,
       }));
@@ -181,13 +190,15 @@ export default function QuestionnaireEditor({ mode }) {
 
   // ── Resolve SessionType UUID ──────────────────────────────────────────────────
   async function resolveSessionTypeId(value) {
-    const { data, error } = await supabase
-      .from("SessionType")
-      .select("id")
-      .ilike("name", `%${value}%`)
-      .limit(1)
-      .single();
-    if (error || !data) throw new Error(`SessionType "${value}" not found. Check SessionType table.`);
+    const response = await fetch(`http://localhost:5001/api/sessions/type`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ "session_type_name": value })
+    });
+
+    if (!response.ok) throw new Error(`SessionType "${value}" not found`);
+    
+    const data = await response.json()
     return data.id;
   }
 
@@ -200,17 +211,31 @@ export default function QuestionnaireEditor({ mode }) {
     try {
       setSaving(true);
       const sessionTypeId = await resolveSessionTypeId(sessionType);
-      const schemaJson    = buildSchemaJson();
-      const payload       = { name: name.trim(), session_type_id: sessionTypeId, schema_json: schemaJson, active: false };
+      const schemaJson = buildSchemaJson();
+      const payload = { name: name.trim(), session_type_id: sessionTypeId, schema_json: schemaJson, active: false };
 
       if (isEdit) {
-        const { error: upErr } = await supabase
-          .from("QuestionnaireTemplate").update(payload).eq("id", id);
-        if (upErr) throw upErr;
+        const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw errorData.error;
+        }
       } else {
-        const { error: insErr } = await supabase
-          .from("QuestionnaireTemplate").insert(payload);
-        if (insErr) throw insErr;
+        const response = await fetch(`http://localhost:5001/api/questionnaire/templates`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw errorData.error;
+        }
       }
       navigate("/admin/forms/questionnaires");
     } catch (e) {
@@ -229,36 +254,49 @@ export default function QuestionnaireEditor({ mode }) {
     try {
       setSaving(true);
       const sessionTypeId = await resolveSessionTypeId(sessionType);
-      const schemaJson    = buildSchemaJson();
-      const payload       = { name: name.trim(), session_type_id: sessionTypeId, schema_json: schemaJson, active: false };
+      const schemaJson = buildSchemaJson();
+      const payload = { name: name.trim(), session_type_id: sessionTypeId, schema_json: schemaJson, active: false };
 
       let templateId = id;
 
       if (isEdit) {
-        const { error: upErr } = await supabase
-          .from("QuestionnaireTemplate").update(payload).eq("id", id);
-        if (upErr) throw upErr;
+        const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw errorData.error;
+        }
       } else {
-        const { data: newRow, error: insErr } = await supabase
-          .from("QuestionnaireTemplate").insert(payload).select("id").single();
-        if (insErr) throw insErr;
-        templateId = newRow.id;
+        const response = await fetch(`http://localhost:5001/api/questionnaire/templates`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw errorData.error;
+        }
+
+        const data = await response.json();
+        templateId = data.id;
       }
 
-      // Deactivate all other templates for this session type
-      const { error: deactErr } = await supabase
-        .from("QuestionnaireTemplate")
-        .update({ active: false })
-        .eq("session_type_id", sessionTypeId)
-        .neq("id", templateId);
-      if (deactErr) throw deactErr;
+      // set only one questionnaire template active for this session type
+      const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${templateId}/set`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_type_id: sessionTypeId })
+      });
 
-      // Activate this one
-      const { error: actErr } = await supabase
-        .from("QuestionnaireTemplate")
-        .update({ active: true })
-        .eq("id", templateId);
-      if (actErr) throw actErr;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData.error;
+      }
 
       navigate("/admin/forms/questionnaires");
     } catch (e) {
@@ -294,7 +332,7 @@ export default function QuestionnaireEditor({ mode }) {
       </div>
 
       {loading && <p className="mt-4 text-sm">Loading...</p>}
-      {error   && <p className="mt-4 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-4 text-sm text-red-600">{error}</p>}
 
       {!loading && (
         <div className="mt-6 space-y-6 max-w-2xl">
@@ -502,7 +540,7 @@ export default function QuestionnaireEditor({ mode }) {
 
 // ── Live preview of what the client will see ──────────────────────────────────
 function QuestionPreview({ q }) {
-  const base  = "mt-1 w-full border rounded px-3 py-2 text-sm bg-white";
+  const base = "mt-1 w-full border rounded px-3 py-2 text-sm bg-white";
   const label = (
     <p className="text-sm font-medium text-gray-800">
       {q.label
@@ -560,10 +598,10 @@ function QuestionPreview({ q }) {
             {opts.length === 0
               ? <p className="text-xs text-gray-400 italic">No options added yet</p>
               : opts.map((o, i) => (
-                  <label key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                    <input type="radio" disabled /> {o}
-                  </label>
-                ))
+                <label key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                  <input type="radio" disabled /> {o}
+                </label>
+              ))
             }
           </div>
         </div>
@@ -579,10 +617,10 @@ function QuestionPreview({ q }) {
             {opts.length === 0
               ? <p className="text-xs text-gray-400 italic">No options added yet</p>
               : opts.map((o, i) => (
-                  <label key={i} className="flex items-center gap-2 text-sm text-gray-700">
-                    <input type="checkbox" disabled /> {o}
-                  </label>
-                ))
+                <label key={i} className="flex items-center gap-2 text-sm text-gray-700">
+                  <input type="checkbox" disabled /> {o}
+                </label>
+              ))
             }
           </div>
         </div>
