@@ -292,7 +292,7 @@ app.post("/api/payment/:type", async (req, res) => {
             price_data: {
               currency: 'usd',
               product_data: product_data || {
-                name: 'Deposit - Default Package',
+                name: 'Default Package - Deposit',
                 description: 'Default Package Description'
               },
               unit_amount: final_price,
@@ -325,7 +325,7 @@ app.post("/api/payment/:type", async (req, res) => {
             price_data: {
               currency: 'usd',
               product_data: product_data || {
-                name: 'Rest - Default Package',
+                name: 'Default Package - Rest',
                 description: 'Default Package Description'
               },
               unit_amount: final_price,
@@ -377,7 +377,6 @@ app.post("/api/intent/capture", async (req, res) => {
     if (error) throw error;
     res.status(200).json(data);
   } catch (error) {
-    console.error(req);
     console.error('Error capturing payment intent:', error);
     res.status(500).json({ error: error.message });
   }

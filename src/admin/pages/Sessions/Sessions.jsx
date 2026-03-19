@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
+import { supabase } from "../../../lib/supabaseClient.js"
+
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
-import { supabase } from "../../../lib/supabaseClient.js"
 
 // constants for invoice generation logic
 const DEPOSIT_PERCENTAGE = 0.05;
@@ -46,20 +47,18 @@ function Sessions() {
   const capturePaymentIntent = async (checkoutSessionId) => {
     try {
       const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
-      //console.log("Payment Intent Status: ", status); // DEBUGGING
-      //console.log("Payment Intent ID: ", paymentIntent); // DEBUGGING
-      if (status) {
-        const response = await fetch(`http://localhost:5001/api/intent/capture`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ payment_intent: paymentIntent })
-        });
 
-        if (!response.ok) throw Error(await response.json().error);
-        // console.error("Status: ", status); // DEBUGGING
-      }
+      if (!status) throw new Error("Failed to retrieve payment intent");
+
+      const response = await fetch(`http://localhost:5001/api/intent/capture`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_intent: paymentIntent })
+      });
+
+      if (!response.ok) throw Error("Failed to capture payment intent");
     } catch (error) {
-      console.error("Error capturing payment intent:", error);
+      console.error(error);
     }
   }
 

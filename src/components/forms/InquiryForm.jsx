@@ -402,8 +402,8 @@ export default function InquiryForm() {
           session_id: sessionData.id,
           from_url: window.location.href,
           product_data: {
-            name: `${sessionTypeData.name} Session Deposit`,
-            description: sessionTypeData.description || "",
+            name: `${sessionTypeData.name} Session - Deposit`,
+            description: sessionTypeData.description,
           },
           price: (sessionTypeData.base_price) * 0.05, // 5% deposit
           apply_tax: true,

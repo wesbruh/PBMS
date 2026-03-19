@@ -9,7 +9,6 @@ import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloa
 import { saveAs } from "file-saver";
 
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
-import { ta } from "zod/v4/locales";
 
 import SectionPager from "../../components/SectionPager";
 
@@ -80,33 +79,71 @@ export default function ClientDashboard() {
   }, [invoices]);
 
   const handlePayment = async (invoice) => {
-    const { id: invoiceId, remaining: amountDue } = invoice;
-    const checkoutSession = await fetch("http://localhost:5001/api/payment/rest", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        price: amountDue,
-        apply_tax: true,
-        tax_rate: 5
-      })
-    });
+    const { id: invoiceId, session_id: sessionId, remaining: amountDue } = invoice;
 
-    if (checkoutSession.ok) {
-      const { id, url } = await checkoutSession.json();
+    try {
+      // retrieve session type info for product data
+      const { data: sessionData, error: sessionError } = await supabase
+        .from("Session")
+        .select("SessionType(name, description)")
+        .eq("id", sessionId)
+        .single();
 
-      try {
+      if (sessionError) throw new Error("Session not found.");
+
+      const sessionTypeData = sessionData.SessionType;
+
+      // check if entry already exists in Payment table for this invoice to avoid duplicates
+      const { data: existingPayment } = await supabase
+        .from("Payment")
+        .select()
+        .eq("invoice_id", invoiceId)
+        .eq("type", "Rest")
+        .maybeSingle();
+
+      if (!existingPayment) {
         // create entry in Payment Table
         const { error: paymentError } = await supabase
           .from("Payment")
           .insert({
             invoice_id: invoiceId,
             provider: "Stripe",
-            provider_payment_id: id,
             amount: amountDue + (amountDue * 0.05), // add tax to amount
             currency: "USD",
             status: "Pending",
-            created_at: new Date().toISOString(),
             type: "Rest"
+          })
+          .select()
+          .single();
+
+        if (paymentError) throw paymentError;
+      }
+
+      // create checkout session in backend
+      const checkoutSession = await fetch("http://localhost:5001/api/payment/rest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_data: {
+            name: `${sessionTypeData.name} Session - Rest`,
+            description: sessionTypeData.description,
+          },
+          price: amountDue,
+          apply_tax: true,
+          tax_rate: 5
+        })
+      });
+
+      if (checkoutSession.ok) {
+        const { id, url } = await checkoutSession.json();
+
+        // update entry in Payment Table to link checkout session
+        const { error: paymentError } = await supabase
+          .from("Payment")
+          .update({
+            provider_payment_id: id,
+            status: "Pending",
+            created_at: new Date().toISOString(),
           })
           .select()
           .single();
@@ -115,12 +152,12 @@ export default function ClientDashboard() {
 
         // redirect to stripe
         window.location.href = url;
-      } catch (paymentError) {
-        console.error("Error processing payment: ", paymentError)
+      } else {
+        const { error: errorMessage } = await checkoutSession.json();
+        console.error("Stripe connection failed: ", errorMessage);
       }
-    } else {
-      const { error: errorMessage } = await checkoutSession.json();
-      console.error("Stripe connection failed: ", errorMessage);
+    } catch (error) {
+      console.error("Error initiating payment: ", error);
     }
   };
 
@@ -133,7 +170,7 @@ export default function ClientDashboard() {
       // 0) update invoices on checkout_session_success
       if (checkoutSessionId) {
         try {
-          // get client_id based on checkoutSessionId
+          // get Payment table entry based on checkoutSessionId
           const { data: paymentData, error: paymentError } = await supabase
             .from("Payment")
             .select("invoice_id, amount, Invoice( Session( client_id ) )")
@@ -148,7 +185,11 @@ export default function ClientDashboard() {
           // ensure checkout session belongs to user
           if (user.id === client_id) {
             const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
-            const status = await response.json().then((data) => { return data.session.payment_status });
+            const status = await response.json()
+              .then((data) => {
+                console.log("Checkout session: ", data.session); // DEBUGGING
+                return data.session.payment_status
+              });
             
             // if session has been fully paid and processed
             if (status === "paid") {
