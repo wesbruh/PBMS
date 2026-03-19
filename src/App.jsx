@@ -10,7 +10,6 @@ import Testimonials from './pages/Testimonials/testimonials';
 import SignUp from './pages/SignUp/SignUp.jsx';
 import Login from './pages/Login/Login.jsx';
 import Inquiry from "./pages/Inquiry/Inquiry.jsx";
-import Payment from "./pages/Payment/Payment";
 import Services from './pages/Services/Services.jsx';
 import Weddings from './pages/Special/Weddings.jsx';
 import Labor from './pages/Special/Labor.jsx';
@@ -65,7 +64,6 @@ function AppContent() {
             <Route path="/signup/success" element={<SignUpSuccess />} />
             <Route path="/login" element={<Login />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/payment" element={<Payment />} />
 
             {/* Services */}
             <Route path="services" element={<Outlet />}>

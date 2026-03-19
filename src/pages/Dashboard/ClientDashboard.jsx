@@ -83,14 +83,14 @@ export default function ClientDashboard() {
 
     try {
       // retrieve session type info for product data
-      const { data: sessionData, error: sessionError } = await supabase
-        .from("Session")
-        .select("SessionType(name, description)")
-        .eq("id", sessionId)
-        .single();
+      const sessionResponse = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
 
-      if (sessionError) throw new Error("Session not found.");
+      if (!sessionResponse.ok) throw new Error("Session not found.");
 
+      const sessionData = await sessionResponse.json()
       const sessionTypeData = sessionData.SessionType;
 
       // check if entry already exists in Payment table for this invoice to avoid duplicates
@@ -120,7 +120,7 @@ export default function ClientDashboard() {
       }
 
       // create checkout session in backend
-      const checkoutSession = await fetch("http://localhost:5001/api/payment/rest", {
+      const checkoutSession = await fetch("http://localhost:5001/api/checkout/rest", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -187,7 +187,7 @@ export default function ClientDashboard() {
             const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
             const status = await response.json()
               .then((data) => {
-                console.log("Checkout session: ", data.session); // DEBUGGING
+                // console.log("Checkout session: ", data.session); // DEBUGGING
                 return data.session.payment_status
               });
             

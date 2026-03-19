@@ -3,21 +3,8 @@ import { supabase } from "../../lib/supabaseClient";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
-async function GetId(roleName) {
-  const { data, error } = await supabase.from("Role").select("id").eq("name", `${roleName}`).single();;
-
-  if (error) {
-    console.error(`Error retrieving or finding role "${roleName}"`);
-    return null;
-  }
-
-  const roleId = data.id;
-
-  return roleId;
-}
-
 export default function Login() {
-  const { user, roleId, loading } = useAuth();
+  const { profile: user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -33,40 +20,20 @@ export default function Login() {
   const [resetEmail, setResetEmail] = useState("");
   const [resetMsg, setResetMsg] = useState("");
 
-  // get roleIds to check against
-  const [adminRoleId, setAdminId] = useState(null);
-  const [userRoleId, setUserId] = useState(null);
-
-  useEffect(() => {
-    const loadRoles = async () => {
-      if (!adminRoleId) {
-        const id = await GetId("Admin");
-        setAdminId(id);
-      }
-
-      if (!userRoleId) {
-        const id = await GetId("User");
-        setUserId(id);
-      }
-    };
-
-    loadRoles();
-  }, [adminRoleId, userRoleId]);
-
   // navigate when everything is loaded
   useEffect(() => {
     // something hasn't been initialized or found
-    if (loading || !user || !roleId || !adminRoleId || !userRoleId) {
+    if (loading || !user) {
       return;
     }
 
     // get real, target (navigation location)
-    const navLoc = roleId === adminRoleId ? "/admin" :
-      roleId === userRoleId ? from || "/dashboard" :
-      from;
+    const navLoc = user.roleName === "Admin" ? "/admin" :
+      user.roleName === "User" ? from || "/dashboard" :
+        from;
 
     navigate(navLoc, { replace: true });
-  }, [loading, user, roleId, adminRoleId, userRoleId, from, navigate]);
+  }, [loading, user, from, navigate]);
 
 
   const onChange = (e) => {
@@ -112,28 +79,23 @@ export default function Login() {
     }
 
     // we are logged in – update the User table
-    const { data: userData, error: getErr } = await supabase.auth.getUser();
-    if (getErr) {
-      console.error("getUser after login failed:", getErr);
-    }
-
-    const authedUser = userData?.user;
-
-    if (authedUser?.id) {
-      const { error: updateErr } = await supabase
-        .from("User")
-        .update({
+    if (user?.id) {
+      const response = await fetch(`http://localhost:5001/api/profile/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
           is_active: true,
-          last_login_at: new Date().toISOString(),
+          last_login_at: new Date().toISOString()
         })
-        .eq("id", authedUser.id);
+      });
 
-      if (updateErr) {
+      if (!response.ok) {
         // if you see this in console, you have RLS blocking it
-        console.error("User update failed:", updateErr);
+        const errorData = await response.json();
+        console.error("User update failed:", errorData.error);
       }
     }
-  };
+  }
 
   // Open/submit handlers for reset popup
   const openReset = () => {
@@ -141,6 +103,7 @@ export default function Login() {
     setResetMsg("");
     setShowReset(true);
   };
+
   const sendReset = async (e) => {
     e.preventDefault();
 

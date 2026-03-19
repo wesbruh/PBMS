@@ -1,6 +1,5 @@
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
 
 // const sessionTypeLabel = (v) => {
@@ -29,7 +28,7 @@ export default function InquirySuccess() {
   const [location, setLocation] = useState(null);
 
   // get user information
-  const { user } = useAuth();
+  const { profile: user } = useAuth();
   const [loading, setLoading] = useState(true);
 
   // If someone refreshes this page, state will be lost.
@@ -45,13 +44,19 @@ export default function InquirySuccess() {
 
     const loadParameters = async () => {
       try {
-        const { data: sessionData } = await supabase
-          .from("Session")
-          .select("User(id, first_name, last_name, email), SessionType(name), start_at, location_text")
-          .eq("id", sessionId)
-          .single();
+        const response = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
 
-          // error checks
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error("Failed to fetch session", errorData.error);
+        }
+
+        const sessionData = await response.json();
+        
+        // error checks
         if (user && sessionData.User.id !== user.id) throw new Error({ message: "Session not found or does not belong to user" });
 
         // set parameters
@@ -62,13 +67,14 @@ export default function InquirySuccess() {
         setLocation(sessionData.location_text);
 
         setLoading(false);
-      } catch (e) {
-        console.error("Error getting session: ", e);
+      } catch (error) {
+        console.error("Error getting session: ", error);
+        navigate("/dashboard/inquiry", { replace: true });
       }
     }
 
     loadParameters();
-  }, [user, sessionId])
+  }, [user, sessionId, navigate])
 
   if (loading) {
     return (

@@ -2,15 +2,8 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "../../lib/supabaseClient";
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-
-// default role init
-const { data: defaultRoleArr, error: roleError } = await supabase
-  .from("Role")
-  .select("id")
-  .eq("name", "User");
 
 // password rules
 const passwordSchema = z
@@ -60,7 +53,7 @@ export default function SignUp() {
 
     const redirectUrl = `${window.location.origin}/auth/callback`;
 
-    const { data, error } = await supabase.auth.signUp({
+    const signupPayload = {
       email: values.email,
       password: values.password,
       options: {
@@ -69,79 +62,30 @@ export default function SignUp() {
           last_name: values.lastName,
         },
         emailRedirectTo: redirectUrl,
-      },
-    });
-
-    if (error) {
-      const raw = error.message?.toLowerCase() || "";
-      if (raw.includes("already registered") || raw.includes("already exists")) {
-        setSubmitError("That email is already in use. Please log in instead.");
-      } else {
-        setSubmitError(error.message || "Could not create account.");
       }
+    }
+
+    const profilePayload = {
+      email: values.email,
+      first_name: values.firstName,
+      last_name: values.lastName,
+    };
+
+    const response = await fetch("http://localhost:5001/api/signup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ signup_payload: signupPayload, profile_payload: profilePayload})
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      setSubmitError(errorData.error.message);
       setInfoMsg("");
-      return;
+    } else {
+      const data = await response.json();
+      setSubmitError("");
+      setInfoMsg(data.info.message);
     }
-
-    const authUser = data.user;
-    const duplicateSignup =
-      authUser &&
-      Array.isArray(authUser.identities) &&
-      authUser.identities.length === 0;
-
-    if (duplicateSignup) {
-      setSubmitError("That email is already in use. Please log in instead.");
-      setInfoMsg("");
-      return;
-    }
-
-    // upsert in your "User" and "UserRole" table
-    if (authUser?.id) {
-      const profilePayload = {
-        id: authUser.id,
-        email: values.email,
-        first_name: values.firstName,
-        last_name: values.lastName,
-        is_active: !!authUser.email_confirmed_at,
-      };
-
-      if (roleError || !defaultRoleArr) {
-        console.error("Role not found or error fetching role: ", roleError);
-      }
-
-      const defaultRole = defaultRoleArr?.[0];
-      const rolePayload = {
-        user_id: profilePayload.id,
-        role_id: defaultRole?.id,
-      };
-
-      if (data?.session) {
-        profilePayload.last_login_at = new Date().toISOString();
-        profilePayload.is_active = true;
-        // NOTE: rolePayload.assigned_at was being set before, but assigned_at isn't defined here.
-        // If your table requires assigned_at, add it explicitly:
-        // rolePayload.assigned_at = new Date().toISOString();
-      }
-
-      const { error: userTableErr } = await supabase
-        .from("User")
-        .upsert(profilePayload);
-      const { error: userRoleTableErr } = await supabase
-        .from("UserRole")
-        .upsert(rolePayload);
-
-      if (userTableErr) console.error("User upsert error:", userTableErr);
-      if (userRoleTableErr) console.error("UserRole upsert error:", userRoleTableErr);
-    }
-
-    if (!data.session) {
-      setInfoMsg(
-        "We’ve sent you a confirmation link. Please check your email to finish creating your account."
-      );
-      return;
-    }
-
-    navigate("/signup/success", { replace: true });
   };
 
   return (
@@ -171,9 +115,8 @@ export default function SignUp() {
                 <label>
                   <p className="text-brown py-2 tracking-widest text-[11px]">FIRST NAME *</p>
                   <input
-                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
-                      errors.firstName ? "border-red-500" : "border-neutral-200"
-                    }`}
+                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.firstName ? "border-red-500" : "border-neutral-200"
+                      }`}
                     id="firstName"
                     type="text"
                     autoComplete="given-name"
@@ -189,9 +132,8 @@ export default function SignUp() {
                 <label>
                   <p className="text-brown py-2 tracking-widest text-[11px]">LAST NAME *</p>
                   <input
-                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
-                      errors.lastName ? "border-red-500" : "border-neutral-200"
-                    }`}
+                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.lastName ? "border-red-500" : "border-neutral-200"
+                      }`}
                     id="lastName"
                     type="text"
                     autoComplete="family-name"
@@ -208,9 +150,8 @@ export default function SignUp() {
               <label>
                 <p className="text-brown py-2 tracking-widest text-[11px]">EMAIL *</p>
                 <input
-                  className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
-                    errors.email ? "border-red-500" : "border-neutral-200"
-                  }`}
+                  className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.email ? "border-red-500" : "border-neutral-200"
+                    }`}
                   id="email"
                   type="email"
                   autoComplete="email"
@@ -227,9 +168,8 @@ export default function SignUp() {
                 <label>
                   <p className="text-brown py-2 tracking-widest text-[11px]">PASSWORD *</p>
                   <input
-                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
-                      errors.password ? "border-red-500" : "border-neutral-200"
-                    }`}
+                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.password ? "border-red-500" : "border-neutral-200"
+                      }`}
                     id="password"
                     type="password"
                     autoComplete="new-password"
@@ -248,9 +188,8 @@ export default function SignUp() {
                 <label>
                   <p className="text-brown py-2 tracking-widest text-[11px]">CONFIRM PASSWORD *</p>
                   <input
-                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
-                      errors.confirmPassword ? "border-red-500" : "border-neutral-200"
-                    }`}
+                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.confirmPassword ? "border-red-500" : "border-neutral-200"
+                      }`}
                     id="confirmPassword"
                     type="password"
                     autoComplete="new-password"
