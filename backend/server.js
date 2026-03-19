@@ -2,18 +2,18 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import process from "node:process"
-import invoiceRoutes from "./pdf/invoice.js";
-import { supabase } from "./supabaseClient.js";
-import galleryRoutes from "./routes/galleryRoutes.js";
-import Stripe from "stripe";
-import receiptRoutes from "./pdf/receipt.js";
-
 dotenv.config();
 
-const app = express();
+import { supabase } from "./supabaseClient.js";
+import { stripe } from "./stripeClient.js"
 
-// stripe secrets
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+import contractRoutes from "./routes/contractRoutes.js"
+import contactRoutes from "./routes/contactRoutes.js"
+import invoiceRoutes from "./pdf/invoice.js";
+import receiptRoutes from "./pdf/receipt.js";
+import galleryRoutes from "./routes/galleryRoutes.js";
+
+const app = express();
 
 app.use(
   cors({
@@ -25,26 +25,159 @@ app.use(
 
 app.use(express.json());
 
+// --- Signup Route ---
+
+app.post("/api/signup", async (req, res) => {
+  const { signup_payload, profile_payload } = req.body;
+
+  try {
+    // default role init
+    const { data: defaultRole, error: defaultRoleError } = await supabase
+      .from("Role")
+      .select("id")
+      .eq("name", "User")
+      .single();
+
+    if (defaultRoleError) {
+      console.error("Role not found or error fetching role: ", defaultRoleError);
+      return;
+    }
+
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(signup_payload);
+
+    if (signUpError) {
+      const raw = signUpError.message?.toLowerCase() || "";
+      if (raw.includes("already registered") || raw.includes("already exists")) {
+        throw new Error({ error: { message: "That email is already in use. Please log in instead." } });
+      } else {
+        throw new Error({ error: { message: signUpError.message || "Could not create account." } });
+      }
+    }
+
+    const authUser = signUpData.user;
+    const duplicateSignup =
+      authUser &&
+      Array.isArray(authUser.identities) &&
+      authUser.identities.length === 0;
+
+    if (duplicateSignup) throw new Error({ error: { message: "That email is already in use. Please log in instead." } });
+
+    // upsert into "User" and "UserRole" table
+    if (authUser?.id) {
+      profile_payload.id = authUser.id;
+      profile_payload.is_active = !!authUser.email_confirmed_at;
+
+      const rolePayload = {
+        user_id: profile_payload.id,
+        role_id: defaultRole.id,
+      };
+
+      if (signUpData?.session) {
+        profile_payload.last_login_at = new Date().toISOString();
+        profile_payload.is_active = true;
+        // NOTE: rolePayload.assigned_at was being set before, but assigned_at isn't defined here.
+        // If your table requires assigned_at, add it explicitly:
+        // rolePayload.assigned_at = new Date().toISOString();
+      }
+
+      const { error: userTableErr } = await supabase
+        .from("User")
+        .upsert(profile_payload);
+      const { error: userRoleTableErr } = await supabase
+        .from("UserRole")
+        .upsert(rolePayload);
+
+      if (userTableErr) console.error("User upsert error:", userTableErr);
+      if (userRoleTableErr) console.error("UserRole upsert error:", userRoleTableErr);
+    }
+
+    if (!signUpData.session) {
+      res.status(200).json({
+        "info": {
+          "message": "We’ve sent you a confirmation link. Please check your email to finish creating your account."
+        }
+      });
+    }
+  } catch (error) {
+    console.error("Failed to signup:", error);
+    res.status(500).json(error)
+  }
+});
+
+// --- User Profile Routes ---
+
+// get information related to all users
+app.get("/api/profiles", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("User")
+      .select("id, email, first_name, last_name, phone");
+
+    if (error || !data) throw new Error("Could not fetch users.");
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// get information related to a specified user
+app.get("/api/profile/:user_id", async (req, res) => {
+  const { user_id } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from("User")
+      .select("id, email, first_name, last_name, phone, UserRole(Role(name))")
+      .eq("id", user_id)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    if (!data) {
+      res.status(200).json(null);
+    }
+
+    const { UserRole, ...rest } = data || {};
+    const roleName = (data) ? UserRole?.Role.name : null;
+
+    res.status(200).json({ ...rest, role_name: roleName });
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// update information related to a specified user
+app.patch("/api/profile/:user_id", async (req, res) => {
+  const { user_id } = req.params;
+  const updates = req.body;
+
+  try {
+    const { error } = await supabase
+      .from("User")
+      .update(updates)
+      .eq("id", user_id)
+
+    if (error) throw error;
+
+    res.status(200).json(null);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 // --- Admin Session Routes ---
 
-// Fetch all active sessions with related User and Type data
+// Fetch all active sessions with related data
 app.get("/api/sessions", async (req, res) => {
   try {
     const { data, error } = await supabase
       .from("Session")
-      .select(`
-                id,
-                client_id,
-                session_type_id,
-                start_at,
-                end_at,
-                location_text,
-                status,
-                deposit_cs_id,
-                User:client_id (first_name, last_name),
-                SessionType:session_type_id (name)
-            `)
-          .eq("is_active", true);
+      .select("*, User(first_name, last_name), SessionType(name)")
+      .eq("is_active", true);
 
     if (error) throw error;
     res.status(200).json(data);
@@ -54,29 +187,45 @@ app.get("/api/sessions", async (req, res) => {
   }
 });
 
-// Fetch specific session for related session_id
+// retrieve session type details for specified session_type_id
+app.post("/api/sessions/type", async (req, res) => {
+  const { session_type_id, session_type_name } = req.body;
+
+  try {
+    if (!session_type_id && !session_type_name) throw new Error("session_type_id and session_type_name not specified.")
+
+    let query = supabase
+      .from("SessionType")
+      .select();
+
+    if (session_type_id)
+      query = query.eq("id", session_type_id);
+    else if (session_type_name)
+      query = query.eq("name", session_type_name);
+
+    const { data, error } = await query.single();
+    if (error) throw error;
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching Session Type:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// Fetch specific session with related data for specified session_id (id)
 app.get("/api/sessions/:id", async (req, res) => {
   const { id } = req.params;
 
   try {
     const { data, error } = await supabase
       .from("Session")
-      .select(`
-                id,
-                client_id,
-                session_type_id,
-                start_at,
-                end_at,
-                location_text,
-                status,
-                deposit_cs_id,
-                User:client_id (first_name, last_name),
-                SessionType:session_type_id (name)
-            `)
+      .select("*, User(id, first_name, last_name, email, phone), SessionType(name, description)")
       .eq("id", id)
       .single();
 
     if (error) throw error;
+
     res.status(200).json(data);
   } catch (error) {
     console.error("Error fetching session:", error.message);
@@ -100,87 +249,6 @@ app.patch("/api/sessions/:id", async (req, res) => {
     res.json(data);
   } catch (error) {
     console.error("Error updating session:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-// --- Contract Routes ---
-
-// get active contract templates
-app.get("/api/contract/templates", async (_, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("ContractTemplate")
-      .select("id, name, body")
-      .eq("active", true);
-
-    if (error) throw error;
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("Error fetching contract Id:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-// get basic contract
-app.post("/api/contract", async (req, res) => {
-  const { user_id, session_id } = req.body;
-  const now = new Date().toISOString();
-
-  try {
-    if (session_id) {
-      // select Contract table entry
-      const { data: contractData, error: contractError } = await supabase
-        .from("Contract")
-        .select()
-        .eq("assigned_user_id", user_id)
-        .eq("session_id", session_id)
-        .eq("is_active", false)
-        .single();
-
-      if (contractError) throw contractError;
-      res.status(200).json(contractData);
-    } else {
-      // delete all current, inactive user contract entries
-      await supabase
-        .from("Contract")
-        .delete()
-        .eq("assigned_user_id", user_id)
-        .eq("is_active", false);
-
-      // create new Contract table entry
-      const { data: contractData, error: contractError } = await supabase
-        .from("Contract")
-        .insert({ assigned_user_id: user_id, status: "Draft", created_at: now, updated_at: now, is_active: false })
-        .select()
-        .single();
-
-      if (contractError) throw contractError;
-      res.status(200).json(contractData);
-    }
-  } catch (error) {
-    console.error("Error getting contract:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
-// update contract details
-app.patch("/api/contract/:id", async (req, res) => {
-  const { id } = req.params;
-  const now = new Date().toISOString();
-  const updates = { ...req.body, updated_at: now };
-
-  try {
-    const { data, error } = await supabase
-      .from("Contract")
-      .update(updates)
-      .eq("id", id)
-      .select();
-
-    if (error) throw error;
-    res.status(200).json(data);
-  } catch (error) {
-    console.error("Error updating contract:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
@@ -266,12 +334,12 @@ app.post("/api/availability/blocks", async (req, res) => {
   }
 });
 
-/* Stripe */
+// --- Stripe / Payment Routes ---
 
 // create and retrieve Stripe Checkout Session information
 app.post("/api/checkout/:type", async (req, res) => {
   const { type } = req.params;
-  const { session_id, from_url, product_data, price, apply_tax, tax_rate } = req.body
+  const { session_id, from_url, product_data, price, apply_tax, tax_rate } = req.body;
 
   // compute final price based on values passed in
   // if no price is passed in, default to 150
@@ -279,9 +347,11 @@ app.post("/api/checkout/:type", async (req, res) => {
 
   // calculate tax as needed, default to 5% if tax_rate not passed
   if (apply_tax)
-    final_price *= (100 + ((tax_rate) ? tax_rate : 5))
+    final_price *= (100 + ((tax_rate) ? tax_rate : 5));
   else
-    final_price *= 100
+    final_price *= 100;
+
+  final_price = Math.round(final_price);
 
   if (type === "deposit") {
     try {
@@ -292,7 +362,7 @@ app.post("/api/checkout/:type", async (req, res) => {
             price_data: {
               currency: 'usd',
               product_data: product_data || {
-                name: 'Deposit - Default Package',
+                name: 'Default Package - Deposit',
                 description: 'Default Package Description'
               },
               unit_amount: final_price,
@@ -325,7 +395,7 @@ app.post("/api/checkout/:type", async (req, res) => {
             price_data: {
               currency: 'usd',
               product_data: product_data || {
-                name: 'Rest - Default Package',
+                name: 'Default Package - Rest',
                 description: 'Default Package Description'
               },
               unit_amount: final_price,
@@ -345,7 +415,7 @@ app.post("/api/checkout/:type", async (req, res) => {
       });
     } catch (error) {
       console.error('Error creating rest checkout session:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: "Internal Server Error" });
     }
   } else {
     const errorMessage = "Unknown Checkout Type";
@@ -356,8 +426,9 @@ app.post("/api/checkout/:type", async (req, res) => {
 
 // Retrieve Checkout Session and associated Stripe Payment Intent information
 app.get("/api/checkout/:checkout_session_id", async (req, res) => {
+  const { checkout_session_id } = req.params;
+
   try {
-    const { checkout_session_id } = req.params;
     const session = await stripe.checkout.sessions.retrieve(checkout_session_id);
     res.status(200).json({
       session: session,
@@ -365,29 +436,140 @@ app.get("/api/checkout/:checkout_session_id", async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting checkout session:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
+// Capture Payment Intent
 app.post("/api/intent/capture", async (req, res) => {
+  const { payment_intent } = req.body;
+
   try {
-    const { payment_intent } = req.body;
-    const { data, error} = await stripe.paymentIntents.capture(payment_intent);
-    
+    const { data, error } = await stripe.paymentIntents.capture(payment_intent);
+
     if (error) throw error;
     res.status(200).json(data);
   } catch (error) {
-    console.error(req);
     console.error('Error capturing payment intent:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-// --- Miscellaneous Routes ---
+// get all payments
 
+// --- Questionnaire Routes ---
+
+app.get("/api/questionnaire/templates/:template_id", async (req, res) => {
+  const { template_id } = req.params;
+
+  try {
+    const { data, error } = await supabase
+      .from("QuestionnaireTemplate")
+      .select("id, name, session_type_id, schema_json, active")
+      .eq("id", template_id)
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error('Error getting template:', error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// insert questionnaire template
+app.post("/api/questionnaire/templates", async (req, res) => {
+  const paylod = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("QuestionnaireTemplate")
+      .insert(paylod)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error inserting questionnaire template:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// update questionnaire template details
+app.patch("/api/questionnaire/templates/:template_id", async (req, res) => {
+  const { template_id: id } = req.params;
+  const updates = req.body;
+
+  try {
+    const { error } = await supabase
+      .from("QuestionnaireTemplate")
+      .update(updates)
+      .eq("id", id);
+
+    if (error) throw error;
+    res.status(200).json(null);
+  } catch (error) {
+    console.error("Error updating questionnaire template:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// update questionnaire template details
+app.patch("/api/questionnaire/templates/:template_id/set", async (req, res) => {
+  const { template_id } = req.params;
+  const { session_type_id } = req.body;
+
+  try {
+    // Deactivate all other templates for this session type
+    const { error: deactErr } = await supabase
+      .from("QuestionnaireTemplate")
+      .update({ active: false })
+      .eq("session_type_id", session_type_id)
+      .neq("id", template_id);
+    if (deactErr) throw deactErr;
+
+    // Activate this one
+    const { error: actErr } = await supabase
+      .from("QuestionnaireTemplate")
+      .update({ active: true })
+      .eq("id", template_id);
+      
+    if (actErr) throw actErr;
+    res.status(200).json(null);
+  } catch (error) {
+    console.error("Error setting active questionnaire template:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+// app.post("/api/questionnaire/templates", async (req, res) => {
+//   const updates = req.body;
+
+//   try {
+//     const { data, error } = await supabase
+//       .from("QuestionnaireTemplate")
+//       .update(updates)
+//       .eq("id", template_id)
+//       .single();
+
+//     if (error) throw error;
+
+//     res.status(200).json(data);
+//   } catch (error) {
+//     console.error('Error getting template:', error);
+//     res.status(500).json({ error: "Internal Server Error" });
+//   }
+// });
+
+// --- Routes ---
+
+app.use("/api/contract", contractRoutes);
+app.use("/api/contact", contactRoutes);
 app.use("/api/invoice", invoiceRoutes);
-app.use("/api/gallery", galleryRoutes);
 app.use("/api/receipts", receiptRoutes);
+app.use("/api/gallery", galleryRoutes);
 
 app.get("/test-server", (_req, res) => {
   res.json({ message: "HTTP server running and Supabase-compatible!" });

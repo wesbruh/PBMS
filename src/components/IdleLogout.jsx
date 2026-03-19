@@ -28,11 +28,16 @@ export default function IdleLogout({ timeoutMs = 10 * 60 * 1000 }) { // changed 
       timerRef.current = setTimeout(async () => {
         if (!user) return;
 
-        try {
-          // best-effort mark user inactive
-          await supabase.from("User").update({ is_active: false }).eq("id", user.id);
-        } catch (err) {
-          console.error("Failed to mark user inactive before idle logout:", err);
+        // best-effort mark user inactive
+        const response = await fetch(`http://localhost:5001/api/profile/${user.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ is_active: false })
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("Failed to mark user inactive:", errorData.error);
         }
 
         await supabase.auth.signOut();

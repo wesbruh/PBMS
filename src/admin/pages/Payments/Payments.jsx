@@ -20,23 +20,23 @@ function AdminPayments() {
       const { data, error } = await supabase
         .from("Invoice")
         .select(`
-    id,
-    amount,
-    currency,
-    status,
-    paid_at,
-    provider,
-    invoice_id,
-    Invoice(
-      invoice_number,
-      Session (
-        User (
-          first_name,
-          last_name
-        )
-      )
-    )
-  `)
+          id,
+          amount,
+          currency,
+          status,
+          paid_at,
+          provider,
+          invoice_id,
+          Invoice(
+            invoice_number,
+            Session (
+              User (
+                first_name,
+                last_name
+              )
+            )
+          )
+        `)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
