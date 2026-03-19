@@ -927,18 +927,18 @@ export default function ClientDashboard() {
                             </p>
                           </div>
                           <span
-                            className={`text-xs px-2 py-1 rounded border font-medium ${s.status?.toLowerCase() === "confirmed"
+                            className={`text-xs px-2 py-1 rounded border font-medium ${
+                              s.status?.toLowerCase() === "confirmed"
                                 ? "bg-green-100 border-green-300 text-green-700"
                                 : s.status?.toLowerCase() === "completed"
-                                  ? "bg-purple-100 text-purple-800 border-purple-200"
-                                  : "bg-yellow-100 border-yellow-300 text-yellow-700"
-                              }`}
+                                ? "bg-purple-100 text-purple-800 border-purple-200"
+                                : "bg-yellow-100 border-yellow-300 text-yellow-700"
+                            }`}
                           >
                             {s.status ?? "pending"}
                           </span>
                         </li>
                       ))}
-
                     </ul>
                     <SectionPager
                       page={completedPage}
@@ -947,18 +947,12 @@ export default function ClientDashboard() {
                       itemsPerPage={ITEMS_PER_PAGE}
                     />
                   </div>
-                </li>
-              ))}
-            </ul>
-            <SectionPager
-              page={unpaidPage}
-              setPage={setUnpaidPage}
-              totalItems={unpaidInvoices.length}
-              itemsPerPage={ITEMS_PER_PAGE}
-            />
-            </div>
+                )}
+              </div>
+            </div> /* End of grid */
           )}
         </section>
+
 
         {/* Invoices */}
         <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
