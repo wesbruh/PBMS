@@ -1046,9 +1046,9 @@ export default function ClientDashboard() {
               ))}
             </ul>
             <SectionPager
-              page={unPaidPage}
-              setPage={setUnPaidPage}
-              totalItems={unPaidInvoices.length}
+              page={unpaidPage}
+              setPage={setUnpaidPage}
+              totalItems={unpaidInvoices.length}
               itemsPerPage={ITEMS_PER_PAGE}
             />
             </div>

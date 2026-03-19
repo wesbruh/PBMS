@@ -339,7 +339,7 @@ app.post("/api/availability/blocks", async (req, res) => {
 // create and retrieve Stripe Checkout Session information
 app.post("/api/checkout/:type", async (req, res) => {
   const { type } = req.params;
-  const { session_id, from_url, product_data, price, apply_tax, tax_rate } = req.body
+  const { session_id, from_url, product_data, price, apply_tax, tax_rate } = req.body;
 
   // compute final price based on values passed in
   // if no price is passed in, default to 150
@@ -347,9 +347,11 @@ app.post("/api/checkout/:type", async (req, res) => {
 
   // calculate tax as needed, default to 5% if tax_rate not passed
   if (apply_tax)
-    final_price *= (100 + ((tax_rate) ? tax_rate : 5))
+    final_price *= (100 + ((tax_rate) ? tax_rate : 5));
   else
-    final_price *= 100
+    final_price *= 100;
+
+  final_price = Math.round(final_price);
 
   if (type === "deposit") {
     try {
