@@ -3,36 +3,15 @@ import Frame from "../../components/shared/Frame/Frame";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuth } from "../../../context/AuthContext";
-
-const SETTINGS_BUCKET = "adminSettingsBucket";
-const MAX_NAME_LENGTH = 50;
-const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png"];
-
-const getSettingsPath = (userId, version = Date.now()) =>
-  `admins/${userId}/settings-${version}.json`;
-const getFileExtension = (fileName = "") => {
-  const lower = fileName.toLowerCase();
-  if (lower.endsWith(".png")) return "png";
-  if (lower.endsWith(".jpeg") || lower.endsWith(".jpg")) return "jpg";
-  return "jpg";
-};
-
-const getProfilePhotoPath = (userId, fileName) => {
-  const ext = getFileExtension(fileName);
-  return `admins/${userId}/profile-${Date.now()}.${ext}`;
-};
-
-const isIgnorableSettingsLoadError = (error) => {
-  const message = String(error?.message || "").toLowerCase();
-  return (
-    error?.status === 404 ||
-    error?.statusCode === 404 ||
-    message.includes("not found") ||
-    message.includes("permission denied") ||
-    message.includes("row-level security")
-  );
-};
+import {
+  ALLOWED_MIME_TYPES,
+  getProfilePhotoPath,
+  getSettingsPath,
+  isIgnorableSettingsLoadError,
+  MAX_NAME_LENGTH,
+  MAX_PHOTO_BYTES,
+  SETTINGS_BUCKET,
+} from "./settings.utils";
 
 function AdminSettings() {
   const { user, profile } = useAuth();
