@@ -24,7 +24,7 @@ import ContractView from "./pages/Dashboard/ContractView.jsx";
 import IdleLogout from './components/IdleLogout.jsx';
 
 // Protected Admin Routes
-import AdminRoute from './admin/components/shared/ProtectedRoute.jsx'
+import AdminRoute from './admin/components/shared/ProtectedRoute.jsx';
 import AdminHome from './admin/pages/Home/Home.jsx';
 import Sessions from './admin/pages/Sessions/Sessions.jsx';
 import Availability from './admin/pages/Availability/Availability.jsx';
@@ -37,6 +37,11 @@ import Forms from './admin/pages/Forms/Forms.jsx';
 import Settings from './admin/pages/Settings/Settings.jsx';
 import QuestionnairesList from './admin/pages/Forms/Questionnaires/QuestionnairesList';
 import QuestionnaireEditor from './admin/pages/Forms/Questionnaires/QuestionnairesEditor';
+
+// Offerings — session types & packages management (distinct from booked Sessions above)
+import OfferingsPage     from './admin/pages/Offerings/OfferingsPage.jsx';
+import SessionTypeEditor from './admin/pages/Offerings/SessionTypeEditor.jsx';
+import PackageEditor     from './admin/pages/Offerings/PackageEditor.jsx';
 
 function App() {
   return (
@@ -51,12 +56,12 @@ function AppContent() {
     <div className='min-h-screen flex flex-col'>
       <IdleLogout />
 
-      { /* temp dynamic navbar */}
       <Navbar />
 
       <main className='grow'>
         <AuthHashRouter>
           <Routes>
+            {/* ── Public routes ───────────────────────────────────────────── */}
             <Route index element={<Home />} />
             <Route path="/about" element={<About />} />
             <Route path="/testimonials" element={<Testimonials />} />
@@ -67,14 +72,14 @@ function AppContent() {
             <Route path="/auth/callback" element={<AuthCallback />} />
             <Route path="/payment" element={<Payment />} />
 
-            {/* Services */}
+            {/* ── Services (client-facing) ─────────────────────────────── */}
             <Route path="services" element={<Outlet />}>
               <Route index element={<Services />} />
               <Route path="weddings" element={<Weddings />} />
               <Route path="labor-and-delivery" element={<Labor />} />
             </Route>
 
-            {/* Protected User Routes */}
+            {/* ── Protected user routes ────────────────────────────────── */}
             <Route path="dashboard" element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
               <Route index element={<ClientDashboard />} />
               <Route path="contracts" element={<ContractsPage />} />
@@ -83,10 +88,22 @@ function AppContent() {
               <Route path="inquiry/success" element={<InquirySuccess />} />
             </Route>
 
-            {/* Protected Admin Routes */}
+            {/* ── Protected admin routes ───────────────────────────────── */}
             <Route path="admin" element={<AdminRoute><Outlet /></AdminRoute>}>
               <Route index element={<AdminHome />} />
+
+              {/* Booked sessions management (existing) */}
               <Route path="sessions" element={<Sessions />} />
+
+              {/* Offerings — session types & packages Bailey White offers */}
+              <Route path="offerings" element={<Outlet />}>
+                <Route index element={<OfferingsPage />} />
+                <Route path="new" element={<SessionTypeEditor mode="create" />} />
+                <Route path=":id/edit" element={<SessionTypeEditor mode="edit" />} />
+                <Route path=":sessionId/packages/new" element={<PackageEditor mode="create" />} />
+                <Route path=":sessionId/packages/:pkgId/edit" element={<PackageEditor mode="edit" />} />
+              </Route>
+
               <Route path="availability" element={<Availability />} />
               <Route path="contacts" element={<Contacts />} />
               <Route path="contacts/:id" element={<ContactView />} />
@@ -107,8 +124,8 @@ function AppContent() {
       </main>
 
       <Footer />
-    </div >
+    </div>
   );
 }
 
-export default App
+export default App;
