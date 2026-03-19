@@ -12,7 +12,7 @@ dotenv.config();
 
 const app = express();
 
-// stripe secrets
+// stripe secrets 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 app.use(
@@ -387,7 +387,7 @@ app.post("/api/intent/capture", async (req, res) => {
 
 app.use("/api/invoice", invoiceRoutes);
 app.use("/api/gallery", galleryRoutes);
-app.use("/api/receipts", receiptRoutes);
+app.use("/api/receipt", receiptRoutes);
 
 app.get("/test-server", (_req, res) => {
   res.json({ message: "HTTP server running and Supabase-compatible!" });

@@ -9,6 +9,7 @@ import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloa
 import { saveAs } from "file-saver";
 
 import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
+import DownloadReceipt from "../../components/InvoiceButton/DownloadReceipt";
 import { ta } from "zod/v4/locales";
 
 export default function ClientDashboard() {
@@ -173,7 +174,7 @@ export default function ClientDashboard() {
         const { data, error } = await supabase
           .from("Invoice")
           .select(
-            "id, session_id, invoice_number, issue_date, due_date, remaining, status"
+            "id, session_id, invoice_number, issue_date, due_date, remaining, status, Payment(id)"
           )
           .in("session_id", sessionIds)
           .order("issue_date", { ascending: false });
@@ -732,14 +733,11 @@ export default function ClientDashboard() {
                       <div className='flex flex-row gap-3'>
                         <p className="text-sm text-brown font-semibold">
                           Invoice No. {inv.invoice_number || inv.id.slice(0, 6)}
-                        </p>
-                        <a
-                          className='text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5'
-                          aria-label="Preview"
-                        >
-                          <i className="fa-solid fa-eye"></i>
-                        </a>
+                        </p>                  
                         <DownloadInvoiceButton invoiceId={inv.id} />
+                        {inv.status === "Paid" && (
+                          <DownloadReceipt invoiceId={inv.id} />
+                        )}
                       </div>
                       <div className="flex relative mx-auto lg:mr-0">
                         <div className="flex lg:absolute lg:right-5">
