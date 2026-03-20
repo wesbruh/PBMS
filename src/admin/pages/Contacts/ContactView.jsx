@@ -29,13 +29,17 @@ function ContactView() {
     if (!userId) return;
 
     async function checkUser() {
-      const { data: userData, error } = await supabase.from("User").select().eq("id", userId).maybeSingle();
+      const response = await fetch(`http://localhost:5001/api/profile/${userId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
 
-      if (error) {
+      if (!response.ok) {
         setUser(false);
         return;
       }
 
+      const userData = await response.json();
       const name = `${userData.first_name} ${userData.last_name}`
 
       setUser(true);
@@ -43,8 +47,7 @@ function ContactView() {
     }
 
     checkUser();
-  }, [userId, user, fullName]
-  );
+  }, [userId]);
 
   // load all data that belongs to THIS user only
   useEffect(() => {
@@ -57,7 +60,7 @@ function ContactView() {
       const { data: sessionRows, error: sesErr } = await supabase
         .from("Session")
         .select(
-          "id, session_type_id, start_at, end_at, location_text, status, created_at, inquiry_id"
+          "id, session_type_id, start_at, end_at, location_text, status, created_at"
         )
         .eq("client_id", userId)
         .order("start_at", { ascending: false });
