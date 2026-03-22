@@ -11,6 +11,7 @@ function Notifications() {
   const [error, setError] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [filterTab, setFilterTab] = useState("All");
+  const [audienceTab, setAudienceTab] = useState(null);
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -88,10 +89,28 @@ function Notifications() {
   };
 
   useEffect(() => {
-    supabase
-      .from("Notification")
-      .update({ status: "read" })
-      .eq("status", "sent");
+    const markAllRead = async () => {
+      const { data, error: updateError } = await supabase
+        .from("Notification")
+        .update({ status: "read" })
+        .eq("status", "sent")
+        .select("id");
+
+      if (updateError) {
+        console.error("markAllRead error:", updateError);
+      } else {
+        console.log(`markAllRead: updated ${data?.length ?? 0} notification(s) to "read"`);
+      }
+
+      // Record the visit timestamp so the toast knows what counts as "new"
+      // on the next login. Done after the update so the cutoff is accurate.
+      localStorage.setItem("admin_notifs_last_viewed", new Date().toISOString());
+    };
+
+    // 2-second delay so the admin can see the "sent" status before it flips
+    // to "read". Cleanup cancels the timeout if the page unmounts early.
+    const timeoutId = setTimeout(markAllRead, 2000);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   useEffect(() => {
@@ -109,9 +128,17 @@ function Notifications() {
     return () => supabase.removeChannel(channel);
   }, []);
 
+  const isClientNotification = (n) => {
+    const text = ((n.subject || "") + " " + (n.message || "")).toLowerCase();
+    return /\byour\b|\bhi\b/.test(text);
+  };
+
   const filteredNotifications = notifications.filter((n) => {
+    if (audienceTab === "Client Notifications" && !isClientNotification(n)) return false;
+    if (audienceTab === "Admin Notifications" && isClientNotification(n)) return false;
+
     if (filterTab === "All") return true;
-    const subject = n.subject.toLowerCase();
+    const subject = (n.subject || "").toLowerCase();
     if (filterTab === "Sessions") return subject.includes("gallery");
     if (filterTab === "Payment & Invoice") return subject.includes("invoice") || subject.includes("payment");
     return true;
@@ -129,6 +156,12 @@ function Notifications() {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     }
     setConfirmDeleteId(null);
+  };
+
+  const emptyMessages = {
+    "All": "No notifications yet.",
+    "Sessions": "No session notifications found.",
+    "Payment & Invoice": "No payment & invoice notifications found.",
   };
 
   const tableNotificationColumns = [
@@ -178,102 +211,104 @@ function Notifications() {
 
   return (
     <>
-    {confirmDeleteId && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Notification</h3>
-          <p className="text-sm text-gray-600 mb-5">Are you sure you want to delete this notification?</p>
-          <div className="flex justify-end gap-3">
-            <button
-              onClick={() => setConfirmDeleteId(null)}
-              className="px-4 py-2 text-sm rounded-md border hover:bg-gray-50 transition"
-            >
-              No
-            </button>
-            <button
-              onClick={() => handleDelete(confirmDeleteId)}
-              className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition"
-            >
-              Yes
-            </button>
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete Notification</h3>
+            <p className="text-sm text-gray-600 mb-5">Are you sure you want to delete this notification?</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="px-4 py-2 text-sm rounded-md border hover:bg-gray-50 transition"
+              >
+                No
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDeleteId)}
+                className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+              >
+                Yes
+              </button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
-    <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="w-1/5 min-w-50 overflow-y-scroll">
-        <Sidebar />
-      </div>
+      )}
+      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+        <div className="w-1/5 min-w-50 overflow-y-scroll">
+          <Sidebar />
+        </div>
 
-      <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
-        <Frame>
-          <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-scroll">
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications</h1>
-              <p className="text-gray-600">
-                View and manage all system notifications sent to clients.
-              </p>
-            </div>
-
-            {/* Loading state */}
-            {loading && <p className="text-sm text-gray-500 mb-2">Loading notifications…</p>}
-
-            {/* Error state */}
-            {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
-
-            {/* Empty state */}
-            {!loading && !error && notifications.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="text-gray-300 text-6xl mb-4">🔔</div>
-                <h3 className="text-lg font-semibold text-gray-700 mb-1">No Notifications Yet</h3>
-                <p className="text-sm text-gray-500">
-                  There are no notifications in the system at the moment. They will appear here once sent.
+        <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
+          <Frame>
+            <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-scroll">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications</h1>
+                <p className="text-gray-600">
+                  View and manage all system notifications sent to clients.
                 </p>
               </div>
-            )}
 
-            {/* Filter Tabs */}
-            {!loading && !error && (
-              <div className="flex justify-center gap-2 mb-4">
-                {["All", "Sessions", "Payment & Invoice"].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setFilterTab(tab)}
-                    className={`px-5 py-2 rounded-full text-sm font-medium border transition-colors ${
-                      filterTab === tab
-                        ? "bg-gray-900 text-white border-gray-900"
-                        : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-            )}
+              {/* Loading state */}
+              {loading && <p className="text-sm text-gray-500 mb-2">Loading notifications…</p>}
 
-            {/* Table */}
-            {!loading && !error && filteredNotifications.length > 0 && (
-              <div>
-                <Table
-                  columns={tableNotificationColumns}
-                  data={filteredNotifications}
-                  searchable={true}
-                  searchPlaceholder={"Search notifications by recipient or message..."}
-                  rowsPerPage={5}
-                />
-              </div>
-            )}
+              {/* Error state */}
+              {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
 
-            {/* Empty state for active filter */}
-            {!loading && !error && notifications.length > 0 && filteredNotifications.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <p className="text-sm text-gray-500">No {filterTab} notifications found.</p>
-              </div>
-            )}
-          </div>
-        </Frame>
+              {/* Audience Filter */}
+              {!loading && !error && (
+                <div className="flex justify-center gap-2 mb-3">
+                  {["Client Notifications", "Admin Notifications"].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setAudienceTab(audienceTab === tab ? null : tab)}
+                      className={`px-5 py-2 rounded-full text-sm font-medium border transition-colors ${
+                        audienceTab === tab
+                          ? "bg-gray-900 text-white border-gray-900"
+                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Filter Tabs */}
+              {!loading && !error && (
+                <div className="flex justify-center gap-2 mb-4">
+                  {["All", "Sessions", "Payment & Invoice"].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setFilterTab(tab)}
+                      className={`px-5 py-2 rounded-full text-sm font-medium border transition-colors ${
+                        filterTab === tab
+                          ? "bg-gray-900 text-white border-gray-900"
+                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Table — always show when not loading/error */}
+              {!loading && !error && (
+                <div>
+                  <Table
+                    columns={tableNotificationColumns}
+                    data={filteredNotifications}
+                    searchable={true}
+                    searchPlaceholder={"Search notifications by recipient or message..."}
+                    rowsPerPage={5}
+                    emptyMessage={emptyMessages[filterTab]}
+                  />
+                </div>
+              )}
+            </div>
+          </Frame>
+        </div>
       </div>
-    </div>
     </>
   );
 }
