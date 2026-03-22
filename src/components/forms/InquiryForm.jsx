@@ -449,7 +449,7 @@ export default function InquiryForm() {
           },
           price:     (selectedSessionType?.base_price ?? 0) * 0.05,
           apply_tax: true,
-          tax_rate:  5,
+          tax_rate:  7.25,
         }),
       });
 

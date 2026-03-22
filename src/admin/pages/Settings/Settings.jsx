@@ -3,8 +3,6 @@ import Frame from "../../components/shared/Frame/Frame";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
 import { useAuth } from "../../../context/AuthContext";
-import { supabase } from "../../../lib/supabaseClient";
-import { useAuth } from "../../../context/AuthContext";
 import {
   ALLOWED_MIME_TYPES,
   getProfilePhotoPath,
@@ -17,16 +15,8 @@ import {
 
 function AdminSettings() {
   const { user, profile } = useAuth();
-  const { user, profile } = useAuth();
   const fileInputRef = useRef(null);
   const successTimeoutRef = useRef(null);
-
-  const fallbackDisplayName = useMemo(() => {
-    const first = (profile?.first_name || "").trim();
-    const last = (profile?.last_name || "").trim();
-    const fullName = `${first} ${last}`.trim();
-    return fullName || "Admin";
-  }, [profile?.first_name, profile?.last_name]);
 
   const fallbackDisplayName = useMemo(() => {
     const first = (profile?.first_name || "").trim();
@@ -44,16 +34,10 @@ function AdminSettings() {
   const [savedPhotoPath, setSavedPhotoPath] = useState("");
   const [savedSettingsPath, setSavedSettingsPath] = useState("");
   const [selectedPhotoFile, setSelectedPhotoFile] = useState(null);
-  const [savedPhotoPath, setSavedPhotoPath] = useState("");
-  const [savedSettingsPath, setSavedSettingsPath] = useState("");
-  const [selectedPhotoFile, setSelectedPhotoFile] = useState(null);
   const [photoError, setPhotoError] = useState("");
   const [nameError, setNameError] = useState("");
   const [formError, setFormError] = useState("");
-  const [formError, setFormError] = useState("");
   const [showSavedBanner, setShowSavedBanner] = useState(false);
-  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -63,197 +47,6 @@ function AdminSettings() {
   const [alertsSavedAt, setAlertsSavedAt] = useState("");
 
   useEffect(() => {
-    let ignore = false;
-
-    const loadSettings = async () => {
-      if (!user?.id) {
-        setDisplayName(fallbackDisplayName);
-        setSavedDisplayName(fallbackDisplayName);
-        setSelectedPhotoFile(null);
-        setSavedSettingsPath("");
-        setSavedPhotoPath("");
-        setSavedPhotoName("");
-        setPhotoName("");
-        setProfilePhotoUrl((current) => {
-          if (current) URL.revokeObjectURL(current);
-          return "";
-        });
-        setSavedPhotoUrl((current) => {
-          if (current) URL.revokeObjectURL(current);
-          return "";
-        });
-        setEmailNotifications(true);
-        setDashboardAlerts(true);
-        setIsLoadingSettings(false);
-        return;
-      }
-
-      setIsLoadingSettings(true);
-      setFormError("");
-
-      const adminFolderPath = `admins/${user.id}`;
-      const { data: folderItems, error: folderError } = await supabase.storage
-        .from(SETTINGS_BUCKET)
-        .list(adminFolderPath);
-
-      if (ignore) return;
-
-      if (folderError) {
-        if (!isIgnorableSettingsLoadError(folderError)) {
-          setFormError("Could not load your saved settings.");
-        }
-
-        setDisplayName(fallbackDisplayName);
-        setSavedDisplayName(fallbackDisplayName);
-        setSavedSettingsPath("");
-        setSavedPhotoPath("");
-        setSavedPhotoName("");
-        setPhotoName("");
-        setSelectedPhotoFile(null);
-        setProfilePhotoUrl((current) => {
-          if (current) URL.revokeObjectURL(current);
-          return "";
-        });
-        setSavedPhotoUrl((current) => {
-          if (current) URL.revokeObjectURL(current);
-          return "";
-        });
-        setEmailNotifications(true);
-        setDashboardAlerts(true);
-        setEmailSavedAt("");
-        setAlertsSavedAt("");
-        setIsLoadingSettings(false);
-        return;
-      }
-
-      const latestSettingsFile = (folderItems || [])
-        .filter((item) => /^settings-\d+\.json$/.test(item.name))
-        .sort((a, b) => b.name.localeCompare(a.name))[0];
-
-      if (!latestSettingsFile) {
-        setDisplayName(fallbackDisplayName);
-        setSavedDisplayName(fallbackDisplayName);
-        setSavedSettingsPath("");
-        setSavedPhotoPath("");
-        setSavedPhotoName("");
-        setPhotoName("");
-        setSelectedPhotoFile(null);
-        setProfilePhotoUrl((current) => {
-          if (current) URL.revokeObjectURL(current);
-          return "";
-        });
-        setSavedPhotoUrl((current) => {
-          if (current) URL.revokeObjectURL(current);
-          return "";
-        });
-        setEmailNotifications(true);
-        setDashboardAlerts(true);
-        setEmailSavedAt("");
-        setAlertsSavedAt("");
-        setIsLoadingSettings(false);
-        return;
-      }
-
-      const settingsPath = `${adminFolderPath}/${latestSettingsFile.name}`;
-      const { data: settingsBlob, error: settingsError } = await supabase.storage
-        .from(SETTINGS_BUCKET)
-        .download(settingsPath);
-
-      if (ignore) return;
-
-      if (settingsError) {
-        if (!isIgnorableSettingsLoadError(settingsError)) {
-          setFormError("Could not load your saved settings.");
-        }
-
-        setDisplayName(fallbackDisplayName);
-        setSavedDisplayName(fallbackDisplayName);
-        setSavedSettingsPath("");
-        setSavedPhotoPath("");
-        setSavedPhotoName("");
-        setPhotoName("");
-        setSelectedPhotoFile(null);
-        setProfilePhotoUrl((current) => {
-          if (current) URL.revokeObjectURL(current);
-          return "";
-        });
-        setSavedPhotoUrl((current) => {
-          if (current) URL.revokeObjectURL(current);
-          return "";
-        });
-        setEmailNotifications(true);
-        setDashboardAlerts(true);
-        setEmailSavedAt("");
-        setAlertsSavedAt("");
-        setIsLoadingSettings(false);
-        return;
-      }
-
-      try {
-        const raw = await settingsBlob.text();
-        const settings = JSON.parse(raw || "{}");
-
-        const nextDisplayName = settings.displayName?.trim() || fallbackDisplayName;
-        const nextEmailNotifications =
-          settings.emailNotifications === undefined ? true : Boolean(settings.emailNotifications);
-        const nextDashboardAlerts =
-          settings.dashboardAlerts === undefined ? true : Boolean(settings.dashboardAlerts);
-        const nextPhotoPath = settings.photoPath || "";
-        const nextPhotoName = settings.photoName || "";
-        const savedAt = settings.updatedAt ? new Date(settings.updatedAt).toLocaleTimeString() : "";
-
-        setDisplayName(nextDisplayName);
-        setSavedDisplayName(nextDisplayName);
-        setSavedSettingsPath(settingsPath);
-        setEmailNotifications(nextEmailNotifications);
-        setDashboardAlerts(nextDashboardAlerts);
-        setSavedPhotoPath(nextPhotoPath);
-        setSavedPhotoName(nextPhotoName);
-        setPhotoName(nextPhotoName);
-        setSelectedPhotoFile(null);
-        setEmailSavedAt(savedAt);
-        setAlertsSavedAt(savedAt);
-
-        if (nextPhotoPath) {
-          const { data: photoBlob, error: photoError } = await supabase.storage
-            .from(SETTINGS_BUCKET)
-            .download(nextPhotoPath);
-
-          if (!photoError && photoBlob && !ignore) {
-            const nextUrl = URL.createObjectURL(photoBlob);
-            setProfilePhotoUrl((current) => {
-              if (current) URL.revokeObjectURL(current);
-              return nextUrl;
-            });
-            setSavedPhotoUrl((current) => {
-              if (current && current !== nextUrl) URL.revokeObjectURL(current);
-              return nextUrl;
-            });
-          }
-        } else {
-          setProfilePhotoUrl((current) => {
-            if (current) URL.revokeObjectURL(current);
-            return "";
-          });
-          setSavedPhotoUrl((current) => {
-            if (current) URL.revokeObjectURL(current);
-            return "";
-          });
-        }
-      } catch (error) {
-        console.error("Could not parse saved settings:", error);
-        setFormError("Could not parse your saved settings.");
-      } finally {
-        if (!ignore) setIsLoadingSettings(false);
-      }
-    };
-
-    loadSettings();
-
-    return () => {
-      ignore = true;
-    };
-  }, [fallbackDisplayName, user?.id]);
     let ignore = false;
 
     const loadSettings = async () => {
@@ -491,25 +284,17 @@ function AdminSettings() {
     }
 
     if (profilePhotoUrl && profilePhotoUrl !== savedPhotoUrl) {
-    if (profilePhotoUrl && profilePhotoUrl !== savedPhotoUrl) {
       URL.revokeObjectURL(profilePhotoUrl);
     }
 
     const nextPhotoUrl = URL.createObjectURL(file);
-    setSelectedPhotoFile(file);
     setSelectedPhotoFile(file);
     setProfilePhotoUrl(nextPhotoUrl);
     setPhotoName(file.name);
   };
 
   const saveProfileChanges = async () => {
-  const saveProfileChanges = async () => {
     const trimmedName = displayName.trim();
-
-    if (!user?.id) {
-      setFormError("You must be logged in to save settings.");
-      return;
-    }
 
     if (!user?.id) {
       setFormError("You must be logged in to save settings.");
@@ -629,114 +414,7 @@ function AdminSettings() {
 
       setSelectedPhotoFile(null);
       if (fileInputRef.current) fileInputRef.current.value = "";
-    setFormError("");
-    setIsSaving(true);
 
-    try {
-      let nextPhotoPath = savedPhotoPath;
-      let nextPhotoName = savedPhotoName;
-      let nextSavedPhotoUrl = savedPhotoUrl;
-
-      if (selectedPhotoFile) {
-        const profilePhotoPath = getProfilePhotoPath(user.id, selectedPhotoFile.name);
-        const { error: photoUploadError } = await supabase.storage
-          .from(SETTINGS_BUCKET)
-          .upload(profilePhotoPath, selectedPhotoFile, {
-            upsert: false,
-            contentType: selectedPhotoFile.type,
-            cacheControl: "0",
-          });
-
-        if (photoUploadError) {
-          throw new Error(photoUploadError.message || "Could not upload profile photo.");
-        }
-
-        const { data: persistedPhotoBlob, error: persistedPhotoError } = await supabase.storage
-          .from(SETTINGS_BUCKET)
-          .download(profilePhotoPath);
-
-        if (persistedPhotoError) {
-          throw new Error(persistedPhotoError.message || "Could not load uploaded profile photo.");
-        }
-
-        nextPhotoPath = profilePhotoPath;
-        nextPhotoName = selectedPhotoFile.name;
-        nextSavedPhotoUrl = URL.createObjectURL(persistedPhotoBlob);
-
-        if (savedPhotoPath && savedPhotoPath !== nextPhotoPath) {
-          const { error: removeError } = await supabase.storage
-            .from(SETTINGS_BUCKET)
-            .remove([savedPhotoPath]);
-          if (removeError) {
-            console.warn("Could not remove previous profile photo:", removeError.message);
-          }
-        }
-      }
-
-      const payload = {
-        displayName: trimmedName,
-        emailNotifications,
-        dashboardAlerts,
-        photoPath: nextPhotoPath,
-        photoName: nextPhotoName,
-        updatedAt: new Date().toISOString(),
-      };
-
-      const settingsPath = getSettingsPath(user.id);
-      const settingsBlob = new Blob([JSON.stringify(payload, null, 2)], {
-        type: "application/json",
-      });
-
-      const { error: settingsUploadError } = await supabase.storage
-        .from(SETTINGS_BUCKET)
-        .upload(settingsPath, settingsBlob, {
-          upsert: false,
-          contentType: "application/json",
-          cacheControl: "0",
-        });
-
-      if (settingsUploadError) {
-        throw new Error(settingsUploadError.message || "Could not save settings.");
-      }
-
-      if (savedSettingsPath && savedSettingsPath !== settingsPath) {
-        const { error: removeSettingsError } = await supabase.storage
-          .from(SETTINGS_BUCKET)
-          .remove([savedSettingsPath]);
-        if (removeSettingsError) {
-          console.warn("Could not remove previous settings file:", removeSettingsError.message);
-        }
-      }
-
-      const savedTime = new Date().toLocaleTimeString();
-      setSavedDisplayName(trimmedName);
-      setDisplayName(trimmedName);
-      setSavedSettingsPath(settingsPath);
-      setSavedPhotoPath(nextPhotoPath);
-      setSavedPhotoName(nextPhotoName);
-      setPhotoName(nextPhotoName);
-      setEmailSavedAt(savedTime);
-      setAlertsSavedAt(savedTime);
-
-      if (selectedPhotoFile) {
-        if (savedPhotoUrl && savedPhotoUrl !== nextSavedPhotoUrl) {
-          URL.revokeObjectURL(savedPhotoUrl);
-        }
-        if (profilePhotoUrl && profilePhotoUrl !== savedPhotoUrl && profilePhotoUrl !== nextSavedPhotoUrl) {
-          URL.revokeObjectURL(profilePhotoUrl);
-        }
-        setSavedPhotoUrl(nextSavedPhotoUrl);
-        setProfilePhotoUrl(nextSavedPhotoUrl);
-      }
-
-      setSelectedPhotoFile(null);
-      if (fileInputRef.current) fileInputRef.current.value = "";
-
-      setShowSavedBanner(true);
-      if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
-      successTimeoutRef.current = setTimeout(() => {
-        setShowSavedBanner(false);
-      }, 2500);
       setShowSavedBanner(true);
       if (successTimeoutRef.current) clearTimeout(successTimeoutRef.current);
       successTimeoutRef.current = setTimeout(() => {
@@ -747,42 +425,19 @@ function AdminSettings() {
       setFormError(error.message || "Could not save settings.");
     } finally {
       setIsSaving(false);
-      console.error("Error saving admin settings:", error);
-      setFormError(error.message || "Could not save settings.");
-    } finally {
-      setIsSaving(false);
     }
   };
 
   const handleEmailToggle = () => {
     setEmailNotifications((current) => !current);
-    setEmailNotifications((current) => !current);
   };
 
   const handleDashboardAlertsToggle = () => {
-    setDashboardAlerts((current) => !current);
     setDashboardAlerts((current) => !current);
   };
 
   const activePhoto = profilePhotoUrl || savedPhotoUrl;
   const activePhotoName = photoName || savedPhotoName;
-
-  if (isLoadingSettings) {
-    return (
-      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-        <div className="flex w-1/5 min-w-50">
-          <Sidebar />
-        </div>
-        <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
-          <Frame>
-            <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll">
-              <div className="p-2 text-gray-600">Loading your settings...</div>
-            </div>
-          </Frame>
-        </div>
-      </div>
-    );
-  }
 
   if (isLoadingSettings) {
     return (
@@ -820,12 +475,6 @@ function AdminSettings() {
             {showSavedBanner && (
               <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                 Personal settings saved successfully.
-              </div>
-            )}
-
-            {formError && (
-              <div className="mb-4 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {formError}
               </div>
             )}
 
@@ -909,10 +558,7 @@ function AdminSettings() {
                   onClick={saveProfileChanges}
                   disabled={isSaving}
                   className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] disabled:opacity-70 text-white rounded-md border border-black text-sm transition"
-                  disabled={isSaving}
-                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] disabled:opacity-70 text-white rounded-md border border-black text-sm transition"
                 >
-                  {isSaving ? "Saving..." : "Save Changes"}
                   {isSaving ? "Saving..." : "Save Changes"}
                 </button>
               </div>

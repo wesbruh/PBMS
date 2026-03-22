@@ -144,7 +144,7 @@ router.get("/invoice/:invoice_id", async (req, res) => {
       .text(`${userData.email}`, 80, 357)
       .text(`${userData.phone}`, 80, 371);
 
-    const TAX_RATE = .0725
+    const TAX_RATE = 0.0725
     const subtotal = sessionBasePrice;
     const tax = subtotal * TAX_RATE;
     const total = subtotal + tax;

@@ -1,11 +1,8 @@
 import dotenv from "dotenv";
-import { createApp } from "./app.js";
-import invoiceRoutes from "./pdf/invoice.js";
-import galleryRoutes from "./routes/galleryRoutes.js";
-import { supabase } from "./supabaseClient.js";
 import process from "node:process"
 dotenv.config();
 
+import { createApp } from "./app.js";
 import { supabase } from "./supabaseClient.js";
 import { stripe } from "./stripeClient.js"
 
@@ -15,17 +12,7 @@ import invoiceRoutes from "./pdf/invoice.js";
 import receiptRoutes from "./pdf/receipt.js";
 import galleryRoutes from "./routes/galleryRoutes.js";
 
-const app = createApp({ supabaseClient: supabase });
-
-app.use(
-  cors({
-    origin: ["http://localhost:5173"],
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    credentials: true,
-  })
-);
-
-app.use(express.json());
+const app = createApp({ supabaseClient: supabase, stripeClient: stripe });
 
 // --- Routes ---
 

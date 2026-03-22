@@ -108,7 +108,7 @@ export default function ClientDashboard() {
           .insert({
             invoice_id: invoiceId,
             provider: "Stripe",
-            amount: amountDue + (amountDue * 0.05), // add tax to amount
+            amount: amountDue + (amountDue * 0.0725), // add tax to amount
             currency: "USD",
             status: "Pending",
             type: "Rest"
@@ -130,7 +130,7 @@ export default function ClientDashboard() {
           },
           price: amountDue,
           apply_tax: true,
-          tax_rate: 5
+          tax_rate: 7.25
         })
       });
 
@@ -145,6 +145,7 @@ export default function ClientDashboard() {
             status: "Pending",
             created_at: new Date().toISOString(),
           })
+          .eq("id", existingPayment.id)
           .select()
           .single();
 
