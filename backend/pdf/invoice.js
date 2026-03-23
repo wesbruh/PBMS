@@ -52,7 +52,14 @@ router.post("/generate/:session_id", async (req, res) => {
       throw insertError;
     }
 
-    const invoiceNumber = `INV-${String(invoiceData.id).padStart(5, "0")}`;
+    // TODO: select all entries where created_at_year is now.getFullYear()
+    // if data == null set to 1
+    // otherwise find max serial_number and add 1
+    // append this to invoice number: `INV-${now.getFullYear()}-`
+    // use rpc to set/get this value
+
+    // TODO: CHANGE THIS TO BE AN AUTO-INCREMENTING THING
+    const invoiceNumber = `INV-${now.getFullYear()}-${now.getTime()}`;
 
     const { data: updatedInvoice, error: updateError } = await supabase
       .from("Invoice")

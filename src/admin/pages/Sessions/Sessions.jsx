@@ -132,25 +132,43 @@ function Sessions() {
   };
 
   const handleUpdate = async (sessionId, field, value) => {
+    let payload = {}
+
     // FIX: Convert time strings to proper ISO format for Supabase
-    let finalValue = value;
-    if (field === 'start_at' || field === 'end_at') {
-      finalValue = new Date(value).toISOString();
+    if (field === 'start_at') {
+      const session = sessions.reduce((acc, s) => {
+        if (s.id === sessionId)
+          return s
+        else
+          return acc
+      }, null);
+
+      const newStart = new Date(value).toISOString();
+      const timeOffset = new Date(newStart) - new Date(session.start_at);
+      const newEnd = new Date(new Date(session.end_at).getTime() + timeOffset).toISOString();
+
+      payload = { 'start_at': newStart, 'end_at': newEnd };
+    } else {
+      payload = { [field]: value };
     }
 
     try {
       const response = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ [field]: finalValue }),
+        body: JSON.stringify(payload),
       });
 
-      if (response.ok) {
-        setSessions((prev) =>
-          prev.map((s) => (s.id === sessionId ? { ...s, [field]: finalValue } : s))
-        );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData.error;
       }
+
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, ...payload } : s))
+      );
     } catch (error) {
+      alert("Failed to update session");
       console.error("Failed to update session:", error);
     }
   };
@@ -170,7 +188,6 @@ function Sessions() {
     {
       key: 'client_name',
       label: 'Client',
-      sortable: true,
       render: (_, row) => `${row.User?.first_name || ''} ${row.User?.last_name || ''}`
     },
     {
@@ -184,7 +201,7 @@ function Sessions() {
       render: (val, row) => (
         <input
           className="border rounded px-2 py-1 w-full text-sm"
-          defaultValue={val}
+          defaultValue={val ?? ""}
           onBlur={(e) => handleUpdate(row.id, 'location_text', e.target.value)}
         />
       )
@@ -196,7 +213,7 @@ function Sessions() {
         <input
           type="datetime-local"
           className="border rounded px-1 text-sm"
-          defaultValue={val ? getLocalFormattedDate(val) : ""}
+          value={val ? getLocalFormattedDate(val) : ""}
           onChange={(e) => handleUpdate(row.id, 'start_at', e.target.value)}
         />
       )
@@ -204,12 +221,12 @@ function Sessions() {
     {
       key: 'end_at',
       label: 'End Time',
-      render: (val, row) => (
+      render: (val) => (
         <input
           type="datetime-local"
           className="border rounded px-1 text-sm"
-          defaultValue={val ? getLocalFormattedDate(val) : ""}
-          onChange={(e) => handleUpdate(row.id, 'end_at', e.target.value)}
+          value={val ? getLocalFormattedDate(val) : ""}
+          readOnly={true}
         />
       )
     },
