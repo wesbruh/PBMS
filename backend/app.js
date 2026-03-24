@@ -21,7 +21,7 @@ export function buildBookingPayload(bookingRequest, now = new Date()) {
     start_at: new Date(`${date}T${start_time}:00`).toISOString(),
     end_at: new Date(`${date}T${end_time}:00`).toISOString(),
     location_text,
-    status: "pending",
+    status: "Pending",
     notes: notes || null,
     created_at: timestamp,
     updated_at: timestamp,
@@ -201,7 +201,8 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
       const { data, error } = await supabaseClient
         .from("Session")
         .select("*, User(first_name, last_name), SessionType(name)")
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
       res.status(200).json(data);
