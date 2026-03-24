@@ -153,7 +153,7 @@ function AdminPayments() {
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
 
       {/*SideBar*/}
-      <div className="w-1/5 min-w-50 overflow-y-scroll">
+      <div className="flex w-1/5 min-w-50 overflow-y-auto">
         <Sidebar />
       </div>
 
@@ -187,7 +187,7 @@ function AdminPayments() {
                 data={filteredInvoices}
                 searchable={true}
                 searchPlaceholder='Search Payments by Client Name...'
-                rowsPerPage={8}
+                rowsPerPage={5}
               />
             )}
           </div>

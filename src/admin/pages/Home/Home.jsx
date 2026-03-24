@@ -23,14 +23,14 @@ function AdminHome() {
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
       {/* Sidebar */}
-      <div className="w-1/5 min-w-50 overflow-y-scroll">
+      <div className="flex w-1/5 min-w-50 h-full overflow-y-auto">
         <Sidebar />
       </div>
 
       {/* Main content */}
-      <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
+      <div className="flex w-full h-full rounded-lg">
         <Frame>
-          <div className="flex flex-col bg-white w-full h-full overflow-y-scroll">
+          <div className="flex flex-col w-full h-full shadow-inner bg-white">
             {/* Page header */}
             <div className="px-6 pt-6 pb-4 border-b border-gray-100">
               <h1 className="text-2xl font-bold text-gray-900">
@@ -44,14 +44,14 @@ function AdminHome() {
             <MetricsGrid />
 
             {/* Two-column body */}
-            <div className="grid grid-cols-2 gap-4 px-3 md:px-6 flex-1">
+            <div className="grid grid-cols-2 gap-4 px-3 md:px-6 flex-1 h-full">
               {/* LEFT COLUMN: YTD Chart*/}
-              <div style={{ minHeight: 272, minWidth: 100 }}>
+              <div className="h-full" style={{ minWidth: 0 }} >
                 <YTDBarChart />
               </div>
 
               {/* RIGHT COLUMN: Calendar with CONFIRMED SESSIONS*/}
-              <div style={{ minWidth: 100 }}>
+              <div className="h-full pb-1.5" style={{ minWidth: 0 }}>
                 <SessionCalendar />
               </div>
             </div>

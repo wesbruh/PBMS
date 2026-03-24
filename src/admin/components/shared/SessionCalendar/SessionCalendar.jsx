@@ -93,14 +93,14 @@ function SessionCalendar() {
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-2 md:p-3 shadow-sm flex flex-col min-w-80">
+    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex flex-col h-full overflow-hidden ">
       {/* card header */}
-      <div className="flex flex-wrap items-start justify-between mb-2">
-        <div className="min-w-0 ">
+      <div className="flex flex-wrap items-start justify-between"> 
+        <div className="min-w-0">
           <h2 className="text-xs md:text-sm font-semibold text-gray-800">
             Upcoming Sessions
           </h2>
-          <p className="text-xs text-gray-400 ">
+          <p className="text-xs text-gray-400">
             Showing Confirmed Sessions only. Click on a date to view details.
           </p>
         </div>
@@ -116,13 +116,12 @@ function SessionCalendar() {
       </div>
 
       {/* legend  */}
-      <div className="flex flex-wrap items-center gap-2 pb-1 mb-1 border-b border-gray-100 ">
+      <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 ">
         <span className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-amber-500 inline-block " />
         <span className="text-xs text-gray-400 truncate">
           Confirmed session
         </span>
-        {/* <span className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-amber-100 border border-amber-300 inline-block ml-2" /> */}
-        <span className="text-xs font-bold text-decoration underline text-gray-400 truncate">Underlined date is Today.</span>
+        <span className="text-xs text-gray-500 text-decoration underline font-bold truncate">Underlined date is Today.</span>
       </div>
 
       {/* error state */}
@@ -130,15 +129,14 @@ function SessionCalendar() {
 
       {/* loading pulse similar to other components */}
       {loading ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <span className="text-sm text-gray-400 animate-pulse">
             Loading Calendar...
           </span>
         </div>
       ) : (
         // react-day-picker
-        <div className="w-full grid grid-cols-1 lg:grid-cols-2 ">
-          {/* <div className="min-w-80! rounded-xl"> */}
+        <div className="w-full h-full grid grid-cols-1 lg:grid-cols-2 gap-4 mt-1">
           <DayPicker
             mode="single"
             selected={selected}
@@ -146,26 +144,34 @@ function SessionCalendar() {
             month={month}
             onMonthChange={setMonth}
             modifiers={{ session: sessionDates }}
-            modifiersClassNames={{ session: "font-bold text-amber-600" }}
+            modifiersClassNames={{ session: "text-amber-600 font-bold" }}
             showOutsideDays={false}
             navLayout="around"
             captionLayout="label"
             classNames={{
-              root: `${defaultClassNames.root} text-center overflow-x-auto max-w-76 border border-gray-100 rounded-xl shadow-md min-h-85`,
-              today: "text-decoration underline font-bold",
-              selected: "!bg-amber-200 rounded-4xl transition-all",
-              months: "w-full text-xs md:text-sm text-center",
-              month: "p-1 w-full text-xs md:text-sm text-center",
-              month_grid: "text-xs md:text-sm",
+              root: `${defaultClassNames.root} text-center w-full border border-gray-100 rounded-xl shadow-md overflow-x-auto`,
+              today: "",
+              selected: "!bg-amber-200 rounded-xl transition-all",
+              months: "text-xs md:text-sm text-center",
+              month: "text-xs md:text-sm text-center",
+              month_grid: "w-full text-xs md:text-sm ",
               chevron: "fill-amber-500 hover:fill-amber-700",
-              day: "text-xs md:text-sm",
+              day: "text-center text-xs md:text-sm lg:text-lg",
+              weekday: "text-center",
+              day_button: "p-2 w-full cursor-pointer"
             }}
           />
-          {/* </div> */}
+          {/* specifically target "today" since some changes made it become overloaded, tailwind wont work idk */}
+          <style>{`
+          [data-today="true"] button {
+          text-decoration: underline;
+          font-weight: bold;
+          }
+          `}</style>
 
           {/* popover */}
           {selected && (
-            <div className="relative min-w-30 bg-white border border-gray-100 shadow-md rounded-xl p-3 ">
+            <div className="min-w-30 bg-white border border-gray-100 shadow-md rounded-xl p-3 overflow-hidden">
               <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide ">
                 {selected.toLocaleDateString("en-US", {
                   month: "long",
