@@ -743,7 +743,7 @@ export default function ClientDashboard() {
         <button
           type="button"
           onClick={() => setShowSettings(true)}
-          className="cursor-pointer self-end mt-3 px-4 py-2 bg-white text-black text-sm font-mono border border-black rounded-md transition hover:bg-gray-200">
+          className="cursor-pointer self-end mt-3 px-4 py-2 bg-white text-black text-sm font-sans font-semibold border border-black rounded-md transition hover:bg-gray-200">
           Account Settings
         </button>
       </header>
@@ -751,14 +751,14 @@ export default function ClientDashboard() {
       {/* Reminders / notifications */}
       <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-serif text-brown">Reminders</h2>
-          <span className="text-xs text-neutral-500">
+          <h2 className="text-xl font-serif font-bold tracking-wider text-brown">Reminders</h2>
+          <span className=" font-sans text-xs text-neutral-500">
             Showing latest {notifications.length || 0}
           </span>
         </div>
         {notifications.length === 0 ? (
-          <p className="text-sm text-neutral-500">
-            You’re all caught up. New reminders will appear here.
+          <p className="font-sans text-sm text-neutral-500">
+            You're all caught up. New reminders will appear here.
           </p>
         ) : (
           <ul className="space-y-3">
@@ -801,20 +801,20 @@ export default function ClientDashboard() {
       <div className="space-y-6">
         {/* Sessions */}
         <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-          <h2 className="text-lg font-serif text-brown mb-2">Your Sessions</h2>
+          <h2 className="text-xl font-serif font-bold tracking-wider text-brown mb-2">Your Sessions</h2>
           <div className="border-b border-[#E7DFCF] mb-5"></div>
 
           {sessions.length === 0 ? (
             <p className="text-sm text-neutral-500">
-              You don’t have any sessions scheduled yet.
+              You don't have any sessions scheduled yet.
             </p>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Pending */}
               <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
-                <h3 className="text-base font-serif text-brown mb-3">Pending</h3>
+                <h3 className="text-md font-serif font-semibold tracking-wider text-brown mb-3">Pending</h3>
                 {pendingSessions.length === 0 ? (
-                  <p className="text-sm text-neutral-500">No pending sessions.</p>
+                  <p className="text-sm font-sans text-neutral-500">No pending sessions.</p>
                 ) : (
                   <div>
                     <ul className="space-y-3">
@@ -859,9 +859,9 @@ export default function ClientDashboard() {
 
               {/* Upcoming */}
               <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
-                <h3 className="text-base font-serif text-brown mb-3">Upcoming</h3>
+                <h3 className="text-md font-serif font-semibold tracking-wider text-brown mb-3">Upcoming</h3>
                 {upcomingSessions.length === 0 ? (
-                  <p className="text-sm text-neutral-500">No upcoming sessions.</p>
+                  <p className="text-sm font-sans text-neutral-500">No upcoming sessions.</p>
                 ) : (
                   <div>
                     <ul className="space-y-3">
@@ -906,9 +906,9 @@ export default function ClientDashboard() {
 
               {/* Completed */}
               <div className="lg:pr-6">
-                <h3 className="text-base font-serif text-brown mb-3">Completed</h3>
+                <h3 className="text-md font-serif font-semibold tracking-wider text-brown mb-3">Completed</h3>
                 {completedSessions.length === 0 ? (
-                  <p className="text-sm text-neutral-500">No completed sessions.</p>
+                  <p className="text-sm font-sans text-neutral-500">No completed sessions.</p>
                 ) : (
                   <div>
                     <ul className="space-y-3">
@@ -957,20 +957,20 @@ export default function ClientDashboard() {
 
         {/* Invoices */}
         <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-          <h2 className="text-lg font-serif text-brown mb-2">Invoices</h2>
+          <h2 className="text-xl font-serif font-bold tracking-wider text-brown mb-2">Invoices</h2>
           <div className="border-b border-[#E7DFCF] mb-5"></div>
 
           {invoices.length === 0 ? (
-            <p className="text-sm text-neutral-500">
-              No invoices yet. You’ll see them here when they’re issued.
+            <p className="text-sm font-sans text-neutral-500">
+              No invoices yet. You'll see them here when they're issued.
             </p>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Unpaid */}
               <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
-                <h3 className="text-base font-serif text-brown mb-3">Unpaid</h3>
+                <h3 className="font-serif font-semibold text-md text-brown mb-3">Unpaid</h3>
                 {unpaidInvoices.length === 0 ? (
-                  <p className="text-sm text-neutral-500">No unpaid invoices.</p>
+                  <p className="text-sm font-sans text-neutral-500">No unpaid invoices.</p>
                 ) : (
                   <div>
                     <ul className="space-y-3">
@@ -1055,9 +1055,9 @@ export default function ClientDashboard() {
 
               {/* Paid */}
               <div className="lg:border-r lg:pr-6 border-[#E7DFCF]">
-                <h3 className="text-base font-serif text-brown mb-3">Paid</h3>
+                <h3 className="font-serif font-semibold text-md text-brown mb-3">Paid</h3>
                 {paidInvoices.length === 0 ? (
-                  <p className="text-sm text-neutral-500">No paid invoices.</p>
+                  <p className="text-sm font-sans text-neutral-500">No paid invoices.</p>
                 ) : (
                   <div>
                     <ul className="space-y-3">
@@ -1138,9 +1138,9 @@ export default function ClientDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Galleries */}
         <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-          <h2 className="text-lg font-serif text-brown mb-3">Galleries</h2>
+          <h2 className="text-xl font-serif font-bold tracking-wider text-brown mb-3">Galleries</h2>
           {galleries.length === 0 ? (
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm font-sans text-neutral-500">
               No galleries have been published for you yet.
             </p>
           ) : (
@@ -1190,12 +1190,12 @@ export default function ClientDashboard() {
 
         {/* Forms / Contracts */}
         <section className="flex flex-col bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-          <h2 className=" text-lg font-serif text-brown mb-3">Forms & Contracts</h2>
+          <h2 className="text-xl font-serif font-bold tracking-wider text-brown mb-3">Forms & Contracts</h2>
           <div className="flex-col w-full space-y-2">
             <div className="relative">
               {contracts.length === 0 ? (
                 <div className="flex items-center justify-between">
-                  <p className="text-sm text-neutral-500">
+                  <p className="text-sm font-sans text-neutral-500">
                     No new contracts have been issued to you yet.
                   </p>
                 </div>
@@ -1252,7 +1252,7 @@ export default function ClientDashboard() {
 
             {/* Dialog */}
             <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
-              <h2 className="text-center text-2xl font-serif font-extralight mb-4">
+              <h2 className="text-center text-2xl font-sans font-semibold mb-4">
                 Account Settings
               </h2>
               {saveError && (
@@ -1263,9 +1263,9 @@ export default function ClientDashboard() {
               )}
 
               {/* Modal Content */}
-              <div className="flex flex-col font-mono text-xs">
+              <div className="flex flex-col font-sans text-md">
                 <label className="mb-4">
-                  <p className="text-center text-brown py-3">FIRST NAME *</p>
+                  <p className="text-center text-brown py-3">First Name *</p>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1281,7 +1281,7 @@ export default function ClientDashboard() {
                 </label>
 
                 <label className="mb-4">
-                  <p className="text-center text-brown py-3">LAST NAME *</p>
+                  <p className="text-center text-brown py-3">Last Name *</p>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1297,7 +1297,7 @@ export default function ClientDashboard() {
                 </label>
 
                 <label className="mb-4">
-                  <p className="text-center text-brown py-3">EMAIL *</p>
+                  <p className="text-center text-brown py-3">Email *</p>
                   {isEditing ? (
                     <input
                       type="email"
@@ -1313,7 +1313,7 @@ export default function ClientDashboard() {
                 </label>
 
                 <label className="mb-4">
-                  <p className="text-center text-brown py-3">PHONE NUMBER *</p>
+                  <p className="text-center text-brown py-3">Phone Number *</p>
                   {isEditing ? (
                     <input
                       type="text"
@@ -1329,7 +1329,7 @@ export default function ClientDashboard() {
                 </label>
 
                 <label className="mb-4">
-                  <p className="text-center text-brown py-3">PASSWORD *</p>
+                  <p className="text-center text-brown py-3">Password *</p>
 
                   {/* View mode for password */}
                   {!isEditing && (

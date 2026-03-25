@@ -35,7 +35,7 @@
 
 /* Because of the use of 'font-mono' across the pages, I have implemented the variable for it to be used as a serif instead
 therefore anytime someone used 'mono' it will default to serif */
---font-mono: 'Bodoni Moda', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif;
+/* --font-mono: 'Bodoni Moda', ui-serif, Georgia, Cambria, 'Times New Roman', Times, serif; */
 
 }
 @layer base {

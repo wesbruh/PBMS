@@ -62,8 +62,8 @@ export default function SignUp() {
           last_name: values.lastName,
         },
         emailRedirectTo: redirectUrl,
-      }
-    }
+      },
+    };
 
     const profilePayload = {
       email: values.email,
@@ -74,8 +74,11 @@ export default function SignUp() {
     const response = await fetch("http://localhost:5001/api/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ signup_payload: signupPayload, profile_payload: profilePayload})
-    })
+      body: JSON.stringify({
+        signup_payload: signupPayload,
+        profile_payload: profilePayload,
+      }),
+    });
 
     if (!response.ok) {
       const errorData = await response.json();
@@ -94,18 +97,19 @@ export default function SignUp() {
         <div className="w-full max-w-3xl">
           {/* Header */}
           <div className="text-center mb-8 md:mb-10">
-            <h1 className="text-3xl md:text-5xl font-serif font-extralight tracking-wide">
-              BOOK WITH ME
+            <h1 className="text-3xl md:text-5xl font-serif font-extralight tracking-wide uppercase">
+              Book With Me
             </h1>
             <p className="mt-3 text-sm md:text-base text-neutral-600 max-w-xl mx-auto">
-              Create your account to request a session. I’ll follow up with availability within 24 hours.
+              Create your account to manage your galleries, make a payment, or
+              submit a booking request.
             </p>
           </div>
 
           {/* Card */}
           <div className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl shadow-sm px-5 md:px-8 py-8">
             <form
-              className="flex flex-col gap-5 font-mono text-xs"
+              className="flex flex-col gap-5 font-sans text-xs"
               noValidate
               onSubmit={handleSubmit(onSubmit)}
             >
@@ -113,10 +117,11 @@ export default function SignUp() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* FIRST NAME */}
                 <label>
-                  <p className="text-brown py-2 tracking-widest text-[11px]">FIRST NAME *</p>
+                  <p className="text-brown py-1 text-[14px]">First Name *</p>
                   <input
-                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.firstName ? "border-red-500" : "border-neutral-200"
-                      }`}
+                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
+                      errors.firstName ? "border-red-500" : "border-neutral-200"
+                    }`}
                     id="firstName"
                     type="text"
                     autoComplete="given-name"
@@ -124,16 +129,19 @@ export default function SignUp() {
                     {...register("firstName")}
                   />
                   {errors.firstName && (
-                    <p className="mt-2 text-red-600 text-xs">{errors.firstName.message}</p>
+                    <p className="mt-2 text-red-600 text-xs">
+                      {errors.firstName.message}
+                    </p>
                   )}
                 </label>
 
                 {/* LAST NAME */}
                 <label>
-                  <p className="text-brown py-2 tracking-widest text-[11px]">LAST NAME *</p>
+                  <p className="text-brown py-1 text-[14px]">Last Name *</p>
                   <input
-                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.lastName ? "border-red-500" : "border-neutral-200"
-                      }`}
+                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
+                      errors.lastName ? "border-red-500" : "border-neutral-200"
+                    }`}
                     id="lastName"
                     type="text"
                     autoComplete="family-name"
@@ -141,17 +149,20 @@ export default function SignUp() {
                     {...register("lastName")}
                   />
                   {errors.lastName && (
-                    <p className="mt-2 text-red-600 text-xs">{errors.lastName.message}</p>
+                    <p className="mt-2 text-red-600 text-xs">
+                      {errors.lastName.message}
+                    </p>
                   )}
                 </label>
               </div>
 
               {/* EMAIL */}
               <label>
-                <p className="text-brown py-2 tracking-widest text-[11px]">EMAIL *</p>
+                <p className="text-brown py-1 text-[14px]">Email *</p>
                 <input
-                  className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.email ? "border-red-500" : "border-neutral-200"
-                    }`}
+                  className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
+                    errors.email ? "border-red-500" : "border-neutral-200"
+                  }`}
                   id="email"
                   type="email"
                   autoComplete="email"
@@ -159,17 +170,20 @@ export default function SignUp() {
                   {...register("email")}
                 />
                 {errors.email && (
-                  <p className="mt-2 text-red-600 text-xs">{errors.email.message}</p>
+                  <p className="mt-2 text-red-600 text-xs">
+                    {errors.email.message}
+                  </p>
                 )}
               </label>
 
               {/* PASSWORDS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <label>
-                  <p className="text-brown py-2 tracking-widest text-[11px]">PASSWORD *</p>
+                  <p className="text-brown py-1 text-[14px]">Password *</p>
                   <input
-                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.password ? "border-red-500" : "border-neutral-200"
-                      }`}
+                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
+                      errors.password ? "border-red-500" : "border-neutral-200"
+                    }`}
                     id="password"
                     type="password"
                     autoComplete="new-password"
@@ -177,19 +191,26 @@ export default function SignUp() {
                     {...register("password")}
                   />
                   {errors.password ? (
-                    <p className="mt-2 text-red-600 text-xs">{errors.password.message}</p>
+                    <p className="mt-2 text-red-600 text-xs">
+                      {errors.password.message}
+                    </p>
                   ) : (
-                    <p className="mt-2 text-neutral-500 text-[11px]">
+                    <p className="mt-2 text-neutral-500 text-[12px]">
                       8+ characters, 1 upper, 1 lower, 1 number
                     </p>
                   )}
                 </label>
 
                 <label>
-                  <p className="text-brown py-2 tracking-widest text-[11px]">CONFIRM PASSWORD *</p>
+                  <p className="text-brown py-1 text-[14px]">
+                    Confirm Password *
+                  </p>
                   <input
-                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.confirmPassword ? "border-red-500" : "border-neutral-200"
-                      }`}
+                    className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
+                      errors.confirmPassword
+                        ? "border-red-500"
+                        : "border-neutral-200"
+                    }`}
                     id="confirmPassword"
                     type="password"
                     autoComplete="new-password"
@@ -197,7 +218,9 @@ export default function SignUp() {
                     {...register("confirmPassword")}
                   />
                   {errors.confirmPassword && (
-                    <p className="mt-2 text-red-600 text-xs">{errors.confirmPassword.message}</p>
+                    <p className="mt-2 text-red-600 text-xs">
+                      {errors.confirmPassword.message}
+                    </p>
                   )}
                 </label>
               </div>
@@ -216,9 +239,25 @@ export default function SignUp() {
                 </div>
               )}
 
+              {/* What happens next */}
+              <div className="mt-4 text-center">
+                <h2 className="font-serif text-lg text-[#7E4C3C]">
+                  What happens next?
+                </h2>
+                <p className="mt-2 text-sm text-neutral-600 max-w-2xl mx-auto">
+                  Once you confirm your email, you'll be able to manage your account and submit a
+                  booking request and I'll follow up with cofirmation or any
+                  extra details.
+                </p>
+                <p className="mt-3 text-[12px] text-neutral-600">
+                  By creating an account, you agree to be contacted about
+                  session availability.
+                </p>
+              </div>
+
               {/* CTA */}
               <button
-                className="mt-2 flex justify-center items-center w-full md:w-1/2 mx-auto
+                className="mt-1 flex justify-center items-center w-full md:w-1/2 mx-auto
                            bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-serif border border-black rounded-md transition disabled:opacity-60 cursor-pointer"
                 type="submit"
                 disabled={isSubmitting}
@@ -228,26 +267,18 @@ export default function SignUp() {
               </button>
 
               {/* Footer links */}
-              <div className="text-center mt-2">
-                <p className="text-[11px] text-neutral-600">
+              <div className="text-center">
+                <p className="text-[14px] text-neutral-600">
                   Already have an account?{" "}
-                  <Link to="/login" className="text-[#7E4C3C] underline underline-offset-4 hover:text-[#AB8C4B]">
+                  <Link
+                    to="/login"
+                    className="text-[#7E4C3C] underline underline-offset-4 hover:text-[#AB8C4B]"
+                  >
                     Log in
                   </Link>
                 </p>
-                <p className="mt-2 text-[10px] text-neutral-500">
-                  By creating an account, you agree to be contacted about session availability.
-                </p>
               </div>
             </form>
-          </div>
-
-          {/* What happens next */}
-          <div className="mt-8 text-center">
-            <h2 className="font-serif text-lg text-[#7E4C3C]">What happens next?</h2>
-            <p className="mt-2 text-sm text-neutral-600 max-w-2xl mx-auto">
-              Once your email is confirmed, you’ll be able to submit your session request and I’ll follow up with dates, location, and details.
-            </p>
           </div>
         </div>
       </div>

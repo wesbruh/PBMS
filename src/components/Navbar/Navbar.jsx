@@ -42,7 +42,7 @@ function Navbar() {
   const isHomePage = location.pathname === "/";
 
   // shared styles for navbar links, sweeping underline when hovered with alternate color. Static underline with bg-brown
-  const linkStyles = `tracking-wide relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#AB8C4B] hover:after:w-full after:transition-all after:duration-500 after:ease-in' ${isHomePage ? "text-white" : "text-black"
+  const linkStyles = ` font-semibold tracking-wide relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#AB8C4B] hover:after:w-full after:transition-all after:duration-500 after:ease-in' ${isHomePage ? "text-white" : "text-black"
     }`;
   const activeLinkStyles = "after:!w-full after:bg-brown after:h-[2px]";
 
@@ -67,9 +67,9 @@ function Navbar() {
         />
         <h1
           className={`${isHomePage ? "text-white" : "text-[#7E4C3C]"
-            } font-serif text-2xl flex-grid`}
+            } font-serif font-semibold text-2xl flex-grid uppercase`}
         >
-          YOUR ROOTS PHOTOGRAPHY
+          Your Roots Photography
         </h1>
       </div>
 
