@@ -12,14 +12,14 @@ const inputBase =
 
 const labelCaps = "text-[11px] tracking-[0.2em] text-[#7E4C3C]";
 
-export default function DynamicQuestionnaire({ questions = [], answers = {}, onChange }) {
+export default function DynamicQuestionnaire({ questions = [], answers = {}, onChange, readOnly = false }) {
   function handleChange(tempId, value) {
     onChange({ ...answers, [tempId]: value });
   }
 
   function handleCheckbox(tempId, option, checked) {
     const current = Array.isArray(answers[tempId]) ? answers[tempId] : [];
-    const updated  = checked
+    const updated = checked
       ? [...current, option]
       : current.filter((v) => v !== option);
     onChange({ ...answers, [tempId]: updated });
@@ -44,6 +44,7 @@ export default function DynamicQuestionnaire({ questions = [], answers = {}, onC
           value={answers[q.tempId]}
           onChangeValue={(val) => handleChange(q.tempId, val)}
           onChangeCheckbox={(opt, checked) => handleCheckbox(q.tempId, opt, checked)}
+          readOnly={readOnly}
           inputBase={inputBase}
           labelCaps={labelCaps}
         />
@@ -53,7 +54,7 @@ export default function DynamicQuestionnaire({ questions = [], answers = {}, onC
 }
 
 // ── Individual question renderer ──────────────────────────────────────────────
-function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, labelCaps }) {
+function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, labelCaps, readOnly = false }) {
   const label = (
     <p className={labelCaps}>
       {(q.label ?? "").toUpperCase()}
@@ -75,6 +76,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
           onChange={(e) => onChangeValue(e.target.value)}
           className={`${inputBase} mt-1`}
           placeholder={q.label ?? "Your answer…"}
+          disabled={readOnly}
         />
       </div>
     );
@@ -90,6 +92,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
           value={value ?? ""}
           onChange={(e) => onChangeValue(e.target.value)}
           className={`${inputBase} mt-1`}
+          disabled={readOnly}
         />
       </div>
     );
@@ -105,6 +108,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
           value={value ?? ""}
           onChange={(e) => onChangeValue(e.target.value)}
           className={`${inputBase} mt-1`}
+          disabled={readOnly}
         >
           <option value="">Select an option…</option>
           {opts.map((o, i) => (
@@ -130,6 +134,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
               onChange={(e) => onChangeValue(e.target.value)}
               className={`${inputBase}`}
               placeholder="Your answer…"
+              disabled={readOnly}
             />
           ) : (
             opts.map((o, i) => (
@@ -141,6 +146,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
                   checked={value === o}
                   onChange={() => onChangeValue(o)}
                   className="h-4 w-4 accent-[#7E4C3C]"
+                  disabled={readOnly}
                 />
                 <span className="text-sm text-neutral-700">{o}</span>
               </label>
@@ -153,7 +159,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
 
   // ── Checkbox ──────────────────────────────────────────────────────────────
   if (type === "checkbox") {
-    const opts    = Array.isArray(q.options) ? q.options.filter(Boolean) : [];
+    const opts = Array.isArray(q.options) ? q.options.filter(Boolean) : [];
     const checked = Array.isArray(value) ? value : [];
     return (
       <div>
@@ -166,6 +172,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
               onChange={(e) => onChangeValue([e.target.value])}
               className={`${inputBase}`}
               placeholder="Your answer…"
+              disabled={readOnly}
             />
           ) : (
             opts.map((o, i) => (
@@ -176,6 +183,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
                   checked={checked.includes(o)}
                   onChange={(e) => onChangeCheckbox(o, e.target.checked)}
                   className="h-4 w-4 accent-[#7E4C3C]"
+                  disabled={readOnly}
                 />
                 <span className="text-sm text-neutral-700">{o}</span>
               </label>
@@ -197,6 +205,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
         onChange={(e) => onChangeValue(e.target.value)}
         className={`${inputBase} mt-1`}
         placeholder={q.label ?? "Your answer…"}
+        disabled={readOnly}
       />
     </div>
   );

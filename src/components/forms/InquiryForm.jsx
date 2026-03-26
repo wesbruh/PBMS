@@ -13,7 +13,7 @@ import DynamicQuestionnaire from "./DynamicQuestionnaire";
 import TimeSlotGrid from "../TimeSlotGrid/TimeSlotGrid";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const BUCKET       = "session-images";
+const BUCKET = "session-images";
 
 function getImageUrl(path) {
   if (!path) return null;
@@ -39,6 +39,7 @@ const Schema = z.object({
   phone: z
     .string()
     .trim(),
+  sessionTypeId: z.string().min(1, "Select a session type"),
   date: z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
   startTime: z.string(),
   location: z.string().optional(),
@@ -51,34 +52,35 @@ export default function InquiryForm() {
   const navigate = useNavigate();
   const { profile: user } = useAuth();
 
-  const [searchParams]      = useSearchParams();
-  const [sessionId,          setSessionId]          = useState(null);
-  const [checkoutSessionId,  setCheckoutSessionId]  = useState(null);
-  const [loadingParams,      setLoadingParams]      = useState(true);
+  const [searchParams] = useSearchParams();
+  const [sessionId, setSessionId] = useState(null);
+  const [checkoutSessionId, setCheckoutSessionId] = useState(null);
+  const [loadingParams, setLoadingParams] = useState(true);
 
   const [contractTemplates, setContractTemplates] = useState({});
-  const [contract,          setContract]          = useState(null);
-  const [submitLock,        setSubmitLock]        = useState(true);
-  const [loading,           setLoading]           = useState(true);
+  const [contract, setContract] = useState(null);
+  const [submitLock, setSubmitLock] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // ── Session types + packages from DB ─────────────────────────────────────
   // sessionTypes: SessionType row + packages array attached
-  const [sessionTypes,       setSessionTypes]       = useState([]);
-  const [sessionTypesLoading,setSessionTypesLoading]= useState(true);
+  const [sessionTypes, setSessionTypes] = useState([]);
+  const [sessionTypeLoading, setSessionTypeLoading] = useState(false);
+  const [sessionTypesLoading, setSessionTypesLoading] = useState(true);
 
   // Selected session type row (full object)
   const [selectedSessionType, setSelectedSessionType] = useState(null);
   // Selected package id within that session type (null = base session, no package)
-  const [selectedPackageId,   setSelectedPackageId]   = useState(null);
+  const [selectedPackageId, setSelectedPackageId] = useState(null);
 
   // Duration for TimeSlotGrid — comes from selected package or base session
-  const [durationMinutes, setDurationMinutes] = useState(60);
+  const [durationMinutes, setDurationMinutes] = useState(null);
 
   // Questionnaire
   const [activeTemplate, setActiveTemplate] = useState(null);
-  const [qAnswers,        setQAnswers]       = useState({});
-  const [qALoading,       setQALoading]      = useState(false);
-  const [qLoading,        setQLoading]       = useState(false);
+  const [qAnswers, setQAnswers] = useState({});
+  const [qALoading, setQALoading] = useState(false);
+  const [qLoading, setQLoading] = useState(false);
 
   // ── Load search params ────────────────────────────────────────────────────
   useEffect(() => {
@@ -97,7 +99,7 @@ export default function InquiryForm() {
           .select("*")
           .eq("active", true)
           .order("display_order", { ascending: true })
-          .order("name",          { ascending: true });
+          .order("name", { ascending: true });
 
         if (tErr) throw tErr;
 
@@ -207,17 +209,16 @@ export default function InquiryForm() {
     reValidateMode: "onChange",
     defaultValues: {
       firstName: "", lastName: "", email: "", phone: "",
-      date: "", startTime: "", location: "", message: ""
+      date: "", startTime: "", sessionTypeId: "", location: "", message: ""
     },
   });
 
-  const watchedDate      = watch("date");
+  const watchedDate = watch("date");
   const watchedStartTime = watch("startTime");
 
   // ── When session type is selected, set default package + duration ─────────
   function handleSelectSessionType(st) {
     setSelectedSessionType(st);
-    setValue("sessionTypeId", st.id, { shouldValidate: true });
 
     // Auto-select the default package if one exists
     const defaultPkg = (st.packages ?? []).find((p) => p.is_default) ?? null;
@@ -229,8 +230,11 @@ export default function InquiryForm() {
       ?? 60;
     setDurationMinutes(dur);
 
-    // Reset time when session type changes
-    setValue("startTime", "", { shouldValidate: false });
+    // Reset time when session type changes if not loaded from prefill
+    if (sessionTypeLoading)
+      setSessionTypeLoading(false);
+    else
+      setValue("startTime", "", { shouldValidate: false });
   }
 
   // ── When package is (re-)selected within a session type ───────────────────
@@ -265,6 +269,7 @@ export default function InquiryForm() {
     }
 
     const fetchTemplate = async () => {
+      setQLoading(true);
       try {
         const { data: template, error: tErr } = await supabase
           .from("QuestionnaireTemplate")
@@ -278,11 +283,11 @@ export default function InquiryForm() {
         const questions = (template.schema_json ?? [])
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           .map((q) => ({
-            tempId:   q.id,
-            label:    q.label,
-            type:     q.type,
+            tempId: q.id,
+            label: q.label,
+            type: q.type,
             required: q.required ?? false,
-            options:  q.options  ?? null,
+            options: q.options ?? null,
           }));
 
         setActiveTemplate({ id: template.id, name: template.name, questions });
@@ -291,6 +296,8 @@ export default function InquiryForm() {
       } catch (err) {
         console.error("Error fetching QuestionnaireTemplate:", err);
         setActiveTemplate(null);
+      } finally {
+        setQLoading(false);
       }
     };
 
@@ -316,40 +323,51 @@ export default function InquiryForm() {
 
           // Match the session type from loaded list
           const matchedST = sessionTypes.find((st) => st.id === sessionData.session_type_id);
-          if (matchedST) handleSelectSessionType(matchedST);
+          if (matchedST) {
+            setSessionTypeLoading(true);
+            handleSelectSessionType(matchedST);
+          }
 
-          const dateTime  = new Date(sessionData.start_at);
-          const datePart  = dateTime.toISOString().split("T")[0];
-          const timePart  = `${dateTime.getUTCHours().toString().padStart(2, "0")}:${dateTime.getUTCMinutes().toString().padStart(2, "0")}`;
+          const dateTime = new Date(sessionData.start_at);
+          const datePart = dateTime.getFullYear() + "-" +
+            (dateTime.getMonth() + 1).toString().padStart(2, '0') + "-" +
+            (dateTime.getDate().toString().padStart(2, '0'))
+          const timePart = (dateTime.getHours().toString().padStart(2, '0')) + ":" +
+            (dateTime.getMinutes().toString().padStart(2, '0'));
 
           // Load questionnaire answers
           try {
             const { data: qInstance } = await supabase
-              .from("questionnaire")
+              .from("QuestionnaireResponse")
               .select("id")
               .eq("session_id", sessionId)
               .single();
 
             const { data: resData } = await supabase
-              .from("QuestionnaireResponse")
+              .from("QuestionnaireAnswer")
               .select()
-              .eq("questionnaire_id", qInstance.id)
-              .single();
-            
-            setQAnswers(resData?.answers_json || {});
+              .eq("questionnaire_id", qInstance.id);
+
+            let answers = {};
+            await resData.map((response) => {
+              answers = {...answers, [response.question_id]: response.answer};
+            })
+
             setQALoading(true);
+            setQAnswers(answers);
           } catch (_) { /* no questionnaire saved yet */ }
 
-          setValue("firstName",   user?.first_name?.trim());
-          setValue("lastName",    user?.last_name?.trim());
-          setValue("email",       user.email);
-          setValue("phone",       user.phone);
-          setValue("date",        datePart,                        { shouldValidate: true, shouldDirty: false });
-          setValue("startTime",   timePart,                        { shouldValidate: true, shouldDirty: false });
-          if (sessionData.location_text) setValue("location", sessionData.location_text, { shouldValidate: true, shouldDirty: false });
-          if (sessionData.notes)         setValue("message",  sessionData.notes,         { shouldValidate: true, shouldDirty: false });
+          setValue("firstName", user?.first_name?.trim());
+          setValue("lastName", user?.last_name?.trim());
+          setValue("email", user.email);
+          setValue("phone", user.phone);
+          setValue("date", datePart, { shouldValidate: true, shouldDirty: false });
+          setValue("startTime", timePart, { shouldValidate: true, shouldDirty: false });
+          setValue("sessionTypeId", sessionData.session_type_id);
+          if (sessionData.location_text) setValue("location", sessionData.location_text);
+          if (sessionData.notes) setValue("message", sessionData.notes);
 
-          await trigger(["firstName", "lastName", "email", "phone", "date", "startTime", "location"]);
+          await trigger(["firstName", "lastName", "email", "phone", "date", "startTime", "sessionTypeId", "location", "message"]);
           setSubmitLock(false);
         } catch (error) {
           console.error("Error pre-filling from session:", error);
@@ -357,10 +375,10 @@ export default function InquiryForm() {
       } else {
         // Fresh form — prefill from profile
         const first = user?.first_name?.trim() || "";
-        const last  = user?.last_name?.trim()  || "";
+        const last = user?.last_name?.trim() || "";
 
         if (first) setValue("firstName", first);
-        if (last)  setValue("lastName",  last);
+        if (last) setValue("lastName", last);
 
         if (user.email) setValue("email", user.email);
         if (user.phone) setValue("phone", user.phone);
@@ -380,7 +398,7 @@ export default function InquiryForm() {
       await supabase.from("Session").delete().eq("client_id", user.id).eq("is_active", false);
 
       const startAt = new Date(`${getValues("date")}T${getValues("startTime")}`).toISOString();
-      const endAt   = new Date(
+      const endAt = new Date(
         new Date(`${getValues("date")}T${getValues("startTime")}`).getTime() + durationMinutes * 60 * 1000
       ).toISOString();
 
@@ -388,15 +406,15 @@ export default function InquiryForm() {
       const { data: sessionData, error: sessionError } = await supabase
         .from("Session")
         .insert({
-          client_id:       user.id,
-          session_type_id: selectedSessionType?.id ?? null,
-          start_at:        startAt,
-          end_at:          endAt,
-          location_text:   getValues("location") || null,
-          notes:           getValues("message")  || null,
-          status:          "Pending",
-          created_at:      now,
-          updated_at:      now,
+          client_id: user.id,
+          session_type_id: getValues("sessionTypeId"),
+          start_at: startAt,
+          end_at: endAt,
+          location_text: getValues("location") || "",
+          notes: getValues("message") || "",
+          status: "Pending",
+          created_at: now,
+          updated_at: now,
         })
         .select()
         .single();
@@ -412,11 +430,11 @@ export default function InquiryForm() {
       // Save questionnaire
       if (activeTemplate) {
         const { data: qInstance, error: qInstError } = await supabase
-          .from("questionnaire")
+          .from("QuestionnaireResponse")
           .insert({
-            session_id:  sessionData.id,
+            session_id: sessionData.id,
             template_id: activeTemplate.id,
-            status:      "In Progress",
+            status: "In Progress",
           })
           .select("id")
           .single();
@@ -426,36 +444,48 @@ export default function InquiryForm() {
           throw qInstError;
         }
 
+        // One row per answer (relational, not blob)
+        const responseRows = await activeTemplate.questions.map((q) => {
+          const raw = qAnswers[q.tempId];
+          const type = (q.type ?? "short_text").toLowerCase().trim();
+          const isCheckbox = type === "checkbox";
+          return {
+            questionnaire_id: qInstance.id,
+            question_id: q.tempId,
+            answer: isCheckbox ? (Array.isArray(raw) ? raw : []) : (raw ?? null),
+          };
+        });
+
         const { error: respError } = await supabase
-          .from("QuestionnaireResponse")
-          .insert({questionnaire_id: qInstance.id, answers_json: qAnswers})
+          .from("QuestionnaireAnswer")
+          .insert(responseRows);
 
         if (respError) {
-          await supabase.from("Session").delete().eq("id", sessionData.id);
+          supabase.from("Session").delete().eq("id", sessionData.id);
           throw respError;
         }
       }
-      
+
       // create Stripe checkout session
       const response = await fetch("http://localhost:5001/api/checkout/deposit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          session_id:   sessionData.id,
-          from_url:     window.location.href,
+          session_id: sessionData.id,
+          from_url: window.location.href,
           product_data: {
-            name:        `${selectedSessionType?.name ?? "Session"} Deposit`,
-            description: selectedSessionType?.description || "",
+            name: `${selectedSessionType.name} Deposit`,
+            description: selectedSessionType.description,
           },
-          price:     (selectedSessionType?.base_price ?? 0) * 0.05,
+          price: (selectedSessionType.base_price) * 0.05,
           apply_tax: true,
-          tax_rate:  7.25,
+          tax_rate: 7.25,
         }),
       });
 
       if (!response.ok) throw new Error("Stripe connection failed. Please try again.");
 
-      const checkoutSession = await response.json(); // ← was `stripeRes` bug, fixed
+      const checkoutSession = await response.json();
       window.location.href = checkoutSession.url;
     } catch (err) {
       console.error("Payment error:", err);
@@ -479,10 +509,12 @@ export default function InquiryForm() {
       const now = new Date().toISOString();
 
       // Activate contract
-      await supabase
+      const { error: contractError } = await supabase
         .from("Contract")
         .update({ is_active: true })
         .eq("session_id", sessionId);
+
+      if (contractError) throw contractError;
 
       // Activate session
       const { error: sessionError } = await supabase
@@ -492,34 +524,35 @@ export default function InquiryForm() {
 
       if (sessionError) throw sessionError;
 
-      // Update questionnaire + answers
-      if (activeTemplate) {
-        const { data: qInstance, error: qInstError } = await supabase
-          .from("questionnaire")
-          .update({ status: "Submitted", submitted_at: now, created_at: now })
-          .eq("session_id", sessionId)
-          .select()
-          .single();
+      // TODO: make questionnaire readonly after submit, maybe activate? or just assume active based on session active
+      // // Update questionnaire + answers
+      // if (activeTemplate) {
+      //   const { data: qInstance, error: qInstError } = await supabase
+      //     .from("QuestionnaireResponse")
+      //     .update({ status: "Submitted", submitted_at: now, created_at: now })
+      //     .eq("session_id", sessionId)
+      //     .select()
+      //     .single();
 
-        if (qInstError) throw qInstError;
+      //   if (qInstError) throw qInstError;
+      //
+      //   // Update existing response rows (one per question)
+      //   for (const q of activeTemplate.questions) {
+      //     const raw = qAnswers[q.tempId];
+      //     const type = (q.type ?? "short_text").toLowerCase().trim();
+      //     const isCheckbox = type === "checkbox";
 
-        // Update existing response rows (one per question)
-        for (const q of activeTemplate.questions) {
-          const raw        = qAnswers[q.tempId];
-          const type       = (q.type ?? "short_text").toLowerCase().trim();
-          const isCheckbox = type === "checkbox";
-
-          await supabase
-            .from("QuestionnaireResponse")
-            .update({
-              answer:       isCheckbox ? null : (raw ?? null),
-              answer_array: isCheckbox ? (Array.isArray(raw) ? raw : []) : null,
-              created_at:   now,
-            })
-            .eq("questionnaire_id", qInstance.id)
-            .eq("question_id", q.tempId);
-        }
-      }
+      //     await supabase
+      //       .from("QuestionnaireAnswer")
+      //       .update({
+      //         answer: isCheckbox ? null : (raw ?? null),
+      //         answer_array: isCheckbox ? (Array.isArray(raw) ? raw : []) : null,
+      //         created_at: now,
+      //       })
+      //       .eq("questionnaire_id", qInstance.id)
+      //       .eq("question_id", q.tempId);
+      //   }
+      // }
 
       navigate(`/dashboard/inquiry/success?session_id=${sessionId}`, {
         replace: true,
@@ -535,8 +568,8 @@ export default function InquiryForm() {
   const canPay = submitLock && !checkoutSessionId && !!selectedSessionType && !!watchedDate && !!watchedStartTime && contract?.status === "Signed";
 
   // ── Styles ────────────────────────────────────────────────────────────────
-  const inputBase  = "w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]";
-  const labelCaps  = "text-[11px] tracking-[0.2em] text-[#7E4C3C]";
+  const inputBase = "w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]";
+  const labelCaps = "text-[11px] tracking-[0.2em] text-[#7E4C3C]";
 
   if (loading) {
     return (
@@ -565,7 +598,7 @@ export default function InquiryForm() {
             {...register("lastName")}
             readOnly={true}
             className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
-            />
+          />
         </div>
       </div>
 
@@ -608,13 +641,12 @@ export default function InquiryForm() {
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {sessionTypes.map((st) => {
               const isSelected = selectedSessionType?.id === st.id;
-              const imageUrl   = getImageUrl(st.image_path);
+              const imageUrl = getImageUrl(st.image_path);
 
               return (
                 <div key={st.id} className="flex flex-col gap-0">
                   {/* Session type card */}
                   <label
-                    onClick={() => { if (submitLock) handleSelectSessionType(st); }}
                     className={`group cursor-pointer rounded-lg border overflow-hidden bg-white/60 shadow-sm transition
                       ${isSelected
                         ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20"
@@ -628,7 +660,6 @@ export default function InquiryForm() {
                       type="radio"
                       value={st.id}
                       {...register("sessionTypeId")}
-                      checked={isSelected}
                       onChange={() => handleSelectSessionType(st)}
                       disabled={!submitLock}
                       className="sr-only"
@@ -677,7 +708,7 @@ export default function InquiryForm() {
                         .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
                         .map((pkg) => {
                           const pkgSelected = selectedPackageId === pkg.id;
-                          const pkgGreyed   = !!selectedPackageId && !pkgSelected;
+                          const pkgGreyed = !!selectedPackageId && !pkgSelected;
                           const pkgImageUrl = getImageUrl(pkg.image_path);
 
                           return (
@@ -735,7 +766,6 @@ export default function InquiryForm() {
         )}
 
         {/* Hidden input error */}
-        <input type="hidden" {...register("sessionTypeId")} />
         {errors.sessionTypeId && (
           <p className="mt-2 text-sm text-red-600">{errors.sessionTypeId.message}</p>
         )}
@@ -751,12 +781,12 @@ export default function InquiryForm() {
               <p className="text-[11px] tracking-[0.2em] text-[#7E4C3C] mb-3 uppercase">
                 {activeTemplate.name}
               </p>
-              {console.log(qAnswers)}
               <DynamicQuestionnaire
                 key={qAnswers}
                 questions={activeTemplate.questions}
                 answers={qAnswers}
                 onChange={setQAnswers}
+                readOnly={!submitLock}
               />
             </div>
           ) : null}
@@ -804,6 +834,7 @@ export default function InquiryForm() {
               durationMinutes={durationMinutes}
               startTime={watchedStartTime || ""}
               onSelectStart={handleTimeSelect}
+              readOnly={!submitLock}
             />
             {errors.startTime && (
               <p className="mt-2 text-sm text-red-600">{errors.startTime.message}</p>

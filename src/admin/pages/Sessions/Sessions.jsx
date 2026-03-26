@@ -34,7 +34,7 @@ function Sessions() {
       (dateObj.getMonth() + 1).toString().padStart(2, '0') + "-" +
       (dateObj.getDate().toString().padStart(2, '0')) + "T" +
       (dateObj.getHours().toString().padStart(2, '0')) + ":" +
-      (dateObj.getSeconds().toString().padStart(2, '0'));
+      (dateObj.getMinutes().toString().padStart(2, '0'));
   }
 
   const getPaymentIntent = async (checkoutSessionId) => {
