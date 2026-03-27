@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, Camera, Calendar, Contact2, Image as ImageIcon, Bell, BellDot, Banknote, ReceiptText, Settings } from "lucide-react";
+import { Home, Camera, Calendar, Contact2, Image as ImageIcon, Bell, BellDot, Banknote, ReceiptText, Settings, Package } from "lucide-react";
 import { useState, useEffect } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
 
@@ -56,6 +56,9 @@ function Sidebar() {
             </div>
             <div className='flex m-3'>
               <Link to="/admin/sessions" className={`${linkStyles} ${isActive('/sessions') ? activeLinkStyles : ''}`}><Camera size={24} />Sessions</Link>
+            </div>
+            <div className='flex m-3'>
+              <Link to="/admin/offerings" className={`${linkStyles} ${isActive('/offerings') ? activeLinkStyles : ''}`}><Package size={24} />Session Packages</Link>
             </div>
             <div className='flex m-3'>
               <Link to="/admin/availability" className={`${linkStyles} ${isActive('/availability') ? activeLinkStyles : ''}`}><Calendar size={24} />Availability</Link>

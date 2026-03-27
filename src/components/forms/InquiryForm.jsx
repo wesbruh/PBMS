@@ -36,11 +36,14 @@ const Schema = z.object({
   firstName: z.string(),
   lastName: z.string(),
   email: z.string(),
-  phone: z
-    .string()
-    .trim(),
+  phone: z.string().trim(),
+  // date: z
+  //   .string()
+  //   .trim(),
   sessionTypeId: z.string().min(1, "Select a session type"),
-  date: z.string().refine(isTodayOrFuture, { message: "Pick today or a future date" }),
+  date: z
+    .string()
+    .refine(isTodayOrFuture, { message: "Pick today or a future date" }),
   startTime: z.string(),
   location: z.string().optional(),
   message: z.string().max(1000, "Max 1000 characters").optional(),
@@ -136,13 +139,18 @@ export default function InquiryForm() {
   useEffect(() => {
     const loadContracts = async () => {
       try {
-        const response = await fetch("http://localhost:5001/api/contract/templates", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
+        const response = await fetch(
+          "http://localhost:5001/api/contract/templates",
+          {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          },
+        );
         const data = await response.json();
         const map = {};
-        data.forEach((t) => { map[`${t.id}`] = { body: t.body, name: t.name }; });
+        data.forEach((t) => {
+          map[`${t.id}`] = { body: t.body, name: t.name };
+        });
         setContractTemplates(map);
       } catch (err) {
         console.error("Failed to load contract templates:", err);
@@ -182,11 +190,14 @@ export default function InquiryForm() {
 
   const updateContractTemplate = async (templateId) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ template_id: templateId }),
-      });
+      const response = await fetch(
+        `http://localhost:5001/api/contract/${contract?.id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ template_id: templateId }),
+        },
+      );
       if (response.ok) setContract({ ...contract, template_id: templateId });
     } catch (error) {
       console.error("Failed to update contract:", error);
@@ -208,8 +219,15 @@ export default function InquiryForm() {
     mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: {
-      firstName: "", lastName: "", email: "", phone: "",
-      date: "", startTime: "", sessionTypeId: "", location: "", message: ""
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      date: "",
+      startTime: "",
+      sessionTypeId: "",
+      location: "",
+      message: "",
     },
   });
 
@@ -225,16 +243,13 @@ export default function InquiryForm() {
     setSelectedPackageId(defaultPkg?.id ?? null);
 
     // Duration: default_duration_minutes on the session type or package
-    const dur = defaultPkg?.duration_minutes
-      ?? st.default_duration_minutes
-      ?? 60;
+    const dur =
+      defaultPkg?.duration_minutes ?? st.default_duration_minutes ?? 60;
     setDurationMinutes(dur);
 
     // Reset time when session type changes if not loaded from prefill
-    if (sessionTypeLoading)
-      setSessionTypeLoading(false);
-    else
-      setValue("startTime", "", { shouldValidate: false });
+    if (sessionTypeLoading) setSessionTypeLoading(false);
+    else setValue("startTime", "", { shouldValidate: false });
   }
 
   // ── When package is (re-)selected within a session type ───────────────────
@@ -248,8 +263,13 @@ export default function InquiryForm() {
     }
 
     setSelectedPackageId(pkgId);
-    const pkg = (selectedSessionType?.packages ?? []).find((p) => p.id === pkgId);
-    const dur = pkg?.duration_minutes ?? selectedSessionType?.default_duration_minutes ?? 60;
+    const pkg = (selectedSessionType?.packages ?? []).find(
+      (p) => p.id === pkgId,
+    );
+    const dur =
+      pkg?.duration_minutes ??
+      selectedSessionType?.default_duration_minutes ??
+      60;
     setDurationMinutes(dur);
     // Reset time when package changes (duration may differ)
     setValue("startTime", "", { shouldValidate: false });
@@ -278,7 +298,10 @@ export default function InquiryForm() {
           .eq("active", true)
           .single();
 
-        if (tErr || !template) { setActiveTemplate(null); return; }
+        if (tErr || !template) {
+          setActiveTemplate(null);
+          return;
+        }
 
         const questions = (template.schema_json ?? [])
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
@@ -322,18 +345,25 @@ export default function InquiryForm() {
           if (sessionError) throw new Error("Session not found");
 
           // Match the session type from loaded list
-          const matchedST = sessionTypes.find((st) => st.id === sessionData.session_type_id);
+          const matchedST = sessionTypes.find(
+            (st) => st.id === sessionData.session_type_id,
+          );
           if (matchedST) {
             setSessionTypeLoading(true);
             handleSelectSessionType(matchedST);
           }
 
           const dateTime = new Date(sessionData.start_at);
-          const datePart = dateTime.getFullYear() + "-" +
-            (dateTime.getMonth() + 1).toString().padStart(2, '0') + "-" +
-            (dateTime.getDate().toString().padStart(2, '0'))
-          const timePart = (dateTime.getHours().toString().padStart(2, '0')) + ":" +
-            (dateTime.getMinutes().toString().padStart(2, '0'));
+          const datePart =
+            dateTime.getFullYear() +
+            "-" +
+            (dateTime.getMonth() + 1).toString().padStart(2, "0") +
+            "-" +
+            dateTime.getDate().toString().padStart(2, "0");
+          const timePart =
+            dateTime.getHours().toString().padStart(2, "0") +
+            ":" +
+            dateTime.getMinutes().toString().padStart(2, "0");
 
           // Load questionnaire answers
           try {
@@ -350,24 +380,43 @@ export default function InquiryForm() {
 
             let answers = {};
             await resData.map((response) => {
-              answers = {...answers, [response.question_id]: response.answer};
-            })
+              answers = { ...answers, [response.question_id]: response.answer };
+            });
 
             setQALoading(true);
             setQAnswers(answers);
-          } catch (_) { /* no questionnaire saved yet */ }
+          } catch (_) {
+            /* no questionnaire saved yet */
+          }
 
           setValue("firstName", user?.first_name?.trim());
           setValue("lastName", user?.last_name?.trim());
           setValue("email", user.email);
           setValue("phone", user.phone);
-          setValue("date", datePart, { shouldValidate: true, shouldDirty: false });
-          setValue("startTime", timePart, { shouldValidate: true, shouldDirty: false });
+          setValue("date", datePart, {
+            shouldValidate: true,
+            shouldDirty: false,
+          });
+          setValue("startTime", timePart, {
+            shouldValidate: true,
+            shouldDirty: false,
+          });
           setValue("sessionTypeId", sessionData.session_type_id);
-          if (sessionData.location_text) setValue("location", sessionData.location_text);
+          if (sessionData.location_text)
+            setValue("location", sessionData.location_text);
           if (sessionData.notes) setValue("message", sessionData.notes);
 
-          await trigger(["firstName", "lastName", "email", "phone", "date", "startTime", "sessionTypeId", "location", "message"]);
+          await trigger([
+            "firstName",
+            "lastName",
+            "email",
+            "phone",
+            "date",
+            "startTime",
+            "sessionTypeId",
+            "location",
+            "message",
+          ]);
           setSubmitLock(false);
         } catch (error) {
           console.error("Error pre-filling from session:", error);
@@ -395,11 +444,18 @@ export default function InquiryForm() {
       const now = new Date().toISOString();
 
       // Delete all inactive (draft) sessions for this user to prevent duplicates
-      await supabase.from("Session").delete().eq("client_id", user.id).eq("is_active", false);
+      await supabase
+        .from("Session")
+        .delete()
+        .eq("client_id", user.id)
+        .eq("is_active", false);
 
-      const startAt = new Date(`${getValues("date")}T${getValues("startTime")}`).toISOString();
+      const startAt = new Date(
+        `${getValues("date")}T${getValues("startTime")}`,
+      ).toISOString();
       const endAt = new Date(
-        new Date(`${getValues("date")}T${getValues("startTime")}`).getTime() + durationMinutes * 60 * 1000
+        new Date(`${getValues("date")}T${getValues("startTime")}`).getTime() +
+          durationMinutes * 60 * 1000,
       ).toISOString();
 
       // Insert session
@@ -452,7 +508,11 @@ export default function InquiryForm() {
           return {
             questionnaire_id: qInstance.id,
             question_id: q.tempId,
-            answer: isCheckbox ? (Array.isArray(raw) ? raw : []) : (raw ?? null),
+            answer: isCheckbox
+              ? Array.isArray(raw)
+                ? raw
+                : []
+              : (raw ?? null),
           };
         });
 
@@ -467,23 +527,27 @@ export default function InquiryForm() {
       }
 
       // create Stripe checkout session
-      const response = await fetch("http://localhost:5001/api/checkout/deposit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          session_id: sessionData.id,
-          from_url: window.location.href,
-          product_data: {
-            name: `${selectedSessionType.name} Deposit`,
-            description: selectedSessionType.description,
-          },
-          price: (selectedSessionType.base_price) * 0.05,
-          apply_tax: true,
-          tax_rate: 7.25,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:5001/api/checkout/deposit",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            session_id: sessionData.id,
+            from_url: window.location.href,
+            product_data: {
+              name: `${selectedSessionType.name} Deposit`,
+              description: selectedSessionType.description,
+            },
+            price: selectedSessionType.base_price * 0.05,
+            apply_tax: true,
+            tax_rate: 7.25,
+          }),
+        },
+      );
 
-      if (!response.ok) throw new Error("Stripe connection failed. Please try again.");
+      if (!response.ok)
+        throw new Error("Stripe connection failed. Please try again.");
 
       const checkoutSession = await response.json();
       window.location.href = checkoutSession.url;
@@ -498,7 +562,10 @@ export default function InquiryForm() {
     // Validate required questionnaire answers
     if (activeTemplate) {
       for (const q of activeTemplate.questions) {
-        if (q.required && (!qAnswers[q.tempId] || qAnswers[q.tempId].length === 0)) {
+        if (
+          q.required &&
+          (!qAnswers[q.tempId] || qAnswers[q.tempId].length === 0)
+        ) {
           alert(`Please answer the required question: ${q.label}`);
           return;
         }
@@ -565,11 +632,19 @@ export default function InquiryForm() {
   };
 
   // ── Derived: is payment button enabled? ──────────────────────────────────
-  const canPay = submitLock && !checkoutSessionId && !!selectedSessionType && !!watchedDate && !!watchedStartTime && contract?.status === "Signed";
+  const canPay =
+    submitLock &&
+    !checkoutSessionId &&
+    !!selectedSessionType &&
+    !!watchedDate &&
+    !!watchedStartTime &&
+    contract?.status === "Signed";
 
   // ── Styles ────────────────────────────────────────────────────────────────
-  const inputBase = "w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]";
-  const labelCaps = "text-[11px] tracking-[0.2em] text-[#7E4C3C]";
+  const inputBase =
+    "w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]";
+  const labelCaps =
+    "font-sans text-[12px] tracking-wider text-[#7E4C3C] uppercase";
 
   if (loading) {
     return (
@@ -581,11 +656,10 @@ export default function InquiryForm() {
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
-
       {/* ── Name ──────────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <p className={labelCaps}>FIRST NAME *</p>
+          <p className={labelCaps}>First Name *</p>
           <input
             {...register("firstName")}
             readOnly={true}
@@ -593,7 +667,7 @@ export default function InquiryForm() {
           />
         </div>
         <div>
-          <p className={labelCaps}>LAST NAME *</p>
+          <p className={labelCaps}>Last Name *</p>
           <input
             {...register("lastName")}
             readOnly={true}
@@ -605,7 +679,7 @@ export default function InquiryForm() {
       {/* ── Email + Phone ──────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <p className={labelCaps}>EMAIL *</p>
+          <p className={labelCaps}>Email *</p>
           <input
             type="email"
             {...register("email")}
@@ -613,14 +687,13 @@ export default function InquiryForm() {
             aria-readonly={true}
             className={`${inputBase}bg-neutral-100 text-neutral-600 cursor-not-allowed`}
           />
-          <p className="mt-1 text-[11px] text-neutral-500">
-            We'll use this email to confirm availability and send session details.
+          <p className="mt-1 text-[11px] text-neutral-600">
+            We'll use this email to confirm availability and send session
+            details.
           </p>
         </div>
         <div>
-          <p className={labelCaps}>
-            PHONE NUMBER
-          </p>
+          <p className={labelCaps}>Phone Number</p>
           <input
             {...register("phone")}
             placeholder="No phone number provided."
@@ -631,14 +704,15 @@ export default function InquiryForm() {
         </div>
       </div>
 
-      {/* ── Session Type (from DB) ─────────────────────────────────────────── */}
-      <div>
-        <p className={labelCaps}>TYPE OF SESSION *</p>
+      {/* ── Session Type (from DB) ───────────────────────────────────────────
+      <div className="border border-red-500">
+        <p className={labelCaps}>SELECT A SESSION *</p>
 
         {sessionTypesLoading ? (
           <p className="mt-3 text-xs text-neutral-400">Loading sessions…</p>
         ) : (
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mt-3 grid grid-cols-2 gap-4 border border-blue-500">
+            <p>General</p>
             {sessionTypes.map((st) => {
               const isSelected = selectedSessionType?.id === st.id;
               const imageUrl = getImageUrl(st.image_path);
@@ -646,7 +720,8 @@ export default function InquiryForm() {
               return (
                 <div key={st.id} className="flex flex-col gap-0">
                   {/* Session type card */}
-                  <label
+      {/* <label
+                    onClick={() => { if (submitLock) handleSelectSessionType(st); }}
                     className={`group cursor-pointer rounded-lg border overflow-hidden bg-white/60 shadow-sm transition
                       ${isSelected
                         ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20"
@@ -656,16 +731,16 @@ export default function InquiryForm() {
                     `}
                   >
                     {/* Hidden input for form validation */}
-                    <input
+      {/* <input
                       type="radio"
                       value={st.id}
                       {...register("sessionTypeId")}
                       onChange={() => handleSelectSessionType(st)}
                       disabled={!submitLock}
                       className="sr-only"
-                    />
+                    /> */}
 
-                    {/* Image */}
+      {/* Image
                     <div className="h-28 w-full bg-neutral-100 overflow-hidden">
                       {imageUrl ? (
                         <img
@@ -679,10 +754,10 @@ export default function InquiryForm() {
                           <span className="text-neutral-300 text-xs">No image</span>
                         </div>
                       )}
-                    </div>
+                    </div> */}
 
-                    {/* Label row */}
-                    <div className="flex items-center gap-3 px-4 py-3">
+      {/* Label row */}
+      {/* <div className="flex items-center gap-3 px-4 py-3">
                       <span className={`h-4 w-4 rounded-full border flex items-center justify-center ${isSelected ? "border-[#7E4C3C]" : "border-black/30"}`}>
                         {isSelected && <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />}
                       </span>
@@ -695,10 +770,10 @@ export default function InquiryForm() {
                         ) : null}
                       </div>
                     </div>
-                  </label>
+                  </label> */}
 
-                  {/* Package options — shown only when this session type is selected */}
-                  {isSelected && (st.packages ?? []).length > 0 && (
+      {/* Package options — shown only when this session type is selected */}
+      {/* {isSelected && (st.packages ?? []).length > 0 && (
                     <div className="mt-1 rounded-b-lg border border-t-0 border-[#7E4C3C]/20 bg-neutral-50/80 px-3 py-3 space-y-2">
                       <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-2">
                         Packages
@@ -766,8 +841,265 @@ export default function InquiryForm() {
         )}
 
         {/* Hidden input error */}
+      {/* <input type="hidden" {...register("sessionTypeId")} />
         {errors.sessionTypeId && (
           <p className="mt-2 text-sm text-red-600">{errors.sessionTypeId.message}</p>
+        )}
+      </div>  */}
+      {/* ── Session Type (from DB) ─────────────────────────────────────────── */}
+      <div>
+        <p className={labelCaps}>Select Your Session Type *</p>
+        <p className="mt-1 text-[14px] text-neutral-600">
+          When selecting your session, you will be asked to fill out a
+          questionnaire. This is to help me prepare for your needs and desires
+          for your photoshoot!
+        </p>
+
+        {sessionTypesLoading ? (
+          <p className="mt-3 text-xs text-neutral-400">Loading sessions…</p>
+        ) : (
+          <>
+            {(() => {
+              // group all session types by their category column
+              const grouped = {};
+              sessionTypes.forEach((st) => {
+                const cat = st?.category;
+                if (!grouped[cat]) grouped[cat] = [];
+                grouped[cat].push(st);
+              });
+
+              // separate "General" from the "Special" services categories
+              const generalTypes = grouped["General"] || [];
+              // will be considered a "special" service if category is not equal to "General"
+              const specialCategories = Object.entries(grouped).filter(
+                ([cat]) => cat !== "General",
+              );
+
+              return (
+                <div className="mt-3 grid grid-cols-1 md:grid-cols-2 border border-black/10 rounded-lg overflow-hidden">
+                  {/* General column */}
+                  <div className="border-b md:border-b-0 md:border-r border-black/10 p-4">
+                    <p className="font-sans uppercase text-sm text-[#7E4C3C] mb-3 font-semibold">
+                      General Services
+                    </p>
+                    <div className="space-y-1">
+                      {generalTypes.map((st) => {
+                        const isSelected = selectedSessionType?.id === st.id;
+                        return (
+                          <label
+                            key={st.id}
+                            onClick={() => {
+                              if (submitLock) handleSelectSessionType(st);
+                            }}
+                            className={`flex items-center gap-3 cursor-pointer rounded-md px-2 py-2 transition
+                        ${isSelected ? "bg-[#7E4C3C]/5" : "hover:bg-neutral-100"}
+                        ${!submitLock ? "pointer-events-none opacity-60" : ""}
+                      `}
+                          >
+                            <input
+                              type="radio"
+                              name="sessionTypeRadio"
+                              value={st.id}
+                              checked={isSelected}
+                              onChange={() => handleSelectSessionType(st)}
+                              disabled={!submitLock}
+                              className="sr-only"
+                            />
+                            <span
+                              className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0
+                        ${isSelected ? "border-[#7E4C3C]" : "border-black/30"}`}
+                            >
+                              {isSelected && (
+                                <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />
+                              )}
+                            </span>
+                            <span className="font-sans text-sm text-neutral-800 ">
+                              {st.name}
+                            </span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Special column. sub-grouped by category */}
+                  <div className="p-4">
+                    <p className="font-sans uppercase text-sm text-[#7E4C3C] mb-3 font-semibold">
+                      Special Services
+                    </p>
+                    {specialCategories.length === 0 ? (
+                      <p className="text-xs text-neutral-400 italic">
+                        No special sessions available
+                      </p>
+                    ) : (
+                      specialCategories.map(([category, items]) => (
+                        <div key={category} className="mb-4 last:mb-0">
+                          <p className="text-[12px] uppercase tracking-wider text-neutral-600 mb-2">
+                            {category}
+                          </p>
+                          <div className="space-y-1">
+                            {items.map((st) => {
+                              const isSelected =
+                                selectedSessionType?.id === st.id;
+                              return (
+                                <label
+                                  key={st.id}
+                                  onClick={() => {
+                                    if (submitLock) handleSelectSessionType(st);
+                                  }}
+                                  className={`flex items-center gap-3 cursor-pointer rounded-md px-2 py-2 transition
+                              ${isSelected ? "bg-[#7E4C3C]/5" : "hover:bg-neutral-100"}
+                              ${!submitLock ? "pointer-events-none opacity-60" : ""}
+                            `}
+                                >
+                                  <input
+                                    type="radio"
+                                    name="sessionTypeRadio"
+                                    value={st.id}
+                                    checked={isSelected}
+                                    onChange={() => handleSelectSessionType(st)}
+                                    disabled={!submitLock}
+                                    className="sr-only"
+                                  />
+                                  <span
+                                    className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0
+                              ${isSelected ? "border-[#7E4C3C]" : "border-black/30"}`}
+                                  >
+                                    {isSelected && (
+                                      <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />
+                                    )}
+                                  </span>
+                                  <span className="font-sans text-sm text-neutral-800">
+                                    {st.name}
+                                  </span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Description + Price — appears below when a session is selected */}
+            {selectedSessionType && (
+              <div className="mt-3 rounded-lg border border-[#7E4C3C]/20 bg-[#FAF7F2] p-4 transition-all">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <p className="font-serif text-base text-[#7E4C3C] font-semibold">
+                      {selectedSessionType.name}
+                    </p>
+                    {selectedSessionType.description && (
+                      <p className="mt-1 text-sm text-neutral-600 leading-relaxed">
+                        {selectedSessionType.description}
+                      </p>
+                    )}
+                  </div>
+                  {(selectedSessionType.price_label ||
+                    selectedSessionType.base_price) && (
+                    <p className="text-sm font-sans text-[#7E4C3C] font-semibold whitespace-nowrap">
+                      {selectedSessionType.price_label ||
+                        `From $${Number(selectedSessionType.base_price).toLocaleString()}`}
+                    </p>
+                  )}
+                </div>
+
+                {/* Package options if any */}
+                {(selectedSessionType.packages ?? []).length > 0 && (
+                  <div className="mt-4 pt-3 border-t border-[#7E4C3C]/10 space-y-2">
+                    <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-2">
+                      Packages
+                    </p>
+                    {selectedSessionType.packages
+                      .slice()
+                      .sort(
+                        (a, b) =>
+                          (a.display_order ?? 0) - (b.display_order ?? 0),
+                      )
+                      .map((pkg) => {
+                        const pkgSelected = selectedPackageId === pkg.id;
+                        const pkgGreyed = !!selectedPackageId && !pkgSelected;
+                        const pkgImageUrl = getImageUrl(pkg.image_path);
+                        return (
+                          <div
+                            key={pkg.id}
+                            onClick={() => {
+                              if (submitLock) handleSelectPackage(pkg.id);
+                            }}
+                            className={`flex gap-2 rounded-lg border p-2 cursor-pointer transition-all
+                        ${
+                          pkgSelected
+                            ? "border-[#7E4C3C] ring-1 ring-[#7E4C3C]/20 bg-white"
+                            : pkgGreyed
+                              ? "opacity-40 border-neutral-200 bg-white"
+                              : "border-neutral-200 bg-white hover:border-[#7E4C3C]/40"
+                        }
+                        ${!submitLock ? "pointer-events-none" : ""}
+                      `}
+                          >
+                            {pkgImageUrl && (
+                              <div className="shrink-0 w-12 h-12 rounded overflow-hidden bg-neutral-100">
+                                <img
+                                  src={pkgImageUrl}
+                                  alt={pkg.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium text-neutral-800">
+                                {pkg.name}
+                                {pkg.is_default && (
+                                  <span className="ml-1.5 text-[9px] text-[#AB8C4B] font-mono uppercase">
+                                    standard
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-[10px] text-[#7E4C3C]">
+                                {pkg.price_label ||
+                                  (pkg.base_price
+                                    ? `From $${Number(pkg.base_price).toLocaleString()}`
+                                    : "")}
+                              </p>
+                              {Array.isArray(pkg.bullet_points) &&
+                                pkg.bullet_points.length > 0 && (
+                                  <ul className="mt-0.5 space-y-0.5 text-[9px] text-neutral-400 list-disc list-inside">
+                                    {pkg.bullet_points
+                                      .slice(0, 3)
+                                      .map((pt, i) => (
+                                        <li key={i}>{pt}</li>
+                                      ))}
+                                    {pkg.bullet_points.length > 3 && (
+                                      <li className="text-neutral-300">
+                                        +{pkg.bullet_points.length - 3} more
+                                      </li>
+                                    )}
+                                  </ul>
+                                )}
+                            </div>
+                            {pkgSelected && (
+                              <span className="text-[#7E4C3C] self-start mt-0.5 shrink-0 text-xs">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        <input type="hidden" {...register("sessionTypeId")} />
+        {errors.sessionTypeId && (
+          <p className="mt-2 text-sm text-red-600">
+            {errors.sessionTypeId.message}
+          </p>
         )}
       </div>
 
@@ -775,7 +1107,9 @@ export default function InquiryForm() {
       {selectedSessionType && (
         <div className="transition-all">
           {qLoading ? (
-            <p className="text-center text-xs text-neutral-400">Loading session questions...</p>
+            <p className="text-center text-xs text-neutral-400">
+              Loading session questions...
+            </p>
           ) : activeTemplate ? (
             <div>
               <p className="text-[11px] tracking-[0.2em] text-[#7E4C3C] mb-3 uppercase">
@@ -798,7 +1132,7 @@ export default function InquiryForm() {
         {/* Date picker */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <p className={labelCaps}>DATE *</p>
+            <p className={labelCaps}>Date *</p>
             <input
               type="date"
               min={minDate}
@@ -807,11 +1141,16 @@ export default function InquiryForm() {
               className={`${inputBase} ${errors.date ? "border-red-500" : "border-black/10"}`}
               aria-invalid={!!errors.date}
             />
-            {errors.date && <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>}
+            {errors.date && (
+              <p className="mt-1 text-sm text-red-600">{errors.date.message}</p>
+            )}
           </div>
           <div>
             <p className={labelCaps}>
-              LOCATION <span className="text-neutral-500 tracking-normal">(optional)</span>
+              Location{" "}
+              <span className="text-neutral-500 tracking-normal">
+                (optional)
+              </span>
             </p>
             <input
               {...register("location")}
@@ -820,7 +1159,11 @@ export default function InquiryForm() {
               className={`${inputBase} ${errors.location ? "border-red-500" : "border-black/10"}`}
               aria-invalid={!!errors.location}
             />
-            {errors.location && <p className="mt-1 text-sm text-red-600">{errors.location.message}</p>}
+            {errors.location && (
+              <p className="mt-1 text-sm text-red-600">
+                {errors.location.message}
+              </p>
+            )}
           </div>
         </div>
 
@@ -837,7 +1180,9 @@ export default function InquiryForm() {
               readOnly={!submitLock}
             />
             {errors.startTime && (
-              <p className="mt-2 text-sm text-red-600">{errors.startTime.message}</p>
+              <p className="mt-2 text-sm text-red-600">
+                {errors.startTime.message}
+              </p>
             )}
           </div>
         ) : watchedDate && !selectedSessionType ? (
@@ -849,34 +1194,45 @@ export default function InquiryForm() {
 
       {/* ── Message ───────────────────────────────────────────────────────── */}
       <div>
+        <p className=" font-sans mt-2 text-[14px] text-brown leading-relaxed">
+          {" "}
+          Any additional notes?
+        </p>
         <textarea
           rows={5}
           {...register("message")}
-          placeholder="Tell me about your vision..."
+          placeholder="Please share any details about the memories you'd like to create. Feel free to mention style preferences, important moments, or unique ideas for your session."
           readOnly={!submitLock}
           className={`${inputBase} ${errors.message ? "border-red-500" : "border-black/10"}`}
           aria-invalid={!!errors.message}
         />
-        <p className="mt-2 text-[11px] text-neutral-500 leading-relaxed">
-          Please share any details about the memories you'd like to create. Feel free to mention
-          style preferences, important moments, or unique ideas for your session.
-        </p>
-        {errors.message && <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>}
+        {/* <p className="mt-1 text-[11px] text-neutral-500 leading-relaxed">
+          Please share any details about the memories you'd like to create. Feel
+          free to mention style preferences, important moments, or unique ideas
+          for your session.
+        </p> */}
+        {errors.message && (
+          <p className="mt-1 text-sm text-red-600">{errors.message.message}</p>
+        )}
       </div>
 
       {/* ── Contract ──────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 gap-6">
         <div className="flex flex-row">
-          <p className={`${labelCaps} w-full`}>CONTRACT *</p>
+          <p className={`${labelCaps} w-full`}>Contract *</p>
           <select
             value={contract?.template_id || ""}
             onChange={(e) => updateContractTemplate(e.target.value)}
             className="px-2 py-1 rounded-md text-sm font-semibold border"
             disabled={!submitLock || contract?.status === "Signed"}
           >
-            <option disabled value="">Select</option>
+            <option disabled value="">
+              Select
+            </option>
             {Object.keys(contractTemplates).map((key) => (
-              <option key={key} value={key}>{contractTemplates[key].name}</option>
+              <option key={key} value={key}>
+                {contractTemplates[key].name}
+              </option>
             ))}
           </select>
         </div>
@@ -890,7 +1246,7 @@ export default function InquiryForm() {
       {/* ── Payment + Submit ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="rounded-xl border border-black/10 bg-white/60 p-5 shadow-sm space-y-3">
-          <h2 className={labelCaps}>PAYMENT *</h2>
+          <h2 className={labelCaps}>Payment *</h2>
           <button
             type="button"
             onClick={handlePayment}
@@ -909,8 +1265,12 @@ export default function InquiryForm() {
             {isSubmitting ? "Submitting..." : "Submit My Inquiry"}
           </button>
           <div className="mt-4 flex items-center gap-3 text-sm text-neutral-700">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-black/10 bg-white">✉️</span>
-            <p className="text-[12px]">I will follow up within 24 hours to confirm details.</p>
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-black/10 bg-white">
+              ✉️
+            </span>
+            <p className="text-[12px]">
+              I will follow up within 24 hours to confirm details.
+            </p>
           </div>
           <div className="mt-4 border-t border-black/10 pt-4 space-y-2 text-[12px] text-neutral-700">
             <div className="flex items-center gap-2">
@@ -924,7 +1284,6 @@ export default function InquiryForm() {
           </div>
         </div>
       </div>
-
     </form>
   );
 }

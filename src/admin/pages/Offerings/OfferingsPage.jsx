@@ -102,7 +102,7 @@ export default function SessionsPage() {
 
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
-    <div className="w-full">
+    <div className="max-w-full mr-22 ml-22 border-red-500">
       {/* Page header */}
       <div className="flex items-start justify-between mb-8">
         <div>
@@ -113,7 +113,7 @@ export default function SessionsPage() {
         </div>
         <button
           onClick={() => navigate("/admin/sessions/new")}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm hover:bg-gray-800 cursor-pointer"
         >
           <Plus size={15} />
           New Session Type
@@ -132,7 +132,7 @@ export default function SessionsPage() {
 
       {/* Session cards grid */}
       {!loading && sessions.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
           {sessions.map((session) => (
             <div key={session.id} className="flex flex-col gap-2">
               <SessionCard
