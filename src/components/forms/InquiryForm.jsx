@@ -23,13 +23,16 @@ function getImageUrl(path) {
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
-const isTodayOrFuture = (value) => {
+const isPastMinDate = (value) => {
   if (!value) return false;
-  const d = new Date(value);
-  const t = new Date();
-  d.setHours(0, 0, 0, 0);
-  t.setHours(0, 0, 0, 0);
-  return d >= t;
+  const minDate = new Date();
+  minDate.setDate(inputDate.minDate() + 7);
+  minDate.setHours(0, 0, 0, 0);
+  
+  const inputDate = new Date(value);
+  inputDate.setHours(0, 0, 0, 0);
+
+  return inputDate >= minDate;
 };
 
 const Schema = z.object({
@@ -37,13 +40,10 @@ const Schema = z.object({
   lastName: z.string(),
   email: z.string(),
   phone: z.string().trim(),
-  // date: z
-  //   .string()
-  //   .trim(),
   sessionTypeId: z.string().min(1, "Select a session type"),
   date: z
     .string()
-    .refine(isTodayOrFuture, { message: "Pick today or a future date" }),
+    .refine(isPastMinDate, { message: "Photoshoot must be booked at least seven days in advance" }),
   startTime: z.string(),
   location: z.string().optional(),
   message: z.string().max(1000, "Max 1000 characters").optional(),
@@ -204,7 +204,14 @@ export default function InquiryForm() {
     }
   };
 
-  const minDate = useMemo(() => new Date().toISOString().split("T")[0], []);
+  // calculate minDate -- 7 days ahead
+  const minDate = useMemo(() => {
+    const minDateObj = new Date();
+    minDateObj.setDate(minDateObj.getDate() + 7);
+    return minDateObj.getFullYear() + "-" +
+      (minDateObj.getMonth() + 1).toString().padStart(2, '0') + "-" +
+      (minDateObj.getDate().toString().padStart(2, '0'))
+  }, []);
 
   const {
     register,
@@ -238,18 +245,17 @@ export default function InquiryForm() {
   function handleSelectSessionType(st) {
     setSelectedSessionType(st);
 
-    // Auto-select the default package if one exists
-    const defaultPkg = (st.packages ?? []).find((p) => p.is_default) ?? null;
-    setSelectedPackageId(defaultPkg?.id ?? null);
-
-    // Duration: default_duration_minutes on the session type or package
-    const dur =
-      defaultPkg?.duration_minutes ?? st.default_duration_minutes ?? 60;
+    // Duration: default_duration_minutes on the session type
+    const dur = st.default_duration_minutes ?? 60;
     setDurationMinutes(dur);
 
     // Reset time when session type changes if not loaded from prefill
     if (sessionTypeLoading) setSessionTypeLoading(false);
-    else setValue("startTime", "", { shouldValidate: false });
+    else {
+      setValue("sessionTypeId", st.id);
+      setValue("startTime", "", { shouldValidate: false });
+      trigger(["sessionTypeId"]);
+    }
   }
 
   // ── When package is (re-)selected within a session type ───────────────────
@@ -573,8 +579,6 @@ export default function InquiryForm() {
     }
 
     try {
-      const now = new Date().toISOString();
-
       // Activate contract
       const { error: contractError } = await supabase
         .from("Contract")
@@ -590,36 +594,6 @@ export default function InquiryForm() {
         .eq("id", sessionId);
 
       if (sessionError) throw sessionError;
-
-      // TODO: make questionnaire readonly after submit, maybe activate? or just assume active based on session active
-      // // Update questionnaire + answers
-      // if (activeTemplate) {
-      //   const { data: qInstance, error: qInstError } = await supabase
-      //     .from("QuestionnaireResponse")
-      //     .update({ status: "Submitted", submitted_at: now, created_at: now })
-      //     .eq("session_id", sessionId)
-      //     .select()
-      //     .single();
-
-      //   if (qInstError) throw qInstError;
-      //
-      //   // Update existing response rows (one per question)
-      //   for (const q of activeTemplate.questions) {
-      //     const raw = qAnswers[q.tempId];
-      //     const type = (q.type ?? "short_text").toLowerCase().trim();
-      //     const isCheckbox = type === "checkbox";
-
-      //     await supabase
-      //       .from("QuestionnaireAnswer")
-      //       .update({
-      //         answer: isCheckbox ? null : (raw ?? null),
-      //         answer_array: isCheckbox ? (Array.isArray(raw) ? raw : []) : null,
-      //         created_at: now,
-      //       })
-      //       .eq("questionnaire_id", qInstance.id)
-      //       .eq("question_id", q.tempId);
-      //   }
-      // }
 
       navigate(`/dashboard/inquiry/success?session_id=${sessionId}`, {
         replace: true,
@@ -704,148 +678,6 @@ export default function InquiryForm() {
         </div>
       </div>
 
-      {/* ── Session Type (from DB) ───────────────────────────────────────────
-      <div className="border border-red-500">
-        <p className={labelCaps}>SELECT A SESSION *</p>
-
-        {sessionTypesLoading ? (
-          <p className="mt-3 text-xs text-neutral-400">Loading sessions…</p>
-        ) : (
-          <div className="mt-3 grid grid-cols-2 gap-4 border border-blue-500">
-            <p>General</p>
-            {sessionTypes.map((st) => {
-              const isSelected = selectedSessionType?.id === st.id;
-              const imageUrl = getImageUrl(st.image_path);
-
-              return (
-                <div key={st.id} className="flex flex-col gap-0">
-                  {/* Session type card */}
-      {/* <label
-                    onClick={() => { if (submitLock) handleSelectSessionType(st); }}
-                    className={`group cursor-pointer rounded-lg border overflow-hidden bg-white/60 shadow-sm transition
-                      ${isSelected
-                        ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20"
-                        : "border-black/10 hover:border-black/20"
-                      }
-                      ${!submitLock ? "pointer-events-none" : ""}
-                    `}
-                  >
-                    {/* Hidden input for form validation */}
-      {/* <input
-                      type="radio"
-                      value={st.id}
-                      {...register("sessionTypeId")}
-                      onChange={() => handleSelectSessionType(st)}
-                      disabled={!submitLock}
-                      className="sr-only"
-                    /> */}
-
-      {/* Image
-                    <div className="h-28 w-full bg-neutral-100 overflow-hidden">
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={st.name}
-                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                          onError={(e) => { e.currentTarget.style.display = "none"; }}
-                        />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center bg-neutral-50">
-                          <span className="text-neutral-300 text-xs">No image</span>
-                        </div>
-                      )}
-                    </div> */}
-
-      {/* Label row */}
-      {/* <div className="flex items-center gap-3 px-4 py-3">
-                      <span className={`h-4 w-4 rounded-full border flex items-center justify-center ${isSelected ? "border-[#7E4C3C]" : "border-black/30"}`}>
-                        {isSelected && <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />}
-                      </span>
-                      <div>
-                        <p className="font-serif text-sm text-[#7E4C3C]">{st.name}</p>
-                        {st.price_label || st.base_price ? (
-                          <p className="text-[10px] text-neutral-500">
-                            {st.price_label || `FROM: $${Number(st.base_price).toLocaleString()}`}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                  </label> */}
-
-      {/* Package options — shown only when this session type is selected */}
-      {/* {isSelected && (st.packages ?? []).length > 0 && (
-                    <div className="mt-1 rounded-b-lg border border-t-0 border-[#7E4C3C]/20 bg-neutral-50/80 px-3 py-3 space-y-2">
-                      <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-2">
-                        Packages
-                      </p>
-                      {st.packages
-                        .slice()
-                        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-                        .map((pkg) => {
-                          const pkgSelected = selectedPackageId === pkg.id;
-                          const pkgGreyed = !!selectedPackageId && !pkgSelected;
-                          const pkgImageUrl = getImageUrl(pkg.image_path);
-
-                          return (
-                            <div
-                              key={pkg.id}
-                              onClick={() => { if (submitLock) handleSelectPackage(pkg.id); }}
-                              className={`flex gap-2 rounded-lg border p-2 cursor-pointer transition-all
-                                ${pkgSelected
-                                  ? "border-[#7E4C3C] ring-1 ring-[#7E4C3C]/20 bg-white"
-                                  : pkgGreyed
-                                    ? "opacity-40 border-neutral-200 bg-white"
-                                    : "border-neutral-200 bg-white hover:border-[#7E4C3C]/40"
-                                }
-                                ${!submitLock ? "pointer-events-none" : ""}
-                              `}
-                            >
-                              {pkgImageUrl && (
-                                <div className="shrink-0 w-12 h-12 rounded overflow-hidden bg-neutral-100">
-                                  <img src={pkgImageUrl} alt={pkg.name} className="w-full h-full object-cover" />
-                                </div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-neutral-800">
-                                  {pkg.name}
-                                  {pkg.is_default && (
-                                    <span className="ml-1.5 text-[9px] text-[#AB8C4B] font-mono uppercase">standard</span>
-                                  )}
-                                </p>
-                                <p className="text-[10px] text-[#7E4C3C]">
-                                  {pkg.price_label || (pkg.base_price ? `FROM: $${Number(pkg.base_price).toLocaleString()}` : "")}
-                                </p>
-                                {Array.isArray(pkg.bullet_points) && pkg.bullet_points.length > 0 && (
-                                  <ul className="mt-0.5 space-y-0.5 text-[9px] text-neutral-400 list-disc list-inside">
-                                    {pkg.bullet_points.slice(0, 3).map((pt, i) => (
-                                      <li key={i}>{pt}</li>
-                                    ))}
-                                    {pkg.bullet_points.length > 3 && (
-                                      <li className="text-neutral-300">+{pkg.bullet_points.length - 3} more</li>
-                                    )}
-                                  </ul>
-                                )}
-                              </div>
-                              {pkgSelected && (
-                                <span className="text-[#7E4C3C] self-start mt-0.5 shrink-0 text-xs">✓</span>
-                              )}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Hidden input error */}
-      {/* <input type="hidden" {...register("sessionTypeId")} />
-        {errors.sessionTypeId && (
-          <p className="mt-2 text-sm text-red-600">{errors.sessionTypeId.message}</p>
-        )}
-      </div>  */}
       {/* ── Session Type (from DB) ─────────────────────────────────────────── */}
       <div>
         <p className={labelCaps}>Select Your Session Type *</p>
@@ -1095,7 +927,6 @@ export default function InquiryForm() {
           </>
         )}
 
-        <input type="hidden" {...register("sessionTypeId")} />
         {errors.sessionTypeId && (
           <p className="mt-2 text-sm text-red-600">
             {errors.sessionTypeId.message}

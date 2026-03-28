@@ -168,7 +168,7 @@ export default function Portfolio() {
                 onClick={closeCategoryGallery}
                 className="px-3 py-1 border rounded text-sm mr-3"
               >
-                ← Back
+                &larr; Back
               </button>
               <span className="text-lg font-semibold">{openCategory}</span>
               <span className="text-sm text-gray-600 ml-3">
