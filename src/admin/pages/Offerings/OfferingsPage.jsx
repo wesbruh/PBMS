@@ -121,7 +121,7 @@ export default function SessionsPage() {
                 </p>
               </div>
               <button
-                onClick={() => navigate("/admin/sessions/new")}
+                onClick={() => navigate("/admin/offerings/new")}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm hover:bg-gray-800 cursor-pointer"
               >
                 <Plus size={15} />
@@ -141,7 +141,7 @@ export default function SessionsPage() {
 
             {/* Session cards grid */}
             {!loading && sessions.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 {sessions.map((session) => (
                   <div key={session.id} className="flex flex-col gap-2">
                     <SessionCard
@@ -153,7 +153,7 @@ export default function SessionsPage() {
 
                     {/* Add package button beneath the card */}
                     <button
-                      onClick={() => navigate(`/admin/sessions/${session.id}/packages/new`)}
+                      onClick={() => navigate(`/admin/offerings/${session.id}/packages/new`)}
                       className="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl border border-dashed border-neutral-300 text-xs text-neutral-400 hover:border-[#AB8C4B]/50 hover:text-[#AB8C4B] transition"
                     >
                       <Plus size={12} />

@@ -103,7 +103,7 @@ function Weddings() {
           Logged in? <strong className="text-[#7E4C3C]">Click on a service</strong> to be redirected to the booking request form!<br></br> Otherwise, you'll be redirected to create an account.
         </p>
       {/* PACKAGES */}
-      <div className="mx-auto min-w-300 max-w-400 px-4 md:px-8 lg:px-10 ">
+      <div className="mx-auto max-w-400 px-4 md:px-8 lg:px-10 ">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           
           {packages.map((p, i) => (
@@ -118,7 +118,7 @@ function Weddings() {
                 className="w-full h-60 md:h-72 object-cover rounded-xl shadow-md overflow-hidden"
               />
 
-              <div className="mt-5 flex items-baseline justify-between gap-3">
+              <div className="mt-5 flex flex-wrap items-baseline justify-between gap-3">
                 <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#2b2b2b]">
                   {p.name}
                 </h2>
