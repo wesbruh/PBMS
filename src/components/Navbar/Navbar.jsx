@@ -42,7 +42,7 @@ function Navbar() {
   const isHomePage = location.pathname === "/";
 
   // shared styles for navbar links, sweeping underline when hovered with alternate color. Static underline with bg-brown
-  const linkStyles = `tracking-wide relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#AB8C4B] hover:after:w-full after:transition-all after:duration-500 after:ease-in' ${isHomePage ? "text-white" : "text-black"
+  const linkStyles = ` font-semibold tracking-wide relative after:content-[''] after:absolute after:bottom-[-4px] after:left-0 after:w-0 after:h-[2px] after:bg-[#AB8C4B] hover:after:w-full after:transition-all after:duration-500 after:ease-in' ${isHomePage ? "text-white" : "text-black"
     }`;
   const activeLinkStyles = "after:!w-full after:bg-brown after:h-[2px]";
 
@@ -67,15 +67,15 @@ function Navbar() {
         />
         <h1
           className={`${isHomePage ? "text-white" : "text-[#7E4C3C]"
-            } font-serif text-2xl flex-grid`}
+            } font-serif font-semibold text-2xl flex-grid uppercase`}
         >
-          YOUR ROOTS PHOTOGRAPHY
+          Your Roots Photography
         </h1>
       </div>
 
       {/* Navbar tabs and buttons on right side of Navbar. Specifically designed to have gaps between tabs and not large gaps between the buttons
       Adjusted to hidden desktop navbar when viewing from mobile. Moved special services to be next to regular services in desktop nav */}
-      <div className="hidden lg:flex font-serif text-sm items-center ml-auto">
+      <div className="hidden lg:flex font-serif text-sm md:text-md items-center ml-auto ">
         <div className="flex items-center gap-6">
           <Link
             to="/"
@@ -160,13 +160,13 @@ function Navbar() {
           <>
             <Link
               to={profile.roleName === "User" ? "/dashboard" : "/admin"}
-              className="ml-12 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
+              className="ml-12 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
             >
               Dashboard
             </Link>
             <button
               onClick={handleLogout}
-              className="ml-4 shrink-0 inline-block px-4 py-1.5 bg-white text-[#7E4C3C] text-sm leading-tight hover:bg-gray-200 cursor-pointer transition border border-black rounded-lg"
+              className="ml-4  inline-block px-4 py-1.5 bg-white text-[#7E4C3C] text-sm leading-tight hover:bg-gray-200 cursor-pointer transition border border-black rounded-lg"
             >
               Log out
             </button>
@@ -175,13 +175,13 @@ function Navbar() {
           <>
             <Link
               to="/login"
-              className="ml-5 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
+              className="ml-5 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm sm:text-xs leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
             >
               Log in
             </Link>
             <Link
               to="/signup"
-              className="ml-4 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
+              className="ml-4 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm sm:text-xs leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
             >
               Book with me
             </Link>

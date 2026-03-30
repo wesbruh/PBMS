@@ -33,7 +33,6 @@ export default function ContractView() {
       }
       
       const data = await response.json();
-      console.log(data)
       setContract(data)
     };
 

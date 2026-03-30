@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
@@ -136,24 +136,24 @@ export default function Login() {
         <div className="w-full max-w-3xl">
         {/* Headline in serif font */}
         <div className="text-center mb-8 md:mb-10">
-          <h1 className="text-center text-3xl md:text-5xl font-serif font-extralight tracking wide">
+          <h1 className="text-center text-3xl md:text-5xl font-serif  tracking wide">
             Log in to Your Account
           </h1>
-          <p className="mt-5 text-sm md:text-base text-neutral-600 max-w-xl mx-auto">
-            Log in to manage your account and submit your session inquiry.
+          <p className="mt-5 text-sm md:text-lg text-neutral-700 max-w-full mx-auto">
+            Log in to manage your account, make payments, or submit a booking request.
           </p>
         </div>
 
         {/* Card */}
-        <div className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl shadow-sm px-5 md:px-8 py-8">
+        <div className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl shadow-md px-5 md:px-8 py-6">
           <form
-            className="flex flex-col gap-5 font-mono text-xs w-full"
+            className="flex flex-col gap-5 font-mono "
             noValidate
             onSubmit={onSubmit}
           >
             {/* Email */}
           <label>
-            <p className="text-brown py-2 tracking-widest text-[11px]">EMAIL *</p>
+            <p className="text-brown py-2 text-[14px] font-sans">Email *</p>
             <input
               className={`w-full rounded-md border border-neutral-200 px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50
               ${errors.email ? "border-red-500" : "border-neutral-200"}`}
@@ -166,7 +166,7 @@ export default function Login() {
 
             {/* Password */}
           <label>
-            <p className="text-brown py-2 tracking-widest text-[11px]">PASSWORD *</p>
+            <p className="text-brown py-2 text-[14px] font-sans">Password *</p>
             <input
               className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
               errors.password ? "border-red-500" : "border-neutral-200"
@@ -179,19 +179,27 @@ export default function Login() {
           </label>
 
           {/* Forgot password link */}
-          <div className="text-center mt-2">
+          <div className="text-center mt-2 flex flex-col gap-3 items-center">
             <button
               type="button"
               onClick={openReset}
-              className="font-sans text-xs underline underline-offset-4 hover:opacity-80"
+              className="font-sans text-sm hover:underline underline-offset-4 cursor-pointer"
             >
               Forgot password?
             </button>
+            <Link to="/signup" className=" font-sans text-sm text-[#7E4C3C] underline underline-offset-4 hover:text-[#AB8C4B]">
+            <button
+              type="button"
+              className="hover:underline underline-offset-4 cursor-pointer"
+            >
+              Create an account
+            </button>
+            </Link>
           </div>
 
           {error && <p className="text-center text-red-600 text-xs mt-2">{error}</p>}
 
-          <button className="flex justify-center items-center w-full md:w-1/2 mx-auto mt-4 mb-2
+          <button className="flex justify-center items-center w-full md:w-1/2 mx-auto mt-2 mb-2
                              bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-sans rounded-md transition cursor-pointer"
             type="submit"
             aria-label="login-button">
@@ -210,11 +218,11 @@ export default function Login() {
           onClick={(e) => { if (e.target === e.currentTarget) setShowReset(false); }}
         >
           <div className="absolute inset-0 bg-black/50"></div>
-          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border-2 border-black rounded-md shadow-lg">
-            <h2 className="text-center text-2xl font-serif font-extralight mb-4">Reset your password</h2>
-            <form className="flex flex-col font-mono text-xs" noValidate onSubmit={sendReset}>
+          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
+            <h2 className="text-center text-2xl font-semibold mb-4">Reset your password</h2>
+            <form className="flex flex-col text-xs" noValidate onSubmit={sendReset}>
               <label>
-                <p className="text-center text-brown py-3">EMAIL *</p>
+                <p className="text-center text-brown py-3">Email *</p>
                 <input
                   className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
                   type="email" required
@@ -226,17 +234,17 @@ export default function Login() {
               {resetMsg && (
                 <p className="text-center text-xs mt-3 mb-1">{resetMsg}</p>
               )}
-              <div className="flex items-center justify-center gap-3 mt-6">
+              <div className="flex items-center justify-center gap-3 mt-6 ">
                 <button
                   type="button"
                   onClick={() => setShowReset(false)}
-                  className="px-4 py-2 bg-white text-black text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition"
+                  className="px-4 py-2 bg-white text-black text-sm font-sans border border-black rounded-md hover:bg-gray-200 transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition"
+                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border border-black rounded-md transition cursor-pointer"
                 >
                   Send reset link
                 </button>

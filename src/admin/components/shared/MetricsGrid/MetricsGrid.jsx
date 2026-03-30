@@ -3,6 +3,10 @@ import { supabase } from "../../../../lib/supabaseClient";
 
 // will remove invoice total calculation stuff later if not needed
 // metric cards
+
+// format currency. always shows 2 decimal places 
+const formatCurrency = (v) => (v ?? 0).toLocaleString("en-US", {style: "currency", currency: "USD" });
+
 function MetricCard({ label, value, sub, accent, loading }) {
   const accentMap = {
     green: "bg-green-50 border-green-200 text-green-700",
@@ -140,7 +144,7 @@ function MetricsGrid() {
       />
       <MetricCard
         label="Revenue Collected"
-        value={`$${(metrics.totalRevenue ?? 0).toLocaleString()}`}
+        value={formatCurrency(metrics.totalRevenue ?? 0)}
         sub="All Time"
         accent="green"
         loading={loading}

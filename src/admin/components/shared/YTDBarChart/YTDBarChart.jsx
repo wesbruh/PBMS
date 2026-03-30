@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
+// for x-axis
 const monthNames = [
   "Jan",
   "Feb",
@@ -24,22 +25,73 @@ const monthNames = [
   "Nov",
   "Dec",
 ];
+// for full month names in tool tip
+const fullMonthNames = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 //all months start at 0 until data fills in
-const emptyMonths = monthNames.map((month) => ({ month, avg: 0 }));
+const emptyMonths = monthNames.map((month) => ({ 
+  month, 
+  actual: 0,      // paid revenue (past months and current month)
+  projected: 0,   // remaining balance on confirmed sessions only for current or future months. i.e not yet paid in full
+}));
 
-// custom tool tip on hover of bar
+// format currency. always shows 2 decimal places 
+const formatCurrency = (v) => (v ?? 0).toLocaleString("en-US", {style: "currency", currency: "USD" });
+
+// time zone safe month index from a timestamptz string
+function monthFromTs(ts) {
+  return parseInt(ts.substring(5, 7), 10) -1; // 0-based
+}
+
+// custom tool tip on hover of bar. added projected label now
 function CustomToolTip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null;
-  const val = payload[0].value;
-  if (!val) {
-    return null;
-  }
+  const actual = payload.find((p) => p.dataKey == "actual")?.value ?? 0;
+  const projected = payload.find((p) => p.dataKey == "projected")?.value ?? 0;
+  const total = actual + projected;
+
+  if (actual === 0 && projected === 0) return null;
+
+  // const val = payload[0].value;
+  // if (!val) {
+  //   return null;
+  // }
+
   return (
-    <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
-      <p className="font-semibold mb-0.5">{label}</p> {/* month */}
-      <p className="text-green-300">${val.toLocaleString()}</p>
-      {/* dollar amount*/}
+    <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg min-w-30">
+      <p className="font-semibold mb-1">{fullMonthNames[monthNames.indexOf(label)]} </p> {/* month */}
+      {actual > 0 && (
+        <p className="flex justify-between gap-1">
+          <span className="text-amber-300">Paid:</span>
+          <span className="text-amber-300">{formatCurrency(actual)}</span>
+        </p>
+      )}
+      {projected > 0 && (
+        <p className="flex justify-between gap-3">
+          <span className="text-blue-300">Projected: Remaining Due</span>
+          <span className="text-blue-300">{formatCurrency(projected)}</span>
+        </p>
+      )}
+      <span className="flex mt-1 mb-1 border-t border-gray-500"></span>
+      {total > 0 && (
+        <p className="flex justify-between gap-3">
+          <span className="text-green-300">Total:</span>
+          <span className="text-green-300">{formatCurrency(total)}</span>
+        </p>
+      )}
     </div>
   );
 }
@@ -62,26 +114,13 @@ function CustomXTick({ x, y, payload, currentMonth }) {
   );
 }
 
+// adjust custom bar section for "actual" bar and "projected" bar side by side
 // custom bar, for 'shape' field in <Bar/>.
-function CustomBar(props) {
-  const { x, y, width, height, index, avg } = props;
+function RoundedBar({ x, y, width, height, fill}) {
   if (!height || height <= 0) {
     return null;
   }
-  const fill = (() => {
-    // future month with no data == light gray
-    if (avg === 0) {
-      return "#f3f4f6";
-    }
-    // current month = amber color
-    if (index === new Date().getMonth()) {
-      return "#f59e0b";
-    }
-    // past months = lighter amber color
-    return "#fcd34d";
-  })();
   const radius = 4;
-
   // actual bar shape, rounded corners and stuff
   return (
     <path
@@ -99,6 +138,30 @@ function CustomBar(props) {
   );
 }
 
+function ActualBar(props) {
+  const { x, y, width, height, index } = props;
+  if (!height || height <= 0) {
+    return null;
+  }
+  const curr_month = new Date().getMonth();
+  const fill = index < curr_month ? "#fcd34d" : index === curr_month ? "#f59e0b" : "#f3f4f6";
+
+  return <RoundedBar x={x} y={y} width={width} height={height} fill={fill} />;
+}
+
+function ProjectedBar(props) {
+  const { x, y, width, height, index} = props;
+  const curr_month = new Date().getMonth();
+  if (!height || height <= 0) {
+    if (index > curr_month) {
+      // future months with no projected data. invisible bar keeps tooltip active
+      return <rect x={x} y={y} width={width} height={1} fill="transparent" />;
+    }
+    return null;
+  }
+  return <RoundedBar x={x} y={y} width={width} height={height} fill="#93c5fd" />;
+}
+
 // main component
 function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
   const [data, setData] = useState(emptyMonths);
@@ -110,25 +173,35 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
   }, []);
   const fetchYTDData = async () => {
     try {
-      const currentYear = new Date().getFullYear();
+      const now = new Date();
+      const currentYear = now.getFullYear();
 
       // fetch paid invoices and paid payments for current year in parallel
       // this is similar to the MetricsGrid logic
+      // will adjust later for calculating paid deposit invoices 
       // >= current year from jan 1st 2026 and <= jan 1st 2027
-      const [paymentsRes] = await Promise.all([
+      const [paymentsRes, sessionsRes] = await Promise.all([
         // supabase
         //   .from("Invoice")
         //   .select("total, created_at")
         //   .eq("status", "Paid")
         //   .gte("created_at", `${currentYear}-01-01`)
         //   .lt("created_at", `${currentYear + 1}-01-01`),
-
+        // 1) actual paid payments for current year 
         supabase
           .from("Payment")
           .select("amount, paid_at")
           .eq("status", "Paid")
           .gte("paid_at", `${currentYear}-01-01`)
           .lt("paid_at", `${currentYear + 1}-01-01`),
+        
+        // 2) confirmed sessions from curretn date onwards for projected revenue using the Session_Type base prive as the estimate
+        supabase
+          .from("Session")
+          .select("start_at, Invoice ( remaining )")
+          .eq("status", "Confirmed")
+          .gte("start_at", `${currentYear}-01-01`)
+          .lt("start_at", `${currentYear + 1}-01-01`),
       ]);
       // if (invoiceRes.error) {
       //   throw invoiceRes.error;
@@ -136,24 +209,42 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
       if (paymentsRes.error) {
         throw paymentsRes.error;
       }
+      if (sessionsRes.error) {
+        throw sessionsRes.error;
+      }
       // accumulate revenue per month
-      const monthlyTotals = Array(12).fill(0);
+      const actualTotals = Array(12).fill(0);
+      const projectedTotals = Array(12).fill(0);
 
       // (invoiceRes.data ?? []).forEach((row) => {
       //   const m = new Date(row.created_at).getMonth();
       //   monthlyTotals[m] += row.total ?? 0;
       // });
+
+      // actual paid revenue
       (paymentsRes.data ?? []).forEach((row) => {
-        const m = new Date(row.paid_at).getMonth();
-        monthlyTotals[m] += row.amount ?? 0;
+        if (!row.paid_at) return;
+        const m = monthFromTs(row.paid_at);
+        actualTotals[m] += row.amount ?? 0;
+      });
+
+      // projected revenue
+      (sessionsRes.data ?? []).forEach((row) => {
+        if (!row.start_at) return;
+        const remaining = row.Invoice?.remaining ?? 0;
+        if (remaining <= 0) return;
+        const m = monthFromTs(row.start_at);
+        projectedTotals[m] += remaining;
       });
 
       setData(
         monthNames.map((month, i) => ({
           month,
-          avg: monthlyTotals[i],
+          actual: actualTotals[i],
+          projected: projectedTotals[i],
         })),
       );
+      
     } catch (err) {
       console.error("YTDBarChart fetch error:", err);
       setError("Failed to load chart data.");
@@ -165,25 +256,23 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
   const currentMonth = new Date().getMonth();
   const year = new Date().getFullYear();
   const resolvedSubtitle =
-    subtitle ?? `Monthly average session revenue - ${year}`;
+    subtitle ?? `Monthly session revenue - ${year}`;
 
   // automatically compute YTD average from months that actually have data use
-  const activeMonths = data.filter((d) => d.avg > 0);
+  const activeMonths = data.filter((d) => d.actual > 0);
   const computedAvg =
     activeMonths.length > 0
-      ? Math.round(
-          activeMonths.reduce((sum, d) => sum + d.avg, 0) / activeMonths.length,
-        )
+      ? parseFloat((activeMonths.reduce((sum, d) => sum + d.actual, 0) / activeMonths.length).toFixed(2))
       : 0;
 
-  //summary stats
+  // summary stats
   const highestEntry = data.reduce(
-    (best, d) => (d.avg > best.avg ? d : best),
+    (best, d) => (d.actual > best.actual ? d : best),
     data[0],
   );
 
   // DYNAMIC Y-AXIS. compute the ceiling rounded up to the nearest 1000
-  const maxVal = Math.max(...data.map((d) => d.avg), 0);
+  const maxVal = Math.max(...data.map((d) => Math.max(d.actual, d.projected)), 0);
   const ceiling = Math.ceil(maxVal / 1000) * 1000;
   // build ticks dynamically: [0, 1000, 2000, ..., ceiling] to auto adjust for total revenue if ever goes above the ceiling
   const ticks = Array.from({ length: ceiling / 1000 + 1 }, (_, i) => i * 1000);
@@ -205,28 +294,23 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
   };
   // adjust y-axis width, must be a fixed number and depends on y-tick size
   const yAxisWidth =
-    maxVal >= 1000000
-      ? 65
-      : maxVal >= 100000
-        ? 55
-        : maxVal >= 10000
-          ? 50
-          : maxVal >= 1000
-            ? 45
-            : 38;
+    maxVal >= 1000000 ? 65 : 
+    maxVal >= 100000 ? 55 : 
+    maxVal >= 10000 ? 50 : 
+    maxVal >= 1000 ? 45 : 38;
 
   return (
     <div
-      className="bg-white border border-gray-100 rounded-xl p-4 md:p-5 shadow-sm flex flex-col overflow-hidden min-w-0"
+      className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex flex-col overflow-hidden "
       style={{ minHeight: 0 }}
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-4 gap-2">
+      <div className="flex items-start justify-between mb-3">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-gray-800 truncate">
             {title}
           </h2>
-          <p className="text-xs text-gray-400 truncate">{resolvedSubtitle}</p>
+          <p className="text-xs text-gray-400 font-semibold truncate">{resolvedSubtitle}</p>
         </div>
         <div className="text-right shrink-0 ">
           {/* loading state similar to metricsgrid */}
@@ -234,7 +318,7 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
             <span className="h-6 w-16 bg-gray-100 rounded animate-pulse inline-block" />
           ) : (
             <p className="text-lg font-bold text-green-700">
-              ${computedAvg.toLocaleString()}
+              {formatCurrency(computedAvg)}
             </p>
           )}
           <p className="text-xs text-gray-400 ">YTD Avg/month</p>
@@ -258,7 +342,8 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
               <BarChart
                 data={data}
                 margin={{ top: 4, right: 4, left: -16, bottom: 0 }}
-                barCategoryGap="30%"
+                barCategoryGap="15%"    // space between month groups
+                barGap={2}              // gap between the two bars
               >
                 <CartesianGrid
                   vertical={false}
@@ -283,13 +368,22 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
                 />
                 <Tooltip
                   content={<CustomToolTip />}
-                  cursor={{ fill: "#fef3c7", radius: [8, 8, 0, 0] }}
+                  cursor={{ fill: "#fef3c7" }}
                 />
+
+                {/* Left bar. Actual paid revenue */}
                 <Bar
-                  dataKey="avg"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={400}
-                  shape={(props) => <CustomBar {...props} />}
+                  dataKey="actual"
+                  maxBarSize={18}
+                  shape={(props) => <ActualBar {...props} />}
+                />
+
+                {/* Right bar. Projected revenue from confirmed upcoming sessions*/}
+                <Bar
+                  dataKey="projected"
+                  maxBarSize={18}
+                  
+                  shape={(props) => <ProjectedBar {...props} />}
                 />
               </BarChart>
             </ResponsiveContainer>
@@ -300,7 +394,7 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
             <div className="min-w-0">
               <p className="text-xs text-gray-400">Highest Month</p>
               <p className="text-sm font-semibold text-gray-700 truncate">
-                {highestEntry.month} - ${highestEntry.avg.toLocaleString()}
+                {highestEntry.month} - {formatCurrency(highestEntry.actual)}
               </p>
             </div>
             <div>
@@ -318,6 +412,10 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-sm bg-amber-300 inline-block" />
                 <span className="text-xs text-gray-400">Past</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="w-3 h-3 rounded-sm bg-blue-300 inline-block" />
+                <span className="text-xs text-gray-400">Projected</span>
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="w-3 h-3 rounded-sm bg-gray-100 border border-gray-200 inline-block" />

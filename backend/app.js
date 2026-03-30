@@ -21,16 +21,20 @@ export function buildBookingPayload(bookingRequest, now = new Date()) {
     start_at: new Date(`${date}T${start_time}:00`).toISOString(),
     end_at: new Date(`${date}T${end_time}:00`).toISOString(),
     location_text,
-    status: "pending",
+    status: "Pending",
     notes: notes || null,
     created_at: timestamp,
     updated_at: timestamp,
   };
 }
 
-export function createApp({ supabaseClient } = {}) {
+export function createApp({ supabaseClient, stripeClient } = {}) {
   if (!supabaseClient) {
     throw new Error("A Supabase client must be provided when creating the PBMS app.");
+  }
+
+  if (!stripeClient) {
+    throw new Error("A Stripe client must be provided when creating the PBMS app.");
   }
 
   const app = express();
@@ -52,7 +56,7 @@ export function createApp({ supabaseClient } = {}) {
 
     try {
       // default role init
-      const { data: defaultRole, error: defaultRoleError } = await supabase
+      const { data: defaultRole, error: defaultRoleError } = await supabaseClient
         .from("Role")
         .select("id")
         .eq("name", "User")
@@ -63,7 +67,7 @@ export function createApp({ supabaseClient } = {}) {
         return;
       }
 
-      const { data: signUpData, error: signUpError } = await supabase.auth.signUp(signup_payload);
+      const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp(signup_payload);
 
       if (signUpError) {
         const raw = signUpError.message?.toLowerCase() || "";
@@ -100,10 +104,10 @@ export function createApp({ supabaseClient } = {}) {
           // rolePayload.assigned_at = new Date().toISOString();
         }
 
-        const { error: userTableErr } = await supabase
+        const { error: userTableErr } = await supabaseClient
           .from("User")
           .upsert(profile_payload);
-        const { error: userRoleTableErr } = await supabase
+        const { error: userRoleTableErr } = await supabaseClient
           .from("UserRole")
           .upsert(rolePayload);
 
@@ -129,7 +133,7 @@ export function createApp({ supabaseClient } = {}) {
   // get information related to all users
   app.get("/api/profiles", async (req, res) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("User")
         .select("id, email, first_name, last_name, phone");
 
@@ -147,7 +151,7 @@ export function createApp({ supabaseClient } = {}) {
     const { user_id } = req.params;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("User")
         .select("id, email, first_name, last_name, phone, UserRole(Role(name))")
         .eq("id", user_id)
@@ -175,7 +179,7 @@ export function createApp({ supabaseClient } = {}) {
     const updates = req.body;
 
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from("User")
         .update(updates)
         .eq("id", user_id)
@@ -194,10 +198,11 @@ export function createApp({ supabaseClient } = {}) {
   // Fetch all active sessions with related data
   app.get("/api/sessions", async (req, res) => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("Session")
         .select("*, User(first_name, last_name), SessionType(name)")
-        .eq("is_active", true);
+        .eq("is_active", true)
+        .order("created_at", { ascending: true });
 
       if (error) throw error;
       res.status(200).json(data);
@@ -214,7 +219,7 @@ export function createApp({ supabaseClient } = {}) {
     try {
       if (!session_type_id && !session_type_name) throw new Error("session_type_id and session_type_name not specified.")
 
-      let query = supabase
+      let query = supabaseClient
         .from("SessionType")
         .select();
 
@@ -238,7 +243,7 @@ export function createApp({ supabaseClient } = {}) {
     const { id } = req.params;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("Session")
         .select("*, User(id, first_name, last_name, email, phone), SessionType(name, description)")
         .eq("id", id)
@@ -259,7 +264,7 @@ export function createApp({ supabaseClient } = {}) {
     const updates = req.body;
     // console.log(updates); DEBUGGING
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("Session")
         .update(updates)
         .eq("id", id)
@@ -283,7 +288,7 @@ export function createApp({ supabaseClient } = {}) {
     const requestEnd = new Date(`${date}T${end_time}:00`).toISOString();
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("Session")
         .insert([{
           client_id: client_id || null,
@@ -309,12 +314,12 @@ export function createApp({ supabaseClient } = {}) {
 
   app.get("/api/availability", async (req, res) => {
     try {
-      let { data: settings, error: settingsError } = await supabase
+      let { data: settings, error: settingsError } = await supabaseClient
         .from("AvailabilitySettings")
         .select("*")
         .maybeSingle();
 
-      const { data: blocks, error: blocksError } = await supabase
+      const { data: blocks, error: blocksError } = await supabaseClient
         .from("AvailabilityBlocks")
         .select("*");
 
@@ -330,7 +335,7 @@ export function createApp({ supabaseClient } = {}) {
 
   app.post("/api/availability/settings", async (req, res) => {
     const { start, end } = req.body;
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from("AvailabilitySettings")
       .upsert({ work_start_time: start, work_end_time: end }, { onConflict: 'id' })
       .select();
@@ -342,9 +347,9 @@ export function createApp({ supabaseClient } = {}) {
   app.post("/api/availability/blocks", async (req, res) => {
     const { blocks, rangeStart, rangeEnd } = req.body;
     try {
-      await supabase.from("AvailabilityBlocks").delete().gte("start_time", rangeStart).lte("start_time", rangeEnd);
+      await supabaseClient.from("AvailabilityBlocks").delete().gte("start_time", rangeStart).lte("start_time", rangeEnd);
       if (blocks && blocks.length > 0) {
-        const { error: insertError } = await supabase.from("AvailabilityBlocks").insert(blocks);
+        const { error: insertError } = await supabaseClient.from("AvailabilityBlocks").insert(blocks);
         if (insertError) throw insertError;
       }
       res.json({ message: "Schedule synced successfully" });
@@ -365,9 +370,9 @@ export function createApp({ supabaseClient } = {}) {
     // if no price is passed in, default to 150
     let final_price = ((price) ? price : 150);
 
-    // calculate tax as needed, default to 5% if tax_rate not passed
+    // calculate tax as needed, default to 7.25% if tax_rate not passed
     if (apply_tax)
-      final_price *= (100 + ((tax_rate) ? tax_rate : 5));
+      final_price *= (100 + ((tax_rate) ? tax_rate : 7.25));
     else
       final_price *= 100;
 
@@ -375,7 +380,7 @@ export function createApp({ supabaseClient } = {}) {
 
     if (type === "deposit") {
       try {
-        const session = await stripe.checkout.sessions.create({
+        const session = await stripeClient.checkout.sessions.create({
           payment_method_types: ['card'],
           line_items: [
             {
@@ -408,7 +413,7 @@ export function createApp({ supabaseClient } = {}) {
       }
     } else if (type === "rest") {
       try {
-        const session = await stripe.checkout.sessions.create({
+        const session = await stripeClient.checkout.sessions.create({
           payment_method_types: ['card'],
           line_items: [
             {
@@ -449,7 +454,7 @@ export function createApp({ supabaseClient } = {}) {
     const { checkout_session_id } = req.params;
 
     try {
-      const session = await stripe.checkout.sessions.retrieve(checkout_session_id);
+      const session = await stripeClient.checkout.sessions.retrieve(checkout_session_id);
       res.status(200).json({
         session: session,
         payment_intent: session.payment_intent
@@ -465,7 +470,7 @@ export function createApp({ supabaseClient } = {}) {
     const { payment_intent } = req.body;
 
     try {
-      const { data, error } = await stripe.paymentIntents.capture(payment_intent);
+      const { data, error } = await stripeClient.paymentIntents.capture(payment_intent);
 
       if (error) throw error;
       res.status(200).json(data);
@@ -483,7 +488,7 @@ export function createApp({ supabaseClient } = {}) {
     const { template_id } = req.params;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("QuestionnaireTemplate")
         .select("id, name, session_type_id, schema_json, active")
         .eq("id", template_id)
@@ -503,7 +508,7 @@ export function createApp({ supabaseClient } = {}) {
     const paylod = req.body;
 
     try {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseClient
         .from("QuestionnaireTemplate")
         .insert(paylod)
         .select()
@@ -523,7 +528,7 @@ export function createApp({ supabaseClient } = {}) {
     const updates = req.body;
 
     try {
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from("QuestionnaireTemplate")
         .update(updates)
         .eq("id", id);
@@ -543,7 +548,7 @@ export function createApp({ supabaseClient } = {}) {
 
     try {
       // Deactivate all other templates for this session type
-      const { error: deactErr } = await supabase
+      const { error: deactErr } = await supabaseClient
         .from("QuestionnaireTemplate")
         .update({ active: false })
         .eq("session_type_id", session_type_id)
@@ -551,7 +556,7 @@ export function createApp({ supabaseClient } = {}) {
       if (deactErr) throw deactErr;
 
       // Activate this one
-      const { error: actErr } = await supabase
+      const { error: actErr } = await supabaseClient
         .from("QuestionnaireTemplate")
         .update({ active: true })
         .eq("id", template_id);
@@ -565,7 +570,7 @@ export function createApp({ supabaseClient } = {}) {
   });
   
   app.get("/test-server", (_req, res) => {
-    res.json({ message: "HTTP server running and Supabase-compatible!" });
+    res.json({ message: "HTTP server running and is both Supabase- and Stripe-compatible!" });
   });
 
   return app;

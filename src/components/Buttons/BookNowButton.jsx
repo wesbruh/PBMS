@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 function BookNowButton({
-  className = "flex justify-center items-center w-full mt-6 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm rounded-3xl transition",
+  className = "flex justify-center items-center w-full mt-6 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-md rounded-xl transition",
   label = "Book Now"
 }) {
   const navigate = useNavigate();

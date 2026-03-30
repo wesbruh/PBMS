@@ -1,9 +1,20 @@
-import { Link } from "react-router-dom";
-import GoToTop from '../../GoToTop';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import GoToTop from "../../GoToTop";
 import BookNowButton from "../../components/Buttons/BookNowButton";
 
 function Labor() {
   const heroImg = "/images/temp_mother.jpg";
+
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const handlePackageClick = (packageName) => {
+    if (user) {
+      navigate('/dashboard/inquiry', { state: { selectedPackage: packageName } });
+    } else {
+      navigate('/signup');
+    }
+  };
 
   const packages = [
     {
@@ -91,47 +102,54 @@ function Labor() {
     <div className="bg-[#F8F4EA] text-black font-serif">
       {/* HERO */}
       <div className="relative w-full text-white">
-        <img className="w-full object-cover h-[420px] md:h-[520px] lg:h-[620px]" src={heroImg} alt="" />
+        <img
+          className="w-full object-cover h-105 md:h-130 lg:h-155"
+          src={heroImg}
+          alt=""
+        />
 
         <div className="absolute inset-0 bg-black/35" />
 
         <div className="absolute inset-0 flex flex-col justify-center pl-10 md:pl-20">
-          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">LABOR & DELIVERY PACKAGES</h1>
+          <h1 className="text-4xl md:text-6xl font-semibold tracking-tight">
+            LABOR & DELIVERY PACKAGES
+          </h1>
         </div>
       </div>
 
       {/* TITLE */}
-      <p className="text-center mt-20 mb-14 font-sans text-sm tracking-[0.3em] uppercase text-neutral-600">
-        L&D PACKAGES & PRICING
+      <p className="text-center mt-20 mb-4 font-serif font-semibold text-3xl tracking-wide uppercase ">
+        Labor and Delivery Packages & Pricing
       </p>
+      <p className="font-sans text-center text-sm md:text-lg mb-10 text-neutral-700">
+        Logged in? <strong className="text-[#7E4C3C]">Click on a service</strong> to be redirected to the booking request form!<br></br> Otherwise, you'll be redirected to create an account.
+        </p>
 
       {/* PACKAGES */}
-      <div className="mx-auto max-w-6xl px-4 md:px-8 lg:px-10 space-y-14">
-        {packages.map((p, i) => (
-          <div
-            key={i}
-            className="grid grid-cols-1 md:grid-cols-2 gap-10 items-center rounded-3xl bg-white/60 backdrop-blur border border-black/5 shadow-sm p-6 md:p-10"
-          >
-            <div className={i % 2 === 1 ? "md:order-2" : "md:order-1"}>
+      <div className="mx-auto max-w-6xl px-4 md:px-8 lg:px-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {packages.map((p, i) => (
+            <div
+              key={i}
+              onClick={() => handlePackageClick(p.name)}
+              className="flex flex-col rounded-3xl overflow-hidden shadow-md hover:shadow-xl transition duration-300 bg-white/60 backdrop-blur border border-black/5 p-5 md:p-6 cursor-pointer"
+            >
               <img
                 src={p.img}
                 alt={p.name}
-                className="w-full h-[320px] md:h-[380px] object-cover rounded-3xl shadow-md"
+                className="w-full h-60 md:h-72 object-cover rounded-2xl shadow-md"
               />
-            </div>
 
-            <div className={i % 2 === 1 ? "md:order-1" : "md:order-2"}>
-              <div className="flex items-baseline justify-between gap-4">
-                <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[#2b2b2b]">
+              <div className="mt-5 flex items-baseline justify-between gap-3">
+                <h2 className="text-2xl md:text-3xl font-semibold tracking-tight text-[#2b2b2b]">
                   {p.name}
                 </h2>
-                <p className="font-sans text-sm md:text-base tracking-widest uppercase text-[#7E4C3C]">
+                <p className="font-sans font-bold text-md tracking-widest uppercase text-[#7E4C3C] whitespace-nowrap">
                   {p.price}
                 </p>
               </div>
 
-
-              <ul className="mt-6 space-y-2 text-[15px] md:text-base leading-7 md:leading-8 text-neutral-700 font-sans">
+              <ul className="mt-4 space-y-2 text-[15px] leading-7 text-neutral-700 font-sans flex-1">
                 {p.points.map((pt, idx) => (
                   <li key={idx} className="flex gap-3">
                     <span className="mt-2 h-1.5 w-1.5 rounded-full bg-[#7E4C3C] shrink-0" />
@@ -139,21 +157,31 @@ function Labor() {
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 flex gap-3">
-                <BookNowButton />
-              </div>
             </div>
+          ))}
+        </div>
+{/* 
+        <div className="mt-3 flex justify-center">
+          <div className="font-sans w-48 md:w-56">
+            <BookNowButton />
           </div>
-        ))}
+        </div> */}
       </div>
 
       {/* Q&A SECTION */}
       <p className="text-center text-4xl mt-28 mb-14 font-serif">Q&A</p>
       <div className="mx-auto max-w-6xl px-4 md:px-8 lg:px-10 space-y-16 mb-28">
         {qa.map((item, i) => (
-          <div key={i} className="grid md:grid-cols-2 gap-10 py-10 border-b border-black/5">
-            <p className="text-xl">{i + 1}. {item.q}</p>
-            <p className="font-sans text-base md:text-lg leading-8 text-neutral-700">{item.a}</p>
+          <div
+            key={i}
+            className="grid md:grid-cols-2 gap-10 py-10 border-b border-black/5"
+          >
+            <p className="text-xl">
+              {i + 1}. {item.q}
+            </p>
+            <p className="font-sans text-base md:text-lg leading-8 text-neutral-700">
+              {item.a}
+            </p>
           </div>
         ))}
       </div>

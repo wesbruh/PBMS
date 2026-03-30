@@ -39,7 +39,7 @@ function fromMin(totalMin) {
 function toLabel(timeStr) {
   const min = toMin(timeStr);
   const h24 = Math.floor(min / 60);
-  const m   = min % 60;
+  const m = min % 60;
   const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
   const ampm = h24 >= 12 ? "PM" : "AM";
   return `${h12}:${m === 0 ? "00" : m} ${ampm}`;
@@ -92,14 +92,15 @@ export default function TimeSlotGrid({
   durationMinutes = 60,
   startTime,
   onSelectStart,
+  readOnly=false
 }) {
   // Work hours fetched from AvailabilitySettings
   const [workStart, setWorkStart] = useState("09:00");
-  const [workEnd,   setWorkEnd]   = useState("17:00");
+  const [workEnd, setWorkEnd] = useState("17:00");
 
   // Blocked intervals for selectedDate: [{ startMin, endMin }]
   const [blockedIntervals, setBlockedIntervals] = useState([]);
-  const [loadingBlocks,    setLoadingBlocks]    = useState(false);
+  const [loadingBlocks, setLoadingBlocks] = useState(false);
 
   // ── Fetch work hours (once, from AvailabilitySettings) ───────────────────
   useEffect(() => {
@@ -157,12 +158,12 @@ export default function TimeSlotGrid({
           .from("Availability")
           .select("valid_from, valid_to")
           .lte("valid_from", selectedDate)
-          .gte("valid_to",   selectedDate);
+          .gte("valid_to", selectedDate);
 
         if (abErr) console.error("TimeSlotGrid: Availability fetch error", abErr);
 
         const workStartMin = toMin(workStart);
-        const workEndMin   = toMin(workEnd);
+        const workEndMin = toMin(workEnd);
 
         const intervals = [];
 
@@ -170,12 +171,12 @@ export default function TimeSlotGrid({
           // If valid_from/valid_to include a time component (timestamptz), use it.
           // Otherwise treat as full-day block.
           const fromHasTime = block.valid_from?.includes("T") || block.valid_from?.includes(" ");
-          const toHasTime   = block.valid_to?.includes("T")   || block.valid_to?.includes(" ");
+          const toHasTime = block.valid_to?.includes("T") || block.valid_to?.includes(" ");
 
           const blockStart = fromHasTime
             ? toMin(tsToLocalTime(block.valid_from))
             : workStartMin;
-          const blockEnd   = toHasTime
+          const blockEnd = toHasTime
             ? toMin(tsToLocalTime(block.valid_to))
             : workEndMin;
 
@@ -183,10 +184,13 @@ export default function TimeSlotGrid({
         });
 
         // ── 2) Active booked sessions on selectedDate ───────────────────────
-        // Session.start_at and end_at are timestamptz.
-        // We fetch sessions where the date portion of start_at matches selectedDate.
-        const dayStart = `${selectedDate}T00:00:00.000Z`;
-        const dayEnd   = `${selectedDate}T23:59:59.999Z`;
+        // selectedDate is local date, but timestampz are fetched
+        // compare table entries against UTC-calculated dayStart and dayEnd times 
+        const startDateTime = new Date(`${selectedDate}T00:00:00.000`);
+        const dayStart = startDateTime.toISOString();
+
+        const endDateTime = new Date(`${selectedDate}T23:59:59.999`);
+        const dayEnd = endDateTime.toISOString();
 
         const { data: bookedSessions, error: bsErr } = await supabase
           .from("Session")
@@ -201,7 +205,7 @@ export default function TimeSlotGrid({
           if (!s.start_at || !s.end_at) return;
           intervals.push({
             startMin: toMin(tsToLocalTime(s.start_at)),
-            endMin:   toMin(tsToLocalTime(s.end_at)),
+            endMin: toMin(tsToLocalTime(s.end_at)),
           });
         });
 
@@ -311,8 +315,8 @@ export default function TimeSlotGrid({
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
         {allSlots.map((slot) => {
           const isDisabled = disabledSet.has(slot.value);
-          const isStart    = slot.value === startTime;
-          const isInRange  = !isDisabled &&
+          const isStart = slot.value === startTime;
+          const isInRange = !isDisabled &&
             startTime &&
             computedEndTime &&
             slot.value > startTime &&
@@ -322,7 +326,7 @@ export default function TimeSlotGrid({
             <button
               key={slot.value}
               type="button"
-              disabled={isDisabled}
+              disabled={isDisabled || readOnly}
               onClick={() => handleSlotClick(slot)}
               title={isDisabled ? "Not available" : slot.label}
               className={`
@@ -333,7 +337,7 @@ export default function TimeSlotGrid({
                     ? "bg-[#F4EFE6] text-brown border-[#E7DFCF]"
                     : isDisabled
                       ? "bg-neutral-100 text-neutral-300 border-neutral-200 cursor-not-allowed line-through"
-                      : "bg-white text-neutral-600 border-neutral-200 hover:border-brown hover:bg-neutral-50"
+                      : `bg-white text-neutral-600 border-neutral-200 ${readOnly ? "" : "hover:border-brown hover:bg-neutral-50"}`
                 }
               `}
             >

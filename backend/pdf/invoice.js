@@ -7,7 +7,7 @@ import path from "path"
 const router = express.Router();
 
 // Invoice for Sessions
-const TAX_RATE = 0.0725; // 5% tax rate, can be adjusted as needed
+const TAX_RATE = 0.0725; // 7.25% tax rate, can be adjusted as needed
 
 router.post("/generate/:session_id", async (req, res) => {
   try {
@@ -22,7 +22,6 @@ router.post("/generate/:session_id", async (req, res) => {
 
     if (sessionError) return res.status(404).json({ message: "Session not found" });
 
-    //const invoiceNumber = `INV-${String(invoiceData.id).padStart(5, "0")}`;
     const now = new Date();
     const issueDate = `${now.getFullYear().toString()}` + "-" +
                       `${(now.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
@@ -32,7 +31,6 @@ router.post("/generate/:session_id", async (req, res) => {
       .from("Invoice")
       .insert({
         session_id: session_id,
-        //invoice_number: invoiceNumber,
         issue_date: issueDate,
         due_date: due_date,
         remaining: remaining,
@@ -54,7 +52,14 @@ router.post("/generate/:session_id", async (req, res) => {
       throw insertError;
     }
 
-    const invoiceNumber = `INV-${String(invoiceData.id).padStart(5, "0")}`;
+    // TODO: select all entries where created_at_year is now.getFullYear()
+    // if data == null set to 1
+    // otherwise find max serial_number and add 1
+    // append this to invoice number: `INV-${now.getFullYear()}-`
+    // use rpc to set/get this value
+
+    // TODO: CHANGE THIS TO BE AN AUTO-INCREMENTING THING
+    const invoiceNumber = `INV-${now.getFullYear()}-${now.getTime()}`;
 
     const { data: updatedInvoice, error: updateError } = await supabase
       .from("Invoice")
@@ -65,7 +70,7 @@ router.post("/generate/:session_id", async (req, res) => {
 
     if (updateError) throw updateError;
 
-    res.json(updatedInvoice);
+    res.status(200).json(updatedInvoice);
 
   } catch (err) {
     console.error("Invoice generation error:", err);

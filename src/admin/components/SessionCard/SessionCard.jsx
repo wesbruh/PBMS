@@ -144,7 +144,7 @@ export default function SessionCard({
 
         {/* Description */}
         {!compact && session.description && (
-          <p className="mt-2 text-xs text-neutral-500 leading-relaxed">{session.description}</p>
+          <p className="mt-2 text-xs text-neutral-500 leading-relaxed truncate">{session.description}</p>
         )}
 
         {/* Packages badge */}

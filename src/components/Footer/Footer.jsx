@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
-
 // page footer with logo and copyright, should be available across all pages - updated as there were media device errors
+
   function Footer() {
+    const currentYear = new Date().getFullYear();
     return (
       <footer className='relative w-full text-[#7E4C3C] px-3 py-4 font-serif '>
 
@@ -11,7 +11,7 @@ import { Link } from "react-router-dom";
           {/* logo and copyright */}
           <div className='flex items-center gap-3'>
             <img src="logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12' />
-            <span className='text-[#7E4C3C] font-serif text-sm'> &copy;2025 Your Roots Photography</span>
+            <span className='text-[#7E4C3C] font-serif text-sm'> &copy;{currentYear} Your Roots Photography</span>
           </div>
   
           {/* social media icons, working links */}
@@ -54,7 +54,7 @@ import { Link } from "react-router-dom";
           {/* logo and copyright */}
           <div className='flex items-center gap-3'>
             <img src="/logo2.png" alt="Your Roots Photography Logo" className='h-12 w-12' />
-            <span className='text-[#7E4C3C] font-serif text-md'> &copy;2025 Your Roots Photography</span>
+            <span className='text-[#7E4C3C] font-serif font-semibold text-md'> &copy;{currentYear} Your Roots Photography</span>
           </div>
   
           {/* social media icons, working links */}
@@ -94,5 +94,4 @@ import { Link } from "react-router-dom";
       </footer>
     );
   }
-  
-  export default Footer
+  export default Footer;

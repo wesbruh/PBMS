@@ -27,7 +27,7 @@ function CarouselSection() {
   return (
     <section className='relative w-screen  bg-[#FFFDF4] overflow-hidden'>
       {/* carousel container */}
-      <div className='relative w-screen h-[500px] md:h-[600px] lg:h-[700px]'>
+      <div className='relative w-screen h-125 md:h-150 lg:h-175'>
         {/* images */}
         {images.map((image, index) => (
           <div
@@ -52,7 +52,7 @@ function CarouselSection() {
             {/* contact button */}
             <div className='flex justify-center mt-12'>
               <BookNowButton
-                className='inline-block px-8 py-3 bg-[#7E4C3C] text-white text-lg font-serif hover:bg-[#AB8C4B] transition'
+                className='inline-block px-8 py-3 bg-[#7E4C3C] text-white text-lg font-sans rounded-md cursor-pointer hover:bg-[#AB8C4B] transition'
                 label="Book With Me!"
               />
             </div>
@@ -61,12 +61,12 @@ function CarouselSection() {
         </div>
 
         {/* carousel indicators to show which image visitor is on, clickable if visitor wants to click on a specific one */}
-        <div className='absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3 z-10'>
+        <div className='absolute bottom-6 left-1/2 transform -translate-x-1/2 flex gap-3 z-10 '>
           {images.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentIndex(index)}
-              className={`w-3 h-3 rounded-full transition-all ${index === currentIndex
+              className={`w-3 h-3 rounded-full transition-all cursor-pointer ${index === currentIndex
                   ? 'bg-white w-8'
                   : 'bg-white/50 hover:bg-white/75'
                 }`}

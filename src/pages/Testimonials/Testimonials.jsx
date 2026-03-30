@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import BookNowButton from "../../components/Buttons/BookNowButton";
 
 function Testimonials() {
   const [itr, setItr] = useState(0);
@@ -51,7 +52,7 @@ function Testimonials() {
             <p className='lg:pr-100'>forever.</p>
           </div>
           <div className='absolute inset-0 flex items-center justify-center'>
-            <div className='text-center text-4xl md:text-5xl lg:text-6xl text-shadow-sm font-extralight w-11/12 md:w-7/12 lg:w-10/24'>
+            <div className='text-center text-4xl md:text-5xl lg:text-6xl text-shadow-sm font-extralight w-11/12 md:w-7/12 lg:w-10/24 px-4 rounded-xl backdrop-blur-sm backdrop-brightness-90 leading-tight md:leading-snug lg:leading-snug'>
               <p>Love notes from people I've photographed</p>
             </div>
           </div>
@@ -60,10 +61,10 @@ function Testimonials() {
         {/* Review Links Section */}
         <div className='my-10 flex flex-col justify-center items-center px-4'>
           <div className='w-full max-w-6xl text-center'>
-            <p className='font-mono text-sm tracking-wide text-brown mb-4'>CLIENT REVIEWS</p>
-            <h2 className='font-serif text-3xl md:text-4xl text-brown mb-4'>Read what clients are saying</h2>
-            <p className='font-mono text-sm md:text-base text-gray-600 max-w-3xl mx-auto mb-8 leading-7'>
-              Browse live Google and Yelp reviews from past clients, or leave a review if we’ve worked together.
+            {/* <p className='font-sans text-md md:text-lg  text-brown mb-4 uppercase'>Client Reviews</p> */}
+            <h2 className='font-serif text-3xl md:text-4xl text-brown mb-4'>Read what my clients are saying!</h2>
+            <p className='font-sans text-sm md:text-base text-gray-600 max-w-3xl mx-auto mb-8 leading-7'>
+              Browse live Google and Yelp reviews from past clients, or leave a review if we've worked together.
             </p>
 
             <div className='flex flex-col md:flex-row justify-center gap-4 mb-10'>
@@ -71,18 +72,18 @@ function Testimonials() {
                 href={GOOGLE_REVIEW_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className='flex justify-center items-center min-w-56 px-6 h-12 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-mono rounded-md transition-colors'
+                className='flex justify-center items-center min-w-56 px-6 h-12 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans rounded-md transition-colors uppercase'
               >
-                LEAVE A GOOGLE REVIEW
+                Leave a Google Review
               </a>
 
               <a
                 href={YELP_REVIEW_URL}
                 target="_blank"
                 rel="noopener noreferrer"
-                className='flex justify-center items-center min-w-56 px-6 h-12 border border-brown text-brown hover:bg-[#f5f1e8] text-sm font-mono rounded-md transition-colors'
+                className='flex justify-center items-center min-w-56 px-6 h-12 border border-brown text-brown hover:bg-gray-100 text-sm font-sans rounded-md transition-colors uppercase'
               >
-                LEAVE A YELP REVIEW
+                Leave a Yelp Review
               </a>
             </div>
 
@@ -96,7 +97,7 @@ function Testimonials() {
       </div>
 
       {/* Featured Testimonials Slider */}
-      <div className='flex flex-col bg-[#887C62] text-white'>
+      {/* <div className='flex flex-col bg-[#887C62] text-white'>
         <div className='mt-8 md:mt-12 lg:mt-18'></div>
         <div className='flex flex-col md:flex-row lg:flex-row mx-5'>
           <div className='flex flex-col w-full md:h-80 lg:h-120 md:w-3/8 lg:w-3/8 md:mx-5 lg:mx-10'>
@@ -114,9 +115,9 @@ function Testimonials() {
           </div>
 
           <div className='flex flex-col mr-0 md:mr-5 lg:mr-10 w-full md:w-5/8 lg:w-5/8'>
-            <div className='relative h-full w-full'>
+            <div className='relative h-full w-full'> */}
               {/* Overlay Navigation Buttons */}
-              <div className='absolute inset-0 flex flex-row z-10'>
+              {/* <div className='absolute inset-0 flex flex-row z-10'>
                 <button 
                   onClick={prev} 
                   className="w-1/2 h-full cursor-pointer bg-transparent"
@@ -148,7 +149,7 @@ function Testimonials() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Booking Footer Section */}
       <div className='relative h-100 md:h-110 lg:h-120 w-full'>
@@ -156,13 +157,12 @@ function Testimonials() {
         <div className='absolute inset-0 flex flex-col justify-between py-20 px-10 md:px-13 lg:px-15'>
           <p className='text-white text-3xl md:text-4xl lg:text-5xl font-serif'>Let's get you booked!</p>
           <div className='flex flex-col items-start md:items-end'>
-            <p className='font-mono text-white text-sm tracking-widest'>YOUR ROOTS PHOTOGRAPHY</p>
-            <a
-              className='flex justify-center items-center min-w-56 mt-5 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-mono rounded-md transition-colors'
-              href="mailto:Your.rootsphotography@gmail.com"
-            >
-              CONTACT ME!
-            </a>
+            <p className='font-serif text-white text-sm tracking-widest uppercase'>Your Roots Photography</p>
+            {/* contact button */}
+              <BookNowButton
+                className='flex px-8 py-3 bg-[#7E4C3C] text-lg font-sans cursor-pointer hover:bg-[#AB8C4B] justify-center items-center min-w-56 mt-5 h-12 text-white rounded-md transition-colors'
+                label="Book With Me!"
+              />
           </div>
         </div>
       </div>
