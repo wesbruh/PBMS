@@ -29,7 +29,7 @@ export default function IdleLogout({ timeoutMs = 10 * 60 * 1000 }) { // changed 
         if (!user || !session) return;
 
         // best-effort mark user inactive
-        const response = await fetch(`http://localhost:5001/api/profile/${user.id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${user.id}`, {
           method: "PATCH",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,

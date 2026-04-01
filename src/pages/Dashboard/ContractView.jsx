@@ -19,7 +19,7 @@ export default function ContractView() {
     if (!session || !profile || !contractId) return;
 
     async function fetchContract() {
-      const response = await fetch(`http://localhost:5001/api/contract/${contractId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contractId}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

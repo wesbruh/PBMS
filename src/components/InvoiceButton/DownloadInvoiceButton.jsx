@@ -12,7 +12,7 @@ export default function DownloadInvoiceButton({ invoiceId }) {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/invoice/${invoiceId}/pdf`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${invoiceId}/pdf`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -44,7 +44,7 @@ export default function DownloadInvoiceButton({ invoiceId }) {
 
   const handlePreview = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/invoice/${invoiceId}/pdf`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${invoiceId}/pdf`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

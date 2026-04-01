@@ -54,7 +54,7 @@ export default function ClientDashboard() {
 
     try {
       // retrieve session type info for product data
-      const sessionResponse = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
+      const sessionResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -94,7 +94,7 @@ export default function ClientDashboard() {
       }
 
       // create checkout session in backend
-      const checkoutSession = await fetch("http://localhost:5001/api/checkout/rest", {
+      const checkoutSession = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/rest`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -162,7 +162,7 @@ export default function ClientDashboard() {
 
           // ensure checkout session belongs to user
           if (user.id === client_id) {
-            const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
               method: "GET",
               headers: {
                 "Authorization": `Bearer ${session?.access_token}`,
