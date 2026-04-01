@@ -26,7 +26,7 @@ export function AuthProvider({ children }) {
 
       // if logged in, try to load the row from "User" and user's role name
       if (session?.user?.id && !ignore) {
-        const response = await fetch(`http://localhost:5001/api/profile/${session.user.id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${session.user.id}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });
@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
       } else {
         // reload profile when session changes
         (async () => {
-          const response = await fetch(`http://localhost:5001/api/profile/${newSession.user.id}`, {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${newSession.user.id}`, {
             method: "GET",
             headers: { "Content-Type": "application/json" },
           });

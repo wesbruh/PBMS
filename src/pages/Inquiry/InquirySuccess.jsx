@@ -44,7 +44,7 @@ export default function InquirySuccess() {
 
     const loadParameters = async () => {
       try {
-        const response = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" }
         });

@@ -80,7 +80,7 @@ export default function Login() {
 
     // we are logged in – update the User table
     if (user?.id) {
-      const response = await fetch(`http://localhost:5001/api/profile/${user.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${user.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

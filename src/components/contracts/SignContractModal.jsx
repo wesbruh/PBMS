@@ -26,7 +26,7 @@ export default function SignContractModal({ open, onClose, contract, contractTem
 
       // 2) Upload to Supabase Storage
       const filePath = `signatures/${contract.id}-${crypto.randomUUID()}.png`;
-      const signResponse = await fetch(`http://localhost:5001/api/contract/${contract.id}/sign`, {
+      const signResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contract.id}/sign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ file_path: filePath, data_url: dataUrl })
@@ -43,7 +43,7 @@ export default function SignContractModal({ open, onClose, contract, contractTem
       const signedUrl = data.publicUrl;
 
       // 4) Mark contract as signed
-      const contractResponse = await fetch(`http://localhost:5001/api/contract/${contract.id}`, {
+      const contractResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contract.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ signed_at: new Date().toISOString(), status: "Signed", signed_pdf_url: signedUrl })

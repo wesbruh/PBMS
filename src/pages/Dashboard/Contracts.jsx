@@ -17,9 +17,9 @@ export default function ContractsPage() {
 
       setLoading(true);
 
-      const response = await fetch(`http://localhost:5001/api/contract/${user.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${user.id}`, {
         method: "GET",
-        headers: { "Content-Tyoe": "application/json" }
+        headers: { "Content-Type": "application/json" }
       })
 
       if (!response.ok) {

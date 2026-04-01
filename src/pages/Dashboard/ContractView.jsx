@@ -21,7 +21,7 @@ export default function ContractView() {
     }
 
     async function fetchContract() {
-      const response = await fetch(`http://localhost:5001/api/contract/${contractId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contractId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: user.id })
@@ -45,7 +45,7 @@ export default function ContractView() {
     }
 
     async function fetchContractTemplate() {
-      const response = await fetch(`https://localhost:5001/api/contract/templates/${contract.template_id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/templates/${contract.template_id}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" }
       });

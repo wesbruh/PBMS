@@ -6,8 +6,8 @@ dotenv.config();
 
 
 const supabase = createClient(
-  process.env.URL,
-  process.env.SERVICE_ROLE_KEY
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
 async function uploadGallery (req, res) {

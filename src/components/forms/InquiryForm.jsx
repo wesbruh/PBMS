@@ -140,7 +140,7 @@ export default function InquiryForm() {
     const loadContracts = async () => {
       try {
         const response = await fetch(
-          "http://localhost:5001/api/contract/templates",
+          `${import.meta.env.VITE_API_URL}/api/contract/templates`,
           {
             method: "GET",
             headers: { "Content-Type": "application/json" },
@@ -165,14 +165,14 @@ export default function InquiryForm() {
       if (!user || loadingParams) return;
       try {
         if (sessionId && checkoutSessionId) {
-          const response = await fetch("http://localhost:5001/api/contract", {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user_id: user.id, session_id: sessionId }),
           });
           setContract(await response.json());
         } else {
-          const response = await fetch("http://localhost:5001/api/contract", {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ user_id: user.id }),
@@ -191,7 +191,7 @@ export default function InquiryForm() {
   const updateContractTemplate = async (templateId) => {
     try {
       const response = await fetch(
-        `http://localhost:5001/api/contract/${contract?.id}`,
+        `${import.meta.env.VITE_API_URL}/api/contract/${contract?.id}`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -534,7 +534,7 @@ export default function InquiryForm() {
 
       // create Stripe checkout session
       const response = await fetch(
-        "http://localhost:5001/api/checkout/deposit",
+        "${import.meta.env.VITE_API_URL}/api/checkout/deposit",
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

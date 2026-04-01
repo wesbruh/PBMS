@@ -2,7 +2,7 @@ export default function DownloadInvoiceButton({ invoiceId }) {
   const handleDownload = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/api/invoice/${invoiceId}/pdf`,
+        `${import.meta.env.VITE_API_URL}/api/invoice/${invoiceId}/pdf`,
         {
           method: "GET",
           credentials: "include",
@@ -33,7 +33,7 @@ export default function DownloadInvoiceButton({ invoiceId }) {
   const handlePreview = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/api/invoice/${invoiceId}/pdf`,
+        `${import.meta.env.VITE_API_URL}/api/invoice/${invoiceId}/pdf`,
         {
           method: "GET",
           credentials: "include",
