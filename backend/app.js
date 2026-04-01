@@ -41,7 +41,9 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
 
   app.use(
     cors({
-      origin: ["http://localhost:5173"],
+      origin: ["http://localhost:5173",
+        "https://pbms-evij.onrender.com"
+      ],
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
       credentials: true,
     })
