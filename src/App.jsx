@@ -30,6 +30,7 @@ import Sessions from './admin/pages/Sessions/Sessions.jsx';
 import Availability from './admin/pages/Availability/Availability.jsx';
 import Contacts from './admin/pages/Contacts/Contacts.jsx';
 import ContactView from './admin/pages/Contacts/ContactView.jsx';
+import AdminContractView from './admin/pages/Contacts/AdminContractView.jsx';
 import Galleries from './admin/pages/Galleries/Galleries.jsx';
 import Notifications from './admin/pages/Notifications/Notifications.jsx';
 import Payments from './admin/pages/Payments/Payments.jsx';
@@ -107,6 +108,8 @@ function AppContent() {
               <Route path="availability" element={<Availability />} />
               <Route path="contacts" element={<Contacts />} />
               <Route path="contacts/:id" element={<ContactView />} />
+              <Route path ="contracts/:contractId" element={<AdminContractView />} />
+              
               <Route path="galleries" element={<Galleries />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="payments" element={<Payments />} />
