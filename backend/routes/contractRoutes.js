@@ -37,7 +37,7 @@ router.get("/templates/:id", async (req, res) => {
     const { data, error } = await supabase
       .from("ContractTemplate")
       .select("id, name, body")
-      .eq(template_id)
+      .eq("id",template_id)
       .eq("active", true)
       .maybeSingle();
 
@@ -90,7 +90,33 @@ router.post("", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+//admin contract view - get contract by contract id
+router.get("/admin/contracts/:id", async (req, res) => {
+  const { id } = req.params;
 
+  try {
+    const { data, error } = await supabase
+      .from("Contract")
+      .select(`
+        id,
+        template_id,
+        status,
+        created_at,
+        updated_at,
+        signed_at,
+        signed_pdf_url
+      `)
+      .eq("id", id)
+      .single();
+
+    if (error) throw error;
+
+    res.status(200).json(data);
+  } catch (error) {
+    console.error("Error fetching admin contract:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 // fetch all contracts for specified user
 router.get("/:user_id", async (req, res) => {
   const { user_id } = req.params;
