@@ -129,7 +129,7 @@ Deno.serve(async (req: Request) => {
     </html>
      `;
     const { data, error } = await resend.emails.send({
-      from: "Your Roots Photography <noreply@yourrootsphotography.space>",
+      from: "Your Roots Photography <info@yourrootsphotography.space>",
       to: email,
       subject: "Your Photos Are Ready!",
       html,
@@ -142,7 +142,7 @@ Deno.serve(async (req: Request) => {
     // log successful email send to user_email_log table
     await supabase.from("user_email_log").insert({
       email_address: email,
-      email_type: "gallery_upload",
+      email_type: "user_gallery_upload_email",
       status: "Sent",
       sent_at: new Date().toISOString(),
       error_message: null,
