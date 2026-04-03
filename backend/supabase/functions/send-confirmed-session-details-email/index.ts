@@ -14,12 +14,16 @@ Deno.serve(async (req: Request) => {
     let email = "";
     try {
         const body = await req.json();
-        const { name, sessionDate, sessionTime, location, sessionType, status, notes} = body;
+        console.log("body:", JSON.stringify(body));
+        const { name, sessionDate, newSessionTime, newLocation, oldSessionTime, oldLocation, sessionType, status, notes, URL} = body;
         
         email = body.email ?? "";
 
         // validate required fields
         const missingFields: string[] = [];
+        if (!URL) {
+            missingFields.push("URL");
+        }
        if(!email) {
         missingFields.push("email");
        }
@@ -29,11 +33,11 @@ Deno.serve(async (req: Request) => {
        if(!sessionDate) {
         missingFields.push("sessionDate");
        }
-       if(!sessionTime) {
-        missingFields.push("sessionTime");
+       if(!newSessionTime) {
+        missingFields.push("oldSessionTime");
        }
-       if(!location) {
-        missingFields.push("location");
+       if(!newLocation) {
+        missingFields.push("oldLocation");
        }
        if(!sessionType) {
         missingFields.push("sessionType");
@@ -44,6 +48,42 @@ Deno.serve(async (req: Request) => {
             {status: 400, headers: {"Content-Type": "application/json" }}
         );
        }
+       
+       // only render changed rows in the email summary table. if old and new values are the same, render one row with "No Change"
+       const timeChanged = oldSessionTime && oldSessionTime !== newSessionTime;
+       const locationChanged = oldLocation && oldLocation !== newLocation;
+
+       const timeRow = timeChanged ? `
+            <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="font-size: 12px; color: #dc2626; text-transform: uppercase; letter-spacing: 1px;">Time - Updated</span><br/>
+            <span style="font-size: 13px; color: #9ca3af; text-decoration: line-through; margin-top: 4px; display: block;">${oldSessionTime}</span>
+            <span style="font-size: 15px; color: #2c2c2c; margin-top: 2px; display: block;">${newSessionTime}</span>
+            </td>
+            </tr>` : `
+            <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Time</span><br/>
+            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${newSessionTime}</span>
+            </td>
+            </tr>
+            `;
+
+            const locationRow = locationChanged ? `
+            <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="font-size: 12px; color: #dc2626; text-transform: uppercase; letter-spacing: 1px;">Location - Updated</span><br/>
+            <span style="font-size: 13px; color: #9ca3af; text-decoration: line-through; margin-top: 4px; display: block;">${oldLocation || "Not provided"}</span>
+            <span style="font-size: 15px; color: #2c2c2c; margin-top: 2px; display: block;">${newLocation}</span>
+            </td>
+            </tr>` : `
+            <tr>
+            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
+            <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Location</span><br/>
+            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${newLocation || "Not provided"}</span>
+            </td>
+            </tr>
+            `;
 
             const html = `
             <!DOCTYPE html>
@@ -71,7 +111,7 @@ Deno.serve(async (req: Request) => {
             Your Roots Photography
             </p>
             <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: normal; letter-spacing: 1px;">
-            Booking Request Received!
+            Your Session is Confirmed!
             </h1>
             </td>
             </tr>
@@ -81,9 +121,8 @@ Deno.serve(async (req: Request) => {
             Hi <strong><span style="color: #2c2c2c; text-decoration: none;">${name}</span></strong>,
             </p>
             <p style="margin: 0 0 24px 0; font-size: 15px; color: #4a4a4a; line-height: 1.7;">
-            Thank you for submitting your session booking request with Your Roots Photography.
-            Here is a summary of your request. Bailey will be in touch shortly to confirm session details! You will not be charged until Bailey confirms your session details and your session is officially booked. 
-            Once confirmed, you'll receive a follow-up email with remaining payment details and final session information.
+            Great News! Bailey has confirmed your session request with Your Roots Photography. Below are your session details. If you requested any changes beforehand, they will be highlighted in red. It is understood that you and Bailey have agreed upon any changes before confirming your session.
+            If you have any questions or need to make further adjustments, please don't hesitate to reach out!
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #e5e7eb;">
             <tr>
@@ -94,22 +133,12 @@ Deno.serve(async (req: Request) => {
             </tr>
             <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
-            <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Location</span><br/>
-            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${location ?? "Not Provided"}</span>
-            </td>
-            </tr>
-            <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
             <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Date</span><br/>
             <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${sessionDate}</span>
             </td>
             </tr>
-            <tr>
-            <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
-            <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Time</span><br/>
-            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${sessionTime}</span>
-            </td>
-            </tr>
+            ${timeRow}
+            ${locationRow}
             <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
             <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Special Requests / Notes</span><br/>
@@ -119,8 +148,14 @@ Deno.serve(async (req: Request) => {
             <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
             <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Status</span><br/>
-            <div style="display: inline-block; margin-top: 6px; background-color: #f9f6f2; border-left: 3px solid #c8a97e; 
-            padding: 8px 14px; font-size: 14px; color: #4a4a4a; font-style: italic;">${status ?? "Pending Admin Approval"}
+            <div style="display: inline-block; margin-top: 6px; background-color: #f0fdf4; border-left: 3px solid #16a34a; 
+            padding: 8px 14px;
+            font-size: 14px;
+            color: #16a34a;
+            font-style: italic;
+            ">
+            ${status ?? "Confirmed"}
+            
             </div>
             </td>
             </tr>
@@ -128,10 +163,30 @@ Deno.serve(async (req: Request) => {
             <p style="text-align: center; margin-top: 24px; font-size: 14px; color: #446780; text-transform: uppercase; letter-spacing: 2px;">
             What Happens Next
             </p>
-            <p style="margin-bottom: 1px; font-size: 14px; color: #4a4a4a; line-height: 1.8;">
-            Bailey will review your request and reach out within 2-4 business days to confirm your session details.
-            <strong>Reminder:Your deposit will not be charged until Bailey confirms your session details.</strong>
+            <p style="margin-bottom: 1px; font-size: 14px; color: #4a4a4a; line-height: 1.8; text-align: center;">
+            Bailey will prepare for your session and ensure everything is set for the scheduled date. You are expected to attend the session as scheduled. <br> <strong>Any further requests or changes must be communicated to Bailey at least 24 hours in advance.</strong>
             </p>
+            <p style="margin-bottom: 1px; font-size: 14px; color: #4a4a4a; line-height: 1.8; text-align: center;">
+            Please log in to your client portal to complete your remaining payment. <br>
+            <strong>If you are paying in cash, please bring the remaining amount with you to the session.</strong>
+            </p>
+            <div style="text-align: center; margin: 32px;">
+            <a href="${URL}" style="
+            display: inline-block;
+            background-color: #446780;
+            color: #ffffff;
+            text-decoration: none;
+            padding: 14px 36px;
+            border-radius: 4px;
+            font-size: 14px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            font-family: Georgia, serif;
+            mso-padding-alt: 0;
+            ">
+            Log In To My Client Portal
+            </a>
+            </div>
             </td>
             </tr>
             <tr>
@@ -151,18 +206,20 @@ Deno.serve(async (req: Request) => {
             </body>
             </html>
             `;
+            console.log("Sending email to:", email);
             const { data, error } = await resend.emails.send({
                 from: "Your Roots Photography <info@yourrootsphotography.space>",
                 to: email,
-                subject: "Booking Request Received! - Your Roots Photography",
+                subject: "Your Session is Confirmed! - Your Roots Photography",
                 html,
             });
+            console.log("Resend response:", JSON.stringify({ data, error }));
 
             // now logs FAILED emails sent to client in the user_email_log table
             if (error) {
             await supabase.from("user_email_log").insert({
                 email_address: email,
-                email_type: "user_booking_request_received_email",
+                email_type: "user_confirmed_session_details_email",
                 status: "Failed",
                 sent_at: new Date().toISOString(),
                 error_message: JSON.stringify(error),
@@ -173,7 +230,7 @@ Deno.serve(async (req: Request) => {
             // log SUCCESSFUL email send to the user_email_log table
             await supabase.from("user_email_log").insert({
                 email_address: email, 
-                email_type: "user_booking_request_received_email",
+                email_type: "user_confirmed_session_details_email",
                 status: "Sent",
                 sent_at: new Date().toISOString(),
                 error_message: null,
@@ -183,10 +240,11 @@ Deno.serve(async (req: Request) => {
 
     } catch (err) {
         // now logs unexpected failure if we have an email address to log against
+        console.error("Caught error:", err instanceof Error ? err.message : String(err));
         if(email) {
             await supabase.from("user_email_log").insert({
                 email_address: email,
-                email_type: "admin_new_booking_request",
+                email_type: "user_confirmed_session_details_email",
                 status: "Failed",
                 sent_at: new Date().toISOString(),
                 error_message: err instanceof Error ? err.message : "Unknown Error",
