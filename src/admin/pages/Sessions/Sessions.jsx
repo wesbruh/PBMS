@@ -4,6 +4,8 @@ import { supabase } from "../../../lib/supabaseClient.js"
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
+import SessionDetailsModal from "../../components/shared/SessionDetailsModal";
+import { X, LoaderCircle } from "lucide-react";
 
 // constants for invoice generation logic
 const DEPOSIT_PERCENTAGE = 0.05;
@@ -11,6 +13,7 @@ const DEPOSIT_PERCENTAGE = 0.05;
 function Sessions() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSessionId, setSelectedSessionId] = useState(null);
 
   useEffect(() => {
     fetchSessions();
@@ -20,7 +23,13 @@ function Sessions() {
     try {
       const response = await fetch("http://localhost:5001/api/sessions");
       const data = await response.json();
-      setSessions(data);
+      // added client_name and session_type fields to the session data for easier table rendering and searching
+      const flattened = data.map((row) => ({
+        ...row,
+        client_name: `${row.User?.first_name || ''} ${row.User?.last_name || ''}`.trim(),
+        session_type: row.SessionType?.name || 'N/A',
+      }));
+      setSessions(flattened);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching sessions:", error);
@@ -209,18 +218,36 @@ function Sessions() {
 
   const tableSessionColumns = [
     {
+      key: 'details',
+      label: 'Details',
+      render: (_, row) => {
+        return (
+          <button
+          type="button"
+          onClick={() => setSelectedSessionId(row.id)}
+          className="hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded-md text-sm font-semibold border"
+          >
+            View
+          </button>
+        )
+      }
+    },
+    {
       key: 'client_name',
       label: 'Client',
+      sortable: true,
       render: (_, row) => `${row.User?.first_name || ''} ${row.User?.last_name || ''}`
     },
     {
       key: 'session_type',
       label: 'Type',
+      sortable: true,
       render: (_, row) => row.SessionType?.name || 'N/A'
     },
     {
       key: 'location_text',
       label: 'Location',
+      sortable: false,
       render: (val, row) => (
         <input
           className="border rounded px-2 py-1 w-full text-sm"
@@ -232,10 +259,11 @@ function Sessions() {
     {
       key: 'start_at',
       label: 'Start Time',
+      sortable: true,
       render: (val, row) => (
         <input
           type="datetime-local"
-          className="border rounded px-1 text-sm"
+          className="border rounded px-2 py-1 w-full text-sm"
           value={val ? getLocalFormattedDate(val) : ""}
           onChange={(e) => handleUpdate(row.id, 'start_at', e.target.value)}
         />
@@ -244,10 +272,11 @@ function Sessions() {
     {
       key: 'end_at',
       label: 'End Time',
+      sortable: false,
       render: (val) => (
         <input
           type="datetime-local"
-          className="border rounded px-1 text-sm"
+          className="border rounded px-2 py-1 w-full text-sm"
           value={val ? getLocalFormattedDate(val) : ""}
           readOnly={true}
         />
@@ -256,8 +285,9 @@ function Sessions() {
     {
       key: 'status',
       label: 'Status',
+      sortable: true,
       render: (val) => (
-        <p className={`px-2 py-1 rounded-md text-sm font-semibold border text-center ${getStatusStyle(val)}`}>
+        <p className={`px-2 py-1 rounded text-sm font-semibold border text-center ${getStatusStyle(val)}`}>
           {val}
         </p>
       )
@@ -265,13 +295,14 @@ function Sessions() {
     {
       key: 'actions',
       label: 'Actions',
+      sortable: false,
       render: (value, row) => (
         (row.status === "Pending" ? (
           <div className="min-w-60 grid grid-cols-2 gap-5">
             <button
               type={"button"}
               onClick={() => { confirmSession(row.id, row.deposit_cs_id) }}
-              className={`w-full min-w-30 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border`}
+              className={`w-full min-w-30 hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded text-sm font-semibold border`}
             >
               Confirm
             </button>
@@ -288,7 +319,7 @@ function Sessions() {
             <button
               type="button"
               onClick={() => { downloadInvoicePdf(row.id) }}
-              className="w-full min-w-30 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border"
+              className="w-full min-w-30 hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded text-sm font-semibold border"
             >
               Download
             </button>
@@ -308,6 +339,7 @@ function Sessions() {
   ];
 
   return (
+    <>
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
       <div className="flex w-1/5 min-w-50 overflow-y-auto">
         <Sidebar />
@@ -318,18 +350,22 @@ function Sessions() {
           <div className="flex w-full shadow-inner rounded-lg overflow-y-scroll">
             <div className="flex flex-col bg-white p-6 w-full h-full">
               <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Admin Sessions</h1>
-                <p className="text-gray-500">Live-sync management of client bookings.</p>
+                <h1 className="text-3xl font-bold text-gray-900">Photography Sessions</h1>
+                <p className="text-gray-500">Manage client booking requests, view session details, and/or update session information.</p>
               </div>
 
-              <div className="grow">
+              <div className="grow flex flex-col">
                 {loading ? (
-                  <div className="animate-pulse flex space-x-4">Loading...</div>
+                  <div className="grow flex flex-col justify-center items-center text-gray-500">
+                    <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
+                    <p className="text-md">Loading Sessions...</p>
+                  </div>
                 ) : (
                   <Table
                     columns={tableSessionColumns}
                     data={sessions}
                     searchable={true}
+                    searchPlaceholder={"Search Sessions by keyword..."}
                     rowsPerPage={6}
                   />
                 )}
@@ -339,6 +375,13 @@ function Sessions() {
         </Frame>
       </div>
     </div>
+    {selectedSessionId && (
+      <SessionDetailsModal
+        sessionId={selectedSessionId}
+        onClose={() => setSelectedSessionId(null)}
+      />
+    )}
+  </>
   );
 }
 

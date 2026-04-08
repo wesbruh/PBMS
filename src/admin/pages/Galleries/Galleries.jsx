@@ -3,9 +3,8 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import UploadGalleryModal from "./UploadGalleryModal.jsx";
-import { Upload, FolderCheck } from "lucide-react";
+import { Upload, FolderCheck, LoaderCircle } from "lucide-react";
 import { supabase } from "../../../lib/supabaseClient.js";
-
 
 function AdminGalleries() {
   const [galleries, setGalleries] = useState([]);
@@ -63,7 +62,8 @@ function AdminGalleries() {
       const mapped = (data || []).map((s) => {
         const clientFirst = s?.User?.first_name ?? "";
         const clientLast = s?.User?.last_name ?? "";
-        const clientName = `${clientFirst} ${clientLast}`.trim() || "Unknown Client";
+        const clientName =
+          `${clientFirst} ${clientLast}`.trim() || "Unknown Client";
 
         const start = s.start_at ? new Date(s.start_at) : null;
 
@@ -73,10 +73,13 @@ function AdminGalleries() {
           : "—";
 
         // if a Gallery row exisit then consider it to be uploaded already
-        const hasGallery = Array.isArray(s.Gallery) ? s.Gallery.length > 0 : !!s.Gallery;
+        const hasGallery = Array.isArray(s.Gallery)
+          ? s.Gallery.length > 0
+          : !!s.Gallery;
         const galleryRow = Array.isArray(s.Gallery) ? s.Gallery[0] : s.Gallery;
 
-        const uploadDate = galleryRow?.published_at || galleryRow?.created_at || null;
+        const uploadDate =
+          galleryRow?.published_at || galleryRow?.created_at || null;
 
         return {
           id: s.id,
@@ -116,11 +119,11 @@ function AdminGalleries() {
       prev.map((row) =>
         row.id === selectedSession.id
           ? {
-            ...row,
-            status: "Gallery Uploaded",
-            uploadDate: new Date().toISOString(),
-            photoCount: uploadData.photoCount,
-          }
+              ...row,
+              status: "Gallery Uploaded",
+              uploadDate: new Date().toISOString(),
+              photoCount: uploadData.photoCount,
+            }
           : row,
       ),
     );
@@ -134,33 +137,38 @@ function AdminGalleries() {
   };
 
   const tableGalleryColumns = [
-    { key: 'clientName', label: 'Client', sortable: true },
-    { key: 'type', label: 'Type', sortable: false },
-    { key: 'date', label: 'Date', sortable: true },
-    { key: 'time', label: 'Time', sortable: false },
-    { key: 'location', label: 'Location', sortable: false },
+    { key: "clientName", label: "Client", sortable: true },
+    { key: "type", label: "Type", sortable: false },
+    { key: "date", label: "Date", sortable: true },
+    { key: "time", label: "Time", sortable: false },
+    { key: "location", label: "Location", sortable: false },
     // Session Status is sortable and has custom rendering for different statuses
     {
-      key: 'status', label: 'Status', sortable: true,
+      key: "status",
+      label: "Status",
+      sortable: true,
       render: (value) => (
         <span
-          className={`px-3 py-1 rounded-md text-sm font-medium ${value === 'Awaiting Gallery'
-            ? 'bg-orange-100 text-orange-800'
-            : value === 'Gallery Uploaded'
-              ? 'bg-green-100 text-green-800'
-              : 'bg-gray-100 text-gray-800'
-            }`}
+          className={`px-3 py-1 rounded-md text-sm font-medium ${
+            value === "Awaiting Gallery"
+              ? "bg-orange-100 text-orange-800"
+              : value === "Gallery Uploaded"
+                ? "bg-green-100 text-green-800"
+                : "bg-gray-100 text-gray-800"
+          }`}
         >
           {value}
         </span>
-      )
+      ),
     },
     // actions column with custom rendering for upload/view buttons based on session status
     {
-      key: 'actions', label: 'Actions', sortable: false,
+      key: "actions",
+      label: "Actions",
+      sortable: false,
       render: (_, row) => (
         <div className="flex gap-2 items-center">
-          {row.status === 'Awaiting Gallery' ? (
+          {row.status === "Awaiting Gallery" ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -175,7 +183,7 @@ function AdminGalleries() {
           ) : (
             <div className="flex flex-col gap-1">
               <button
-                // button now does nothing, just for styling. keeping 'view gallery' logic if needed later 
+                // button now does nothing, just for styling. keeping 'view gallery' logic if needed later
                 // onClick={(e) => {
                 //   e.stopPropagation();
                 //   // Navigate to view gallery
@@ -185,13 +193,14 @@ function AdminGalleries() {
                 title="View uploaded gallery"
               >
                 <FolderCheck size={16} />
-                Notified on {new Date(row.uploadDate || Date.now()).toLocaleDateString()}
+                Notified on{" "}
+                {new Date(row.uploadDate || Date.now()).toLocaleDateString()}
               </button>
             </div>
           )}
         </div>
-      )
-    }
+      ),
+    },
   ];
 
   // OVERALL ADMIN PAGE
@@ -207,23 +216,35 @@ function AdminGalleries() {
           <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-scroll">
             <div className="mb-6 ">
               {/* Page Header */}
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Galleries</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Galleries
+              </h1>
               <p className="text-gray-600">
                 View, upload, and manage all photography galleries.
               </p>
             </div>
-            {/* loading/error UI */}
-            {loading && <p className="text-sm text-gray-500 mb-2">Loading…</p>}
-            {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
-            {/* Table Container */}
-            <div>
-              <Table
-                columns={tableGalleryColumns}
-                data={galleries}
-                searchable={true}
-                searchPlaceholder={"Search Galleries by Client Name..."}
-                rowsPerPage={5}
-              />
+
+            {/* body: loading/error/table UI */}
+            <div className="grow flex flex-col">
+              {loading ? (
+                <div className="grow flex flex-col text-center items-center justify-center text-gray-500">
+                  <LoaderCircle className="text-brown animate-spin" size={32} />
+                  <p className="text-md">Loading galleries...</p>
+                </div>
+              ) : error ? (
+                <div className="grow flex flex-col text-center items-center justify-cente">
+                  <p className="text-sm text-red-600 mb-2">{error}</p>
+                </div>
+              ) : (
+                // {/* Table Container */}
+                <Table
+                  columns={tableGalleryColumns}
+                  data={galleries}
+                  searchable={true}
+                  searchPlaceholder={"Search Galleries by Client Name..."}
+                  rowsPerPage={5}
+                />
+              )}
             </div>
           </div>
         </Frame>

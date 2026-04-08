@@ -1,11 +1,13 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
+import { Plus, LoaderCircle } from "lucide-react";
 
 export default function QuestionnairesList() {
-  const [items,   setItems]   = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   async function loadTemplates() {
     setError("");
@@ -13,7 +15,9 @@ export default function QuestionnairesList() {
     try {
       const { data, error: fetchErr } = await supabase
         .from("QuestionnaireTemplate")
-        .select("id, name, active, session_type_id, SessionType:session_type_id(name), schema_json")
+        .select(
+          "id, name, active, session_type_id, SessionType:session_type_id(name), schema_json",
+        )
         .order("session_type_id", { ascending: true });
 
       if (fetchErr) throw fetchErr;
@@ -30,7 +34,12 @@ export default function QuestionnairesList() {
   }, []);
 
   async function handleDelete(templateId) {
-    if (!window.confirm("Delete this template? Existing submitted questionnaires will keep their data but lose the template link.")) return;
+    if (
+      !window.confirm(
+        "Delete this template? Existing submitted questionnaires will keep their data but lose the template link.",
+      )
+    )
+      return;
 
     try {
       // Step 1: Null out template_id on any questionnaire rows referencing this template.
@@ -58,34 +67,43 @@ export default function QuestionnairesList() {
   }
 
   return (
-    <div className="w-full overflow-y-scroll">
+    <div className="w-full h-full flex flex-col px-2">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Questionnaire Templates</h1>
           <p className="mt-1 text-sm text-gray-500">
-            One active template per session type. Publishing a new one deactivates the previous.
+            One active template per session type. Publishing a new one
+            deactivates the previous.
           </p>
         </div>
-        <Link
-          to="/admin/forms/questionnaires/new"
-          className="px-4 py-2 rounded bg-black text-white text-sm"
+        <button
+          onClick={() => navigate("/admin/forms/questionnaires/new")}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm hover:bg-gray-700 cursor-pointer"
         >
-          + Create Template
-        </Link>
+          <Plus size={15} />
+          Create Template
+        </button>
       </div>
 
-      <div className="mt-6">
-        {loading && <p className="text-sm">Loading...</p>}
-        {error   && <p className="text-sm text-red-600">{error}</p>}
-
-        {!loading && !error && items.length === 0 && (
-          <p className="text-sm text-gray-600">
-            No templates yet. Create one to get started.
-          </p>
-        )}
-
-        {!loading && !error && items.length > 0 && (
+      {/* body */}
+      <div className="mt-6 grow flex flex-col">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center grow text-gray-500">
+            <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
+            <p className="text-sm">Loading templates...</p>
+          </div>
+        ) : error ? (
+          <div className="grow flex flex-col text-center items-center justify-center">
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="grow flex flex-col items-center justify-center">
+            <p className="text-sm text-gray-600">
+              No templates yet. Create one to get started.
+            </p>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm border">
               <thead className="bg-gray-50">
@@ -105,8 +123,12 @@ export default function QuestionnairesList() {
                       {t.SessionType?.name ?? "—"}
                     </td>
                     <td className="p-3 text-gray-500">
-                      {Array.isArray(t.schema_json) ? t.schema_json.length : 0}
-                      {" "}question{Array.isArray(t.schema_json) && t.schema_json.length === 1 ? "" : "s"}
+                      {Array.isArray(t.schema_json) ? t.schema_json.length : 0}{" "}
+                      question
+                      {Array.isArray(t.schema_json) &&
+                      t.schema_json.length === 1
+                        ? ""
+                        : "s"}
                     </td>
                     <td className="p-3">
                       {t.active ? (
@@ -121,15 +143,17 @@ export default function QuestionnairesList() {
                     </td>
                     <td className="p-3">
                       <div className="flex items-center gap-3">
-                        <Link
-                          to={`/admin/forms/questionnaires/${t.id}/edit`}
-                          className="underline text-blue-600"
+                        <button
+                          onClick={() =>
+                            navigate(`/admin/forms/questionnaires/${t.id}/edit`)
+                          }
+                          className="underline text-blue-600 cursor-pointer"
                         >
                           Edit
-                        </Link>
+                        </button>
                         <button
                           onClick={() => handleDelete(t.id)}
-                          className="underline text-red-500"
+                          className="underline text-red-500 cursor-pointer"
                         >
                           Delete
                         </button>
