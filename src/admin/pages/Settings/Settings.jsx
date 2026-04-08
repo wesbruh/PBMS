@@ -12,6 +12,7 @@ import {
   MAX_PHOTO_BYTES,
   SETTINGS_BUCKET,
 } from "./settings.utils";
+import { LoaderCircle } from "lucide-react";
 
 function AdminSettings() {
   const { user, profile } = useAuth();
@@ -447,8 +448,11 @@ function AdminSettings() {
         </div>
         <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
           <Frame>
-            <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll">
-              <div className="p-2 text-gray-600">Loading your settings...</div>
+            <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll justify-center">
+              <div className="flex flex-col text-xl text-center items-center text-gray-600">
+                Loading your settings...
+                <LoaderCircle className="text-brown animate-spin" size={32} />
+              </div>
             </div>
           </Frame>
         </div>
@@ -488,7 +492,7 @@ function AdminSettings() {
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile</h2>
 
               <div className="grid md:grid-cols-[140px_1fr] gap-4 items-start">
-                <div className="w-[120px] h-[120px] rounded-full border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center text-gray-500 text-sm">
+                <div className="w-30 h-30 rounded-full border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center text-gray-500 text-sm">
                   {activePhoto ? (
                     <img
                       src={activePhoto}
