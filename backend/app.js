@@ -42,8 +42,7 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
   app.use(
     cors({
       origin: ["http://localhost:5173",
-        "https://yourrootsphotography.space",
-        "https://pbmsbackend.onrender.com"
+        "https://www.yourrootsphotography.space",
       ],
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
       credentials: true,
