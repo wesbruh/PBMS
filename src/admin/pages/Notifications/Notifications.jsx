@@ -11,7 +11,11 @@ function Notifications() {
   const [error, setError] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [filterTab, setFilterTab] = useState("All");
-  const [audienceTab, setAudienceTab] = useState(null);
+
+  // Reset unread count when admin visits this page
+  useEffect(() => {
+    localStorage.setItem("admin_unread_count", "0");
+  }, []);
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -128,15 +132,7 @@ function Notifications() {
     return () => supabase.removeChannel(channel);
   }, []);
 
-  const isClientNotification = (n) => {
-    const text = ((n.subject || "") + " " + (n.message || "")).toLowerCase();
-    return /\byour\b|\bhi\b/.test(text);
-  };
-
   const filteredNotifications = notifications.filter((n) => {
-    if (audienceTab === "Client Notifications" && !isClientNotification(n)) return false;
-    if (audienceTab === "Admin Notifications" && isClientNotification(n)) return false;
-
     if (filterTab === "All") return true;
     const subject = (n.subject || "").toLowerCase();
     if (filterTab === "Sessions") return subject.includes("gallery");
@@ -253,25 +249,6 @@ function Notifications() {
 
               {/* Error state */}
               {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
-
-              {/* Audience Filter */}
-              {!loading && !error && (
-                <div className="flex justify-center gap-2 mb-3">
-                  {["Client Notifications", "Admin Notifications"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setAudienceTab(audienceTab === tab ? null : tab)}
-                      className={`px-5 py-2 rounded-full text-sm font-medium border transition-colors ${
-                        audienceTab === tab
-                          ? "bg-gray-900 text-white border-gray-900"
-                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-              )}
 
               {/* Filter Tabs */}
               {!loading && !error && (

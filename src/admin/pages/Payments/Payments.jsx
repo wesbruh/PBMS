@@ -2,6 +2,7 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import { supabase } from "../../../lib/supabaseClient";
+import { triggerAdminToast } from "../../../components/AdminNotificationToast.jsx";
 import { useState, useEffect } from "react";
 
 
@@ -30,7 +31,9 @@ function AdminPayments() {
           Invoice(
             invoice_number,
             Session (
-              User (
+              id,
+              client_id,
+              User:client_id (
                 first_name,
                 last_name
               )
@@ -51,6 +54,47 @@ function AdminPayments() {
 
   const handleGenerateInvoice = async (sessionId) => {
     console.log("Generate invoice for session:", sessionId);
+  };
+
+  const handleMarkAsPaid = async (row) => {
+    const { error: updateError } = await supabase
+      .from("Invoice")
+      .update({ status: "Paid", paid_at: new Date().toISOString() })
+      .eq("id", row.id);
+
+    if (updateError) {
+      console.error("[Payments] Error marking as paid:", updateError);
+      return;
+    }
+
+    const sessionId = row.Invoice?.Session?.id;
+    const clientId = row.Invoice?.Session?.client_id;
+    const firstName = row.Invoice?.Session?.User?.first_name || "";
+    const lastName = row.Invoice?.Session?.User?.last_name || "";
+    const clientName = `${firstName} ${lastName}`.trim() || "Client";
+
+    if (clientId && sessionId) {
+      const { error: notifError } = await supabase.from("Notification").insert({
+        id: crypto.randomUUID(),
+        user_id: clientId,
+        session_id: sessionId,
+        channel: "email",
+        subject: "Payment Received",
+        body: `${clientName}'s payment has been received and marked as paid`,
+        status: "sent",
+        sent_at: new Date().toISOString(),
+      });
+      if (notifError) {
+        console.error("[Payments] Notification insert failed:", notifError);
+      } else {
+        console.log("[Payments] Notification inserted for user_id:", clientId);
+        triggerAdminToast();
+      }
+    } else {
+      console.warn("[Payments] Skipping notification — missing clientId or sessionId:", { clientId, sessionId });
+    }
+
+    fetchInvoices();
   };
 
   const today = new Date();
@@ -129,18 +173,27 @@ function AdminPayments() {
     },
 
 
-    {/*Generate Invoice Button*/
+    {/*Generate Invoice / Mark as Paid Button*/
       key: "actions",
       label: "Action",
       render: (_, row) => {
-        if (row.status != "Paid") return null;
+        if (row.status === "Paid") {
+          return (
+            <button
+              onClick={() => handleGenerateInvoice(row.id)}
+              className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
+            >
+              Generate Invoice
+            </button>
+          );
+        }
 
         return (
           <button
-            onClick={() => handleGenerateInvoice(row.id)}
-            className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
+            onClick={() => handleMarkAsPaid(row)}
+            className="px-3 py-1 rounded-md text-sm font-medium bg-green-100 text-green-800 hover:bg-green-200 transition"
           >
-            Generate Invoice
+            Mark as Paid
           </button>
         );
       }

@@ -46,6 +46,8 @@ import PackageEditor     from './admin/pages/Offerings/PackageEditor.jsx';
 function App() {
   return (
     <BrowserRouter>
+      {/* Mounted once at the router root — never unmounts during navigation */}
+      <AdminNotificationToast />
       <AppContent />
     </BrowserRouter>
   );
@@ -55,7 +57,6 @@ function AppContent() {
   return (
     <div className='min-h-screen flex flex-col'>
       <IdleLogout />
-      <AdminNotificationToast />
 
       <Navbar />
 
