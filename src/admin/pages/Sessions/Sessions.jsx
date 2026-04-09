@@ -126,10 +126,35 @@ function Sessions() {
   };
 
   const confirmSession = (sessionId, checkoutSessionId) => {
+    
     capturePaymentIntent(checkoutSessionId);
     generateInvoice(sessionId);
     handleUpdate(sessionId, "status", "Confirmed");
   };
+const handleCancel = async (sessionId) => {
+  const confirmCancel = window.confirm("Are you sure you want to cancel this session?");
+  if (!confirmCancel) return;
+
+  try {
+    const res = await fetch(`http://localhost:5001/api/sessions/${sessionId}/cancel`, {
+      method: "PATCH",
+    });
+
+    if (!res.ok) throw new Error("Failed to cancel session");
+
+    
+    setSessions((prev) =>
+      prev.map((s) =>
+        s.id === sessionId ? { ...s, status: "Cancelled" } : s
+      )
+    );
+
+  } catch (err) {
+    console.error(err);
+    alert("Error cancelling session");
+  }
+};
+  
 
   const handleUpdate = async (sessionId, field, value) => {
     let payload = {}
@@ -243,25 +268,39 @@ function Sessions() {
       key: 'actions',
       label: 'Actions',
       render: (value, row) => (
-        (row.status === "Pending" && row.deposit_cs_id) ?
+        (row.status === "Pending" ? (
+          <div className="flex gap-3 justify-center">
+            {row.deposit_cs_id && (
           <button
             type={"button"}
-            onClick={() => { confirmSession(row.id, row.deposit_cs_id) }}
+            onClick={() => { confirmSession(row.id, row.deposit_cs_id)}}
             className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border`}
           >
             Confirm
-          </button> :
-          (row.status === "Confirmed") ?
+          </button> 
+          )}
+          <button
+          type="button"
+          onClick={() => handleCancel(row.id)}
+          className="px-3 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+          >
+            Cancel
+            </button>
+          
+          </div>
+        ) : row.status === "Confirmed" ? (
             <button
               type={"button"}
               onClick={() => { downloadInvoicePdf(row.id) }}
               className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border`}
             >
               Download
-            </button> :
+            </button> 
+            ) : (
             <div></div>
+       )
       )
-    }
+    )}
   ];
 
   return (
