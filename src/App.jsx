@@ -38,10 +38,10 @@ import Settings from './admin/pages/Settings/Settings.jsx';
 import QuestionnairesList from './admin/pages/Forms/Questionnaires/QuestionnairesList';
 import QuestionnaireEditor from './admin/pages/Forms/Questionnaires/QuestionnairesEditor';
 
-// Offerings — session types & packages management (distinct from booked Sessions above)
+// Offerings — categories & session types management
+// Note: PackageEditor removed — Package table replaced by SessionType with category column
 import OfferingsPage     from './admin/pages/Offerings/OfferingsPage.jsx';
 import SessionTypeEditor from './admin/pages/Offerings/SessionTypeEditor.jsx';
-import PackageEditor     from './admin/pages/Offerings/PackageEditor.jsx';
 
 function App() {
   return (
@@ -92,16 +92,18 @@ function AppContent() {
             <Route path="admin" element={<AdminRoute><Outlet /></AdminRoute>}>
               <Route index element={<AdminHome />} />
 
-              {/* Booked sessions management (existing) */}
+              {/* Booked sessions (existing Sessions.jsx — unchanged) */}
               <Route path="sessions" element={<Sessions />} />
 
-              {/* Offerings — session types & packages Bailey White offers */}
+              {/* Offerings — categories & session types Bailey White offers */}
               <Route path="offerings" element={<Outlet />}>
                 <Route index element={<OfferingsPage />} />
-                <Route path="new" element={<SessionTypeEditor mode="create" />} />
+                {/* Create a brand-new category (is_master=true automatically) */}
+                <Route path="new" element={<SessionTypeEditor mode="create" isMasterDefault={true} />} />
+                {/* Edit any session type (master or child) */}
                 <Route path=":id/edit" element={<SessionTypeEditor mode="edit" />} />
-                <Route path=":sessionId/packages/new" element={<PackageEditor mode="create" />} />
-                <Route path=":sessionId/packages/:pkgId/edit" element={<PackageEditor mode="edit" />} />
+                {/* Add a child session type under an existing category */}
+                <Route path=":categoryName/session-types/new" element={<SessionTypeEditor mode="create" isMasterDefault={false} />} />
               </Route>
 
               <Route path="availability" element={<Availability />} />
