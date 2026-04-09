@@ -13,10 +13,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient.js";
-import { Plus, Pencil, Trash2, ChevronDown, ChevronUp, Star } from "lucide-react";
+import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
+import SessionTypeCard from "../../../components/SessionTypeCard/SessionTypeCard.jsx";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = "session-images";
@@ -98,6 +99,11 @@ export default function OfferingsPage() {
     }
   }
 
+  // ── Edit handler ──────────────────────────────────────────────────────────
+  function handleEdit(st) {
+    navigate(`/admin/offerings/${st.id}/edit`);
+  }
+
   function toggleExpand(category) {
     setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }));
   }
@@ -142,147 +148,134 @@ export default function OfferingsPage() {
             )}
 
             {/* Category groups */}
-            <div className="space-y-6">
+            <div className="space-y-8">
               {grouped.map(({ category, master, children }) => {
                 const isExpanded = !!expandedCategories[category];
                 const imageUrl   = getImageUrl(master?.image_path);
 
                 return (
-                  <div key={category} className="border border-neutral-200 rounded-2xl overflow-hidden bg-white shadow-sm">
+                  <div key={category} className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
 
-                    {/* ── Master / category row ─────────────────────────── */}
-                    <div className="flex items-center gap-4 p-4">
-                      {/* Thumbnail */}
-                      <div className="shrink-0 w-20 h-20 rounded-xl overflow-hidden bg-neutral-100">
-                        {imageUrl
-                          ? <img src={imageUrl} alt={category} className="w-full h-full object-cover" />
-                          : <div className="w-full h-full flex items-center justify-center text-neutral-300 text-xs">No image</div>
-                        }
+                    {/* ── Category Header ────────────────────────────────── */}
+                    <div className="flex items-center gap-4 p-5 bg-gradient-to-r from-neutral-50 to-white border-b border-neutral-100">
+                      {/* Category thumbnail */}
+                      <div className="shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-neutral-100 shadow-sm">
+                        {imageUrl ? (
+                          <img src={imageUrl} alt={category} className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-neutral-300 text-xs">
+                            No image
+                          </div>
+                        )}
                       </div>
 
-                      {/* Info */}
+                      {/* Category info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-serif text-lg text-neutral-900">{category}</p>
-                          <span className="flex items-center gap-1 text-[10px] text-[#AB8C4B] font-mono uppercase bg-[#AB8C4B]/10 px-1.5 py-0.5 rounded">
-                            <Star size={9} /> category
+                        <div className="flex items-center gap-2 mb-1">
+                          <h2 className="font-serif text-xl text-neutral-900">{category}</h2>
+                          <span className="px-2 py-0.5 rounded-full bg-[#AB8C4B]/10 text-[9px] text-[#AB8C4B] font-mono uppercase tracking-wide">
+                            Category
                           </span>
                           {master && !master.active && (
-                            <span className="text-[10px] text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded">inactive</span>
+                            <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-[10px] text-neutral-400 uppercase">
+                              Inactive
+                            </span>
                           )}
                         </div>
-                        {master?.description && (
-                          <p className="mt-0.5 text-xs text-neutral-500 truncate">{master.description}</p>
-                        )}
-                        <div className="flex items-center gap-3 mt-1">
-                          {(master?.price_label || master?.base_price) && (
-                            <p className="text-xs text-[#7E4C3C] font-semibold">
-                              {master.price_label || `From $${Number(master.base_price).toLocaleString()}`}
-                            </p>
-                          )}
-                          <p className="text-xs text-neutral-400">
-                            {children.length === 0
-                              ? "Standalone (no sub-types)"
-                              : `${children.length} session type${children.length > 1 ? "s" : ""}`}
-                          </p>
-                        </div>
+                        <p className="text-xs text-neutral-500">
+                          {children.length === 0
+                            ? "Standalone category (no packages)"
+                            : `${children.length + 1} package${children.length > 0 ? "s" : ""} available`}
+                        </p>
                       </div>
 
-                      {/* Actions */}
+                      {/* Category actions */}
                       <div className="flex items-center gap-2 shrink-0">
-                        {/* Add child session type */}
                         <button
                           onClick={() => navigate(`/admin/offerings/${encodeURIComponent(category)}/session-types/new`)}
-                          className="flex items-center gap-1 px-2 py-1.5 rounded-lg border border-dashed border-neutral-300 text-xs text-neutral-400 hover:border-[#AB8C4B]/50 hover:text-[#AB8C4B] transition"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-[#AB8C4B]/30 bg-[#AB8C4B]/5 text-xs text-[#AB8C4B] hover:border-[#AB8C4B]/50 hover:bg-[#AB8C4B]/10 transition font-medium"
                           title="Add session type under this category"
                         >
-                          <Plus size={11} /> Add session type
+                          <Plus size={13} /> Add Package
                         </button>
-                        {master && (
-                          <button
-                            onClick={() => navigate(`/admin/offerings/${master.id}/edit`)}
-                            className="p-1.5 rounded-lg border hover:bg-neutral-50"
-                            title="Edit category"
-                          >
-                            <Pencil size={13} className="text-neutral-500" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(master?.id, true, category)}
-                          className="p-1.5 rounded-lg border hover:bg-red-50"
-                          title="Delete category and all its session types"
-                        >
-                          <Trash2 size={13} className="text-red-400" />
-                        </button>
-                        {/* Expand/collapse children */}
+                        
                         {children.length > 0 && (
                           <button
                             onClick={() => toggleExpand(category)}
-                            className="p-1.5 rounded-lg border hover:bg-neutral-50"
-                            title={isExpanded ? "Collapse" : "Show session types"}
+                            className="p-2 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition"
+                            title={isExpanded ? "Collapse packages" : "Show packages"}
                           >
-                            {isExpanded
-                              ? <ChevronUp size={13} className="text-neutral-500" />
-                              : <ChevronDown size={13} className="text-neutral-500" />
-                            }
+                            {isExpanded ? (
+                              <ChevronUp size={16} className="text-neutral-500" />
+                            ) : (
+                              <ChevronDown size={16} className="text-neutral-500" />
+                            )}
                           </button>
                         )}
                       </div>
                     </div>
 
-                    {/* ── Child session types (expanded) ────────────────── */}
-                    {isExpanded && children.length > 0 && (
-                      <div className="border-t border-neutral-100 bg-neutral-50/60 divide-y divide-neutral-100">
-                        {children
-                          .slice()
-                          .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-                          .map((child) => {
-                            const childImg = getImageUrl(child.image_path);
-                            return (
-                              <div key={child.id} className="flex items-center gap-3 px-4 py-3">
-                                {/* Thumbnail */}
-                                <div className="shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-neutral-100">
-                                  {childImg
-                                    ? <img src={childImg} alt={child.name} className="w-full h-full object-cover" />
-                                    : <div className="w-full h-full flex items-center justify-center text-neutral-300 text-[9px]">No img</div>
-                                  }
-                                </div>
+                    {/* ── Package Grid ──────────────────────────────────── */}
+                    {isExpanded && (
+                      <div className="p-6 bg-[#FAF7F2]">
+                        <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-4">
+                          Available packages in {category}
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {/* Master card */}
+                          {master && (
+                            <SessionTypeCard
+                              st={master}
+                              isSelected={false}
+                              showEditControls={true}
+                              onEdit={handleEdit}
+                              onDelete={(st) => handleDelete(st.id, true, category)}
+                              variant="grid"
+                            />
+                          )}
 
-                                {/* Info */}
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-neutral-800">{child.name}</p>
-                                  <div className="flex items-center gap-2 mt-0.5">
-                                    {(child.price_label || child.base_price) && (
-                                      <p className="text-[11px] text-[#7E4C3C]">
-                                        {child.price_label || `From $${Number(child.base_price).toLocaleString()}`}
-                                      </p>
-                                    )}
-                                    {!child.active && (
-                                      <span className="text-[10px] text-neutral-400 bg-neutral-100 px-1.5 py-0.5 rounded">inactive</span>
-                                    )}
-                                  </div>
-                                </div>
+                          {/* Child session types */}
+                          {children
+                            .slice()
+                            .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+                            .map((child) => (
+                              <SessionTypeCard
+                                key={child.id}
+                                st={child}
+                                isSelected={false}
+                                showEditControls={true}
+                                onEdit={handleEdit}
+                                onDelete={(st) => handleDelete(st.id, false, category)}
+                                variant="grid"
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    )}
 
-                                {/* Actions */}
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <button
-                                    onClick={() => navigate(`/admin/offerings/${child.id}/edit`)}
-                                    className="p-1.5 rounded-lg border hover:bg-neutral-50"
-                                    title="Edit"
-                                  >
-                                    <Pencil size={12} className="text-neutral-500" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleDelete(child.id, false, category)}
-                                    className="p-1.5 rounded-lg border hover:bg-red-50"
-                                    title="Delete"
-                                  >
-                                    <Trash2 size={12} className="text-red-400" />
-                                  </button>
-                                </div>
-                              </div>
-                            );
-                          })}
+                    {/* ── Collapsed view (master only as preview) ───────── */}
+                    {!isExpanded && master && (
+                      <div className="p-5 border-t border-neutral-100">
+                        <div className="max-w-md">
+                          <SessionTypeCard
+                            st={master}
+                            isSelected={false}
+                            showEditControls={true}
+                            onEdit={handleEdit}
+                            onDelete={(st) => handleDelete(st.id, true, category)}
+                            variant="list"
+                          />
+                        </div>
+                        {children.length > 0 && (
+                          <button
+                            onClick={() => toggleExpand(category)}
+                            className="mt-3 text-xs text-[#AB8C4B] hover:text-[#7E4C3C] font-medium flex items-center gap-1"
+                          >
+                            View all {children.length + 1} packages
+                            <ChevronDown size={12} />
+                          </button>
+                        )}
                       </div>
                     )}
                   </div>

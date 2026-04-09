@@ -11,6 +11,7 @@ import { useAuth } from "../../context/AuthContext";
 import ContractDetail from "../../pages/Dashboard/ContractDetail";
 import DynamicQuestionnaire from "./DynamicQuestionnaire";
 import TimeSlotGrid from "../TimeSlotGrid/TimeSlotGrid";
+import SessionTypeCard from "../SessionTypeCard/SessionTypeCard";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET       = "session-images";
@@ -563,104 +564,91 @@ export default function InquiryForm() {
           <p className="mt-3 text-xs text-neutral-400">Loading sessions…</p>
         ) : (
           <>
-  {/* ── Step 1: Category picture cards ─────────────────────────── */}
-<div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-  {masters.map((master) => {
-    const isSelected = selectedCategory?.id === master.id;
-    const imageUrl = getImageUrl(master.image_path);
+            {/* ── Step 1: Category picture cards ─────────────────────────── */}
+            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {masters.map((master) => {
+                const isSelected = selectedCategory?.id === master.id;
+                const imageUrl = getImageUrl(master.image_path);
 
-    return (
-      <label
-        key={master.id}
-        className={`group cursor-pointer rounded-xl border overflow-hidden bg-white shadow-sm transition-all
-          ${isSelected
-            ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20 shadow-md"
-            : "border-black/10 hover:border-black/20 hover:shadow-md"
-          }
-          ${!submitLock ? "pointer-events-none opacity-60" : ""}
-        `}
-      >
-        <input 
-          type="radio" 
-          name="categoryRadio" 
-          value={master.id}
-          checked={isSelected} 
-          // Use onChange only; clicking the label will trigger this automatically
-          onChange={() => handleSelectCategory(master)}
-          disabled={!submitLock} 
-          className="sr-only" 
-        />
+                return (
+                  <label
+                    key={master.id}
+                    className={`group cursor-pointer rounded-xl border overflow-hidden bg-white shadow-sm transition-all
+                      ${isSelected
+                        ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20 shadow-md"
+                        : "border-black/10 hover:border-black/20 hover:shadow-md"
+                      }
+                      ${!submitLock ? "pointer-events-none opacity-60" : ""}
+                    `}
+                  >
+                    <input 
+                      type="radio" 
+                      name="categoryRadio" 
+                      value={master.id}
+                      checked={isSelected} 
+                      onChange={() => handleSelectCategory(master)}
+                      disabled={!submitLock} 
+                      className="sr-only" 
+                    />
 
-        {/* Picture */}
-        <div className="h-28 w-full bg-neutral-100 overflow-hidden">
-          {imageUrl ? (
-            <img src={imageUrl} alt={master.category}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-              onError={(e) => { e.currentTarget.style.display = "none"; }} />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center bg-neutral-50">
-              <span className="text-neutral-300 text-xs">No image</span>
-            </div>
-          )}
-        </div>
-
-        {/* Label — category name */}
-        <div className="flex items-center gap-2 px-3 py-2.5">
-          {/* Custom Radio Visual */}
-          <span className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 transition
-            ${isSelected ? "border-[#7E4C3C]" : "border-black/30"}`}>
-            {isSelected && <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />}
-          </span>
-          <span className="font-serif text-sm text-neutral-800">{master.category}</span>
-        </div>
-      </label>
-    );
-  })}
-</div>          
-
-            {/* ── Step 2: Expanded detail after category selected ────────── */}
-            {selectedCategory && (
-              <div className="mt-4 rounded-xl border border-[#7E4C3C]/20 bg-[#FAF7F2] p-4 space-y-4">
-
-                {/* ── Master / standalone card (always shown) ─────────────── */}
-                <SessionTypeDetailCard
-                  st={selectedCategory}
-                  isSelected={selectedSessionType?.id === selectedCategory.id}
-                  onSelect={() => handleSelectSessionType(selectedCategory)}
-                  submitLock={submitLock}
-                  isOnlyOption={categoryChildren.length === 0}
-                />
-
-                {/* ── Child session types under this category ─────────────── */}
-                {categoryChildren.length > 0 && (
-                  <>
-                    <p className="text-[10px] uppercase tracking-widest text-neutral-400 pt-1">
-                      Other packages in {selectedCategory.category}
-                    </p>
-                    <div className="space-y-3">
-                      {categoryChildren.map((child) => {
-                        const isSelected = selectedSessionType?.id === child.id;
-                        const isGreyed   = !!selectedSessionType &&
-                          selectedSessionType.id !== child.id &&
-                          selectedSessionType.id !== selectedCategory.id;
-                        return (
-                          <div
-                            key={child.id}
-                            onClick={() => handleSelectSessionType(child)}
-                            className={`transition-opacity ${isGreyed ? "opacity-40" : "opacity-100"}`}
-                          >
-                            <SessionTypeDetailCard
-                              st={child}
-                              isSelected={isSelected}
-                              onSelect={() => handleSelectSessionType(child)}
-                              submitLock={submitLock}
-                            />
-                          </div>
-                        );
-                      })}
+                    {/* Picture */}
+                    <div className="h-28 w-full bg-neutral-100 overflow-hidden">
+                      {imageUrl ? (
+                        <img src={imageUrl} alt={master.category}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                          onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                      ) : (
+                        <div className="h-full w-full flex items-center justify-center bg-neutral-50">
+                          <span className="text-neutral-300 text-xs">No image</span>
+                        </div>
+                      )}
                     </div>
-                  </>
-                )}
+
+                    {/* Label — category name */}
+                    <div className="flex items-center gap-2 px-3 py-2.5">
+                      {/* Custom Radio Visual */}
+                      <span className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 transition
+                        ${isSelected ? "border-[#7E4C3C]" : "border-black/30"}`}>
+                        {isSelected && <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />}
+                      </span>
+                      <span className="font-serif text-sm text-neutral-800">{master.category}</span>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>          
+
+            {/* ── Step 2: Expanded detail with grid cards ────────────────── */}
+            {selectedCategory && (
+              <div className="mt-6 rounded-xl border border-[#7E4C3C]/20 bg-[#FAF7F2] p-6 space-y-6">
+                <p className="text-[10px] uppercase tracking-widest text-neutral-400">
+                  Available packages in {selectedCategory.category}
+                </p>
+
+                {/* Grid of session type cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Master card (always shown first) */}
+                  <SessionTypeCard
+                    st={selectedCategory}
+                    isSelected={selectedSessionType?.id === selectedCategory.id}
+                    onSelect={() => handleSelectSessionType(selectedCategory)}
+                    disabled={!submitLock}
+                    isOnlyOption={categoryChildren.length === 0}
+                    variant="grid"
+                  />
+
+                  {/* Child session types */}
+                  {categoryChildren.map((child) => (
+                    <SessionTypeCard
+                      key={child.id}
+                      st={child}
+                      isSelected={selectedSessionType?.id === child.id}
+                      onSelect={() => handleSelectSessionType(child)}
+                      disabled={!submitLock}
+                      variant="grid"
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </>
@@ -802,66 +790,5 @@ export default function InquiryForm() {
       </div>
 
     </form>
-  );
-}
-
-// ── Reusable detail card (shown in expanded panel) ────────────────────────────
-// Used for both the master card and child session types
-function SessionTypeDetailCard({ st, isSelected, onSelect, submitLock, isOnlyOption = false }) {
-  const imageUrl = getImageUrl(st.image_path);
-
-  return (
-    <div
-      onClick={isOnlyOption ? undefined : onSelect}
-      className={`flex gap-3 rounded-xl border p-3 bg-white transition-all
-        ${isOnlyOption
-          ? "border-[#7E4C3C]/30 cursor-default"
-          : isSelected
-            ? "border-[#7E4C3C] ring-1 ring-[#7E4C3C]/20 shadow-sm cursor-pointer"
-            : `border-neutral-200 hover:border-[#7E4C3C]/40 cursor-pointer ${submitLock ? "" : "pointer-events-none"}`
-        }
-      `}
-    >
-      {/* Image */}
-      {imageUrl && (
-        <div className="shrink-0 w-20 h-20 rounded-lg overflow-hidden bg-neutral-100">
-          <img src={imageUrl} alt={st.name} className="w-full h-full object-cover" />
-        </div>
-      )}
-
-      {/* Info */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="font-serif text-sm font-medium text-neutral-900">
-              {st.name}
-              {st.is_master && !isOnlyOption && (
-                <span className="ml-2 text-[9px] text-[#AB8C4B] font-mono uppercase">standard</span>
-              )}
-            </p>
-            {(st.price_label || st.base_price) && (
-              <p className="text-xs text-[#7E4C3C] font-semibold mt-0.5">
-                {st.price_label || `From $${Number(st.base_price).toLocaleString()}`}
-              </p>
-            )}
-          </div>
-          {!isOnlyOption && isSelected && (
-            <span className="text-[#7E4C3C] text-xs shrink-0 mt-0.5">✓</span>
-          )}
-        </div>
-
-        {st.description && (
-          <p className="mt-1 text-[11px] text-neutral-500 leading-relaxed">{st.description}</p>
-        )}
-
-        {Array.isArray(st.bullet_points) && st.bullet_points.length > 0 && (
-          <ul className="mt-1.5 space-y-0.5 text-[11px] text-neutral-500 list-disc list-inside">
-            {st.bullet_points.map((pt, i) => (
-              <li key={i}>{pt}</li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
   );
 }
