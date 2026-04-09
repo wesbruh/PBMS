@@ -11,6 +11,7 @@ import contactRoutes from "./routes/contactRoutes.js"
 import invoiceRoutes from "./pdf/invoice.js";
 import receiptRoutes from "./pdf/receipt.js";
 import galleryRoutes from "./routes/galleryRoutes.js";
+import sessionRoutes from "./routes/sessionRoutes.js";
 
 const app = createApp({ supabaseClient: supabase, stripeClient: stripe });
 
@@ -21,6 +22,7 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/invoice", invoiceRoutes);
 app.use("/api/receipts", receiptRoutes);
 app.use("/api/gallery", galleryRoutes);
+app.use("/api/sessions", sessionRoutes);
 
 const PORT = process.env.PORT || 5001;
 
