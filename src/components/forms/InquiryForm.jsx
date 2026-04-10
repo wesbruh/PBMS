@@ -12,6 +12,9 @@ import ContractDetail from "../../pages/Dashboard/ContractDetail";
 import DynamicQuestionnaire from "./DynamicQuestionnaire";
 import TimeSlotGrid from "../TimeSlotGrid/TimeSlotGrid";
 
+// constant for invoice generation logic
+const DEPOSIT_PERCENTAGE = 0.05;
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = "session-images";
 
@@ -23,12 +26,13 @@ function getImageUrl(path) {
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
+// check minDate for actual value -- 7 days ahead
 const isPastMinDate = (value) => {
   if (!value) return false;
   const minDate = new Date();
-  minDate.setDate(inputDate.minDate() + 7);
+  minDate.setDate(minDate.getDate() + 7);
   minDate.setHours(0, 0, 0, 0);
-  
+
   const inputDate = new Date(value);
   inputDate.setHours(0, 0, 0, 0);
 
@@ -53,7 +57,7 @@ const Schema = z.object({
 
 export default function InquiryForm() {
   const navigate = useNavigate();
-  const { profile: user } = useAuth();
+  const { profile } = useAuth();
 
   const [searchParams] = useSearchParams();
   const [sessionId, setSessionId] = useState(null);
@@ -65,18 +69,16 @@ export default function InquiryForm() {
   const [submitLock, setSubmitLock] = useState(true);
   const [loading, setLoading] = useState(true);
 
-  // ── Session types + packages from DB ─────────────────────────────────────
-  // sessionTypes: SessionType row + packages array attached
+  // ── Session types from DB ─────────────────────────────────────
+  // sessionTypes: SessionType row
   const [sessionTypes, setSessionTypes] = useState([]);
   const [sessionTypeLoading, setSessionTypeLoading] = useState(false);
   const [sessionTypesLoading, setSessionTypesLoading] = useState(true);
 
   // Selected session type row (full object)
   const [selectedSessionType, setSelectedSessionType] = useState(null);
-  // Selected package id within that session type (null = base session, no package)
-  const [selectedPackageId, setSelectedPackageId] = useState(null);
 
-  // Duration for TimeSlotGrid — comes from selected package or base session
+  // Duration for TimeSlotGrid — comes from selected session type
   const [durationMinutes, setDurationMinutes] = useState(null);
 
   // Questionnaire
@@ -85,14 +87,33 @@ export default function InquiryForm() {
   const [qALoading, setQALoading] = useState(false);
   const [qLoading, setQLoading] = useState(false);
 
-  // ── Load search params ────────────────────────────────────────────────────
+  // ── Load params ────────────────────────────────────────────────────
   useEffect(() => {
-    setSessionId(searchParams.get("session_id") || null);
-    setCheckoutSessionId(searchParams.get("checkout_session_id") || null);
-    setLoadingParams(false);
+    const loadingParams = async () => {
+      const csId = searchParams.get("checkout_session_id") || null;
+
+      if (csId) {
+        const { data: paymentData, error } = await supabase
+          .from("Payment")
+          .select("Invoice(Session(id))")
+          .eq("provider_payment_id", csId)
+          .single();
+
+        if (error) throw error;
+
+        const sessionData = paymentData.Invoice.Session;
+
+        setCheckoutSessionId(csId);
+        setSessionId(sessionData.id);
+      }
+      
+      setLoadingParams(false);
+    }
+
+    loadingParams();
   }, []);
 
-  // ── Load active session types + their packages ────────────────────────────
+  // ── Load active session types ────────────────────────────
   useEffect(() => {
     async function loadSessionTypes() {
       setSessionTypesLoading(true);
@@ -106,26 +127,7 @@ export default function InquiryForm() {
 
         if (tErr) throw tErr;
 
-        const { data: packages, error: pErr } = await supabase
-          .from("Package")
-          .select("*")
-          .order("display_order", { ascending: true });
-
-        if (pErr) throw pErr;
-
-        // Group packages onto their session type
-        const pkgMap = {};
-        (packages ?? []).forEach((pkg) => {
-          if (!pkgMap[pkg.session_type_id]) pkgMap[pkg.session_type_id] = [];
-          pkgMap[pkg.session_type_id].push(pkg);
-        });
-
-        const enriched = (types ?? []).map((st) => ({
-          ...st,
-          packages: pkgMap[st.id] ?? [],
-        }));
-
-        setSessionTypes(enriched);
+        setSessionTypes(types);
       } catch (err) {
         console.error("Failed to load session types:", err);
       } finally {
@@ -139,13 +141,11 @@ export default function InquiryForm() {
   useEffect(() => {
     const loadContracts = async () => {
       try {
-        const response = await fetch(
-          "http://localhost:5001/api/contract/templates",
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
-          },
-        );
+        const response = await fetch("http://localhost:5001/api/contract/templates", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+
         const data = await response.json();
         const map = {};
         data.forEach((t) => {
@@ -156,26 +156,28 @@ export default function InquiryForm() {
         console.error("Failed to load contract templates:", err);
       }
     };
+
     loadContracts();
   }, []);
 
   // ── Load / create default contract ───────────────────────────────────────
   useEffect(() => {
     const getDefaultContract = async () => {
-      if (!user || loadingParams) return;
+      if (!profile || loadingParams) return;
+
       try {
         if (sessionId && checkoutSessionId) {
           const response = await fetch("http://localhost:5001/api/contract", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: user.id, session_id: sessionId }),
+            body: JSON.stringify({ user_id: profile.id, session_id: sessionId })
           });
           setContract(await response.json());
         } else {
           const response = await fetch("http://localhost:5001/api/contract", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ user_id: user.id }),
+            body: JSON.stringify({ user_id: profile.id })
           });
           setContract(await response.json());
         }
@@ -186,7 +188,7 @@ export default function InquiryForm() {
       }
     };
     getDefaultContract();
-  }, [user, loadingParams]);
+  }, [profile, loadingParams]);
 
   const updateContractTemplate = async (templateId) => {
     try {
@@ -204,7 +206,7 @@ export default function InquiryForm() {
     }
   };
 
-  // calculate minDate -- 7 days ahead
+  // calculate minDate for calendar -- 7 days ahead
   const minDate = useMemo(() => {
     const minDateObj = new Date();
     minDateObj.setDate(minDateObj.getDate() + 7);
@@ -256,29 +258,6 @@ export default function InquiryForm() {
       setValue("startTime", "", { shouldValidate: false });
       trigger(["sessionTypeId"]);
     }
-  }
-
-  // ── When package is (re-)selected within a session type ───────────────────
-  function handleSelectPackage(pkgId) {
-    // If already selected → deselect back to base session
-    if (pkgId === selectedPackageId) {
-      setSelectedPackageId(null);
-      setDurationMinutes(selectedSessionType?.default_duration_minutes ?? 60);
-      setValue("startTime", "", { shouldValidate: false });
-      return;
-    }
-
-    setSelectedPackageId(pkgId);
-    const pkg = (selectedSessionType?.packages ?? []).find(
-      (p) => p.id === pkgId,
-    );
-    const dur =
-      pkg?.duration_minutes ??
-      selectedSessionType?.default_duration_minutes ??
-      60;
-    setDurationMinutes(dur);
-    // Reset time when package changes (duration may differ)
-    setValue("startTime", "", { shouldValidate: false });
   }
 
   // ── TimeSlotGrid callback ─────────────────────────────────────────────────
@@ -336,19 +315,44 @@ export default function InquiryForm() {
   // ── Prefill form (from auth + Stripe return) ──────────────────────────────
   useEffect(() => {
     const prefillForm = async () => {
-      if (!user || loadingParams || sessionTypesLoading) return;
+      if (!profile || loadingParams || sessionTypesLoading) return;
 
       if (sessionId && checkoutSessionId) {
         // Returning from Stripe — load existing session from DB
         try {
-          const { data: sessionData, error: sessionError } = await supabase
-            .from("Session")
-            .select("session_type_id, start_at, location_text, notes")
-            .eq("id", sessionId)
-            .eq("is_active", false)
+          const { data: paymentData, error } = await supabase
+            .from("Payment")
+            .select("provider_payment_id, Invoice(Session(id, session_type_id, start_at, location_text, notes, client_id, is_active))")
+            .eq("provider_payment_id", checkoutSessionId)
             .single();
 
-          if (sessionError) throw new Error("Session not found");
+          if (error) throw new Error("Payment entry not found");
+
+          const sessionData = paymentData.Invoice.Session;
+
+          if (!sessionData || sessionData.is_active === true) throw new Error("No inactive session not found");
+          else if (sessionData.client_id !== profile.id) throw new Error("Session does not belong to this user");
+
+          // work with checkout session and payment intent to check for payment authorization
+          const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+          const csData = await csResponse.json();
+          const { status: csStatus, payment_intent: piData } = csData;
+          const { status: piStatus } = piData;
+
+          // if session has been authorized
+          if (csStatus === "complete" && piStatus === "requires_capture") {
+            // update payment table
+            const { error: paymentError } = await supabase
+              .from("Payment")
+              .update({ status: "Authorized" })
+              .eq("provider_payment_id", checkoutSessionId)
+              .single();
+
+            if (paymentError) throw paymentError;
+          }
 
           // Match the session type from loaded list
           const matchedST = sessionTypes.find(
@@ -395,10 +399,10 @@ export default function InquiryForm() {
             /* no questionnaire saved yet */
           }
 
-          setValue("firstName", user?.first_name?.trim());
-          setValue("lastName", user?.last_name?.trim());
-          setValue("email", user.email);
-          setValue("phone", user.phone);
+          setValue("firstName", profile?.first_name?.trim());
+          setValue("lastName", profile?.last_name?.trim());
+          setValue("email", profile.email);
+          setValue("phone", profile.phone);
           setValue("date", datePart, {
             shouldValidate: true,
             shouldDirty: false,
@@ -429,20 +433,20 @@ export default function InquiryForm() {
         }
       } else {
         // Fresh form — prefill from profile
-        const first = user?.first_name?.trim() || "";
-        const last = user?.last_name?.trim() || "";
+        const first = profile?.first_name?.trim() || "";
+        const last = profile?.last_name?.trim() || "";
 
         if (first) setValue("firstName", first);
         if (last) setValue("lastName", last);
 
-        if (user.email) setValue("email", user.email);
-        if (user.phone) setValue("phone", user.phone);
+        if (profile.email) setValue("email", profile.email);
+        if (profile.phone) setValue("phone", profile.phone);
 
         await trigger(["firstName", "lastName", "email", "phone"]);
       }
     };
     prefillForm();
-  }, [user, loadingParams, sessionTypesLoading]);
+  }, [profile, loadingParams, sessionTypesLoading]);
 
   // ── Payment handler ───────────────────────────────────────────────────────
   const handlePayment = async () => {
@@ -453,7 +457,7 @@ export default function InquiryForm() {
       await supabase
         .from("Session")
         .delete()
-        .eq("client_id", user.id)
+        .eq("client_id", profile.id)
         .eq("is_active", false);
 
       const startAt = new Date(
@@ -461,14 +465,14 @@ export default function InquiryForm() {
       ).toISOString();
       const endAt = new Date(
         new Date(`${getValues("date")}T${getValues("startTime")}`).getTime() +
-          durationMinutes * 60 * 1000,
+        durationMinutes * 60 * 1000,
       ).toISOString();
 
       // Insert session
       const { data: sessionData, error: sessionError } = await supabase
         .from("Session")
         .insert({
-          client_id: user.id,
+          client_id: profile.id,
           session_type_id: getValues("sessionTypeId"),
           start_at: startAt,
           end_at: endAt,
@@ -497,6 +501,7 @@ export default function InquiryForm() {
             session_id: sessionData.id,
             template_id: activeTemplate.id,
             status: "In Progress",
+            created_at: now
           })
           .select("id")
           .single();
@@ -507,7 +512,7 @@ export default function InquiryForm() {
         }
 
         // One row per answer (relational, not blob)
-        const responseRows = await activeTemplate.questions.map((q) => {
+        const responseRows = await Promise.all(activeTemplate.questions.map((q) => {
           const raw = qAnswers[q.tempId];
           const type = (q.type ?? "short_text").toLowerCase().trim();
           const isCheckbox = type === "checkbox";
@@ -520,7 +525,7 @@ export default function InquiryForm() {
                 : []
               : (raw ?? null),
           };
-        });
+        }));
 
         const { error: respError } = await supabase
           .from("QuestionnaireAnswer")
@@ -532,34 +537,73 @@ export default function InquiryForm() {
         }
       }
 
+      console.log();
+
+      // create Invoice related to session
+      const invoiceResponse = await fetch(`http://localhost:5001/api/invoice/generate/${sessionData.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          remaining: selectedSessionType.base_price, // send remaining balance with tax for invoice generation
+        })
+      });
+
+      if (!invoiceResponse.ok) {
+        supabase.from("Session").delete().eq("id", sessionData.id);
+        throw new Error("Failed to generate invoice");
+      }
+
+      const invoiceData = await invoiceResponse.json();
+      const amountDue = selectedSessionType.base_price * DEPOSIT_PERCENTAGE; // calculate amountDue based on base price and DEPOSIT_PERCENTAGE
+
       // create Stripe checkout session
-      const response = await fetch(
-        "http://localhost:5001/api/checkout/deposit",
-        {
+      const stripeResponse = await fetch(
+        "http://localhost:5001/api/checkout/deposit", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            session_id: sessionData.id,
             from_url: window.location.href,
             product_data: {
               name: `${selectedSessionType.name} Deposit`,
               description: selectedSessionType.description,
             },
-            price: selectedSessionType.base_price * 0.05,
+            price: amountDue,
             apply_tax: true,
             tax_rate: 7.25,
           }),
         },
       );
 
-      if (!response.ok)
+      if (!stripeResponse.ok) {
+        supabase.from("Session").delete().eq("id", sessionData.id);
         throw new Error("Stripe connection failed. Please try again.");
+      }
 
-      const checkoutSession = await response.json();
+      const checkoutSession = await stripeResponse.json();
+
+      // create new Payment table entry linked to deposit
+      const { error: paymentError } = await supabase
+        .from("Payment")
+        .insert({
+          invoice_id: invoiceData.id,
+          provider: "Stripe",
+          provider_payment_id: checkoutSession.id,
+          amount: amountDue + (amountDue * 0.0725), // add tax to amount
+          currency: "USD",
+          status: "Pending",
+          type: "Deposit",
+          created_at: new Date().toISOString(),
+        });
+
+      if (paymentError) {
+        supabase.from("Session").delete().eq("id", sessionData.id);
+        throw paymentError;
+      }
+
       window.location.href = checkoutSession.url;
-    } catch (err) {
-      console.error("Payment error:", err);
-      alert(`Payment failed: ${err?.message ?? err}`);
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert(`Payment failed: ${error?.message ?? error}`);
     }
   };
 
@@ -832,96 +876,12 @@ export default function InquiryForm() {
                   </div>
                   {(selectedSessionType.price_label ||
                     selectedSessionType.base_price) && (
-                    <p className="text-sm font-sans text-[#7E4C3C] font-semibold whitespace-nowrap">
-                      {selectedSessionType.price_label ||
-                        `From $${Number(selectedSessionType.base_price).toLocaleString()}`}
-                    </p>
-                  )}
+                      <p className="text-sm font-sans text-[#7E4C3C] font-semibold whitespace-nowrap">
+                        {selectedSessionType.price_label ||
+                          `From $${Number(selectedSessionType.base_price).toLocaleString()}`}
+                      </p>
+                    )}
                 </div>
-
-                {/* Package options if any */}
-                {(selectedSessionType.packages ?? []).length > 0 && (
-                  <div className="mt-4 pt-3 border-t border-[#7E4C3C]/10 space-y-2">
-                    <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-2">
-                      Packages
-                    </p>
-                    {selectedSessionType.packages
-                      .slice()
-                      .sort(
-                        (a, b) =>
-                          (a.display_order ?? 0) - (b.display_order ?? 0),
-                      )
-                      .map((pkg) => {
-                        const pkgSelected = selectedPackageId === pkg.id;
-                        const pkgGreyed = !!selectedPackageId && !pkgSelected;
-                        const pkgImageUrl = getImageUrl(pkg.image_path);
-                        return (
-                          <div
-                            key={pkg.id}
-                            onClick={() => {
-                              if (submitLock) handleSelectPackage(pkg.id);
-                            }}
-                            className={`flex gap-2 rounded-lg border p-2 cursor-pointer transition-all
-                        ${
-                          pkgSelected
-                            ? "border-[#7E4C3C] ring-1 ring-[#7E4C3C]/20 bg-white"
-                            : pkgGreyed
-                              ? "opacity-40 border-neutral-200 bg-white"
-                              : "border-neutral-200 bg-white hover:border-[#7E4C3C]/40"
-                        }
-                        ${!submitLock ? "pointer-events-none" : ""}
-                      `}
-                          >
-                            {pkgImageUrl && (
-                              <div className="shrink-0 w-12 h-12 rounded overflow-hidden bg-neutral-100">
-                                <img
-                                  src={pkgImageUrl}
-                                  alt={pkg.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            )}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium text-neutral-800">
-                                {pkg.name}
-                                {pkg.is_default && (
-                                  <span className="ml-1.5 text-[9px] text-[#AB8C4B] font-mono uppercase">
-                                    standard
-                                  </span>
-                                )}
-                              </p>
-                              <p className="text-[10px] text-[#7E4C3C]">
-                                {pkg.price_label ||
-                                  (pkg.base_price
-                                    ? `From $${Number(pkg.base_price).toLocaleString()}`
-                                    : "")}
-                              </p>
-                              {Array.isArray(pkg.bullet_points) &&
-                                pkg.bullet_points.length > 0 && (
-                                  <ul className="mt-0.5 space-y-0.5 text-[9px] text-neutral-400 list-disc list-inside">
-                                    {pkg.bullet_points
-                                      .slice(0, 3)
-                                      .map((pt, i) => (
-                                        <li key={i}>{pt}</li>
-                                      ))}
-                                    {pkg.bullet_points.length > 3 && (
-                                      <li className="text-neutral-300">
-                                        +{pkg.bullet_points.length - 3} more
-                                      </li>
-                                    )}
-                                  </ul>
-                                )}
-                            </div>
-                            {pkgSelected && (
-                              <span className="text-[#7E4C3C] self-start mt-0.5 shrink-0 text-xs">
-                                ✓
-                              </span>
-                            )}
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
               </div>
             )}
           </>

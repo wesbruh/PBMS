@@ -47,9 +47,7 @@ function Sidebar() {
   const activeLinkStyles = "after:w-1 after:bg-white after:h-full after:rounded";
 
   return (
-    <div className='lg:text-lg md:text-md sm:text-md flex w-full bg-brown rounded-lg'>
-      <div className='w-30 md:w-full'>
-        <nav className='my-auto'>
+        <nav className='my-auto max-w-75 lg:text-lg md:text-md sm:text-md flex w-full bg-brown rounded-lg'>
           <div className='flex flex-col w-full'>
             <div className='flex m-3'>
               <Link to="/admin" className={`${linkStyles} ${isActive('') ? activeLinkStyles : ''}`}><Home size={24} />Home</Link>
@@ -89,8 +87,6 @@ function Sidebar() {
             </div>
           </div>
         </nav>
-      </div>
-    </div>
   );
 }
 

@@ -68,12 +68,13 @@ router.post("", async (req, res) => {
       if (contractError) throw contractError;
       res.status(200).json(contractData);
     } else {
-      // delete all current, inactive user contract entries
+      // delete all current, inactive user contract entries that have no associated session
       await supabase
         .from("Contract")
         .delete()
         .eq("assigned_user_id", user_id)
-        .eq("is_active", false);
+        .eq("is_active", false)
+        .is("session_id", null);
 
       // create new Contract table entry
       const { data: contractData, error: contractError } = await supabase

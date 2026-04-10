@@ -200,7 +200,7 @@ export default function SessionEditor({ mode }) {
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex w-1/5 min-w-50 overflow-y-auto">
+      <div className="flex min-w-50 overflow-y-auto">
         <Sidebar />
       </div>
 
