@@ -65,7 +65,7 @@ export default function SessionTypeCard({
             ? "border-[#7E4C3C]/30 cursor-default"
             : isSelected
               ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20 shadow-md"
-              : `border-black/10 hover:border-[#7E4C3C]/40 hover:shadow-md ${isClickable ? "cursor-pointer" : "cursor-default"}`
+              : `border-black/10 hover:border-[#7E4C3C]/40 hover:shadow-md ${isClickable || showEditControls ? "cursor-pointer" : "cursor-default"}`
           }
           ${disabled ? "pointer-events-none opacity-60" : ""}
         `}
@@ -74,14 +74,20 @@ export default function SessionTypeCard({
         {showEditControls && (
           <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
-              onClick={handleEdit}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(e);
+              }}
               className="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-50 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm transition-colors"
               type="button"
             >
               Edit
             </button>
             <button
-              onClick={handleDelete}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(e);
+              }}
               className="px-2 py-1 rounded-md bg-white/95 hover:bg-red-50 border border-red-200 text-red-600 text-xs font-medium shadow-sm transition-colors"
               type="button"
             >

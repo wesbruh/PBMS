@@ -1,19 +1,15 @@
 // src/admin/pages/Offerings/OfferingsPage.jsx
 //
-// Displays ALL SessionType rows grouped by their `category` column.
-// Within each category group:
-//   - The row with is_master=true is the category representative card
-//   - All other rows in the same category are child session types (e.g. Ivory, Champagne)
-//
-// Admin can:
-//   - Create a new category (creates the master session type)
-//   - Add a child session type under a category
-//   - Edit or delete any session type
+// Admin view that mirrors the user booking experience:
+// Step 1: Show category cards (masters only) in a grid
+// Step 2: When category clicked, expand to show all packages in that category
+// - All packages are clickable to edit
+// - Packages have delete buttons on hover
 
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient.js";
-import { Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -33,8 +29,9 @@ export default function OfferingsPage() {
   const [allSessionTypes, setAllSessionTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState("");
-  // Track which category groups are expanded to show children
-  const [expandedCategories, setExpandedCategories] = useState({});
+  
+  // Track which category is currently selected/expanded
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   // ── Load all session types ────────────────────────────────────────────────
   async function loadAll() {
@@ -59,38 +56,41 @@ export default function OfferingsPage() {
   useEffect(() => { loadAll(); }, []);
 
   // ── Group by category ─────────────────────────────────────────────────────
-  // Returns: [{ category, master, children }]
-  const grouped = (() => {
-    const map = {};
-    allSessionTypes.forEach((st) => {
-      const cat = st.category || "Uncategorized";
-      if (!map[cat]) map[cat] = { category: cat, master: null, children: [] };
-      if (st.is_master) map[cat].master = st;
-      else map[cat].children.push(st);
-    });
-    // Sort categories by master's display_order, then alphabetically
-    return Object.values(map).sort((a, b) => {
-      const ao = a.master?.display_order ?? 999;
-      const bo = b.master?.display_order ?? 999;
-      return ao !== bo ? ao - bo : a.category.localeCompare(b.category);
-    });
+  // masters: all is_master=true rows (shown as category cards)
+  // childrenByCategory: all non-master rows grouped by category name
+  const { masters, childrenByCategory } = (() => {
+    const mastersList = allSessionTypes.filter((st) => st.is_master);
+    const childMap    = {};
+    allSessionTypes
+      .filter((st) => !st.is_master)
+      .forEach((st) => {
+        const cat = st.category || "";
+        if (!childMap[cat]) childMap[cat] = [];
+        childMap[cat].push(st);
+      });
+    return { masters: mastersList, childrenByCategory: childMap };
   })();
 
   // ── Delete ────────────────────────────────────────────────────────────────
-  async function handleDelete(id, isMaster, category) {
-    const msg = isMaster
-      ? `Delete the entire "${category}" category? All session types under it will also be deleted.`
-      : "Delete this session type?";
+  async function handleDelete(st) {
+    const msg = st.is_master
+      ? `Delete the entire "${st.category}" category? All session types under it will also be deleted.`
+      : `Delete "${st.name}"?`;
     if (!window.confirm(msg)) return;
+    
     try {
-      if (isMaster) {
+      if (st.is_master) {
         // Delete all rows in this category
         const { error: e } = await supabase
-          .from("SessionType").delete().eq("category", category);
+          .from("SessionType").delete().eq("category", st.category);
         if (e) throw e;
+        // If we deleted the selected category, clear selection
+        if (selectedCategory?.id === st.id) {
+          setSelectedCategory(null);
+        }
       } else {
         const { error: e } = await supabase
-          .from("SessionType").delete().eq("id", id);
+          .from("SessionType").delete().eq("id", st.id);
         if (e) throw e;
       }
       loadAll();
@@ -99,14 +99,27 @@ export default function OfferingsPage() {
     }
   }
 
-  // ── Edit handler ──────────────────────────────────────────────────────────
+  // ── Category card clicked ─────────────────────────────────────────────────
+  function handleSelectCategory(master) {
+    // Toggle: if clicking the already-selected category, deselect it
+    if (selectedCategory?.id === master.id) {
+      setSelectedCategory(null);
+    } else {
+      setSelectedCategory(master);
+    }
+  }
+
+  // ── Edit handler (for package cards in expanded view) ────────────────────
   function handleEdit(st) {
     navigate(`/admin/offerings/${st.id}/edit`);
   }
 
-  function toggleExpand(category) {
-    setExpandedCategories((prev) => ({ ...prev, [category]: !prev[category] }));
-  }
+  // Get children for the selected category
+  const categoryChildren = selectedCategory
+    ? (childrenByCategory[selectedCategory.category] ?? [])
+        .slice()
+        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+    : [];
 
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
@@ -124,13 +137,12 @@ export default function OfferingsPage() {
               <div>
                 <h1 className="text-2xl font-semibold">Sessions &amp; Categories</h1>
                 <p className="mt-1 text-sm text-neutral-500">
-                  Manage your service categories and the session types within each.
-                  Active categories are visible to clients on the booking page.
+                  Click a category to view and edit its packages. All cards are clickable to edit.
                 </p>
               </div>
               <button
                 onClick={() => navigate("/admin/offerings/new")}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm hover:bg-gray-800"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm hover:bg-gray-800 transition"
               >
                 <Plus size={15} />
                 New Category
@@ -140,148 +152,119 @@ export default function OfferingsPage() {
             {loading && <p className="text-sm text-neutral-500">Loading...</p>}
             {error   && <p className="text-sm text-red-600">{error}</p>}
 
-            {!loading && !error && grouped.length === 0 && (
+            {!loading && !error && masters.length === 0 && (
               <div className="text-center py-16 text-neutral-400">
                 <p className="text-lg font-serif">No categories yet.</p>
                 <p className="text-sm mt-2">Create your first category to get started.</p>
               </div>
             )}
 
-            {/* Category groups */}
-            <div className="space-y-8">
-              {grouped.map(({ category, master, children }) => {
-                const isExpanded = !!expandedCategories[category];
-                const imageUrl   = getImageUrl(master?.image_path);
+            {!loading && !error && masters.length > 0 && (
+              <div className="space-y-6">
+                
+                {/* ── Step 1: Category Grid (Masters Only) ─────────────── */}
+                <div>
+                  <p className="text-xs uppercase tracking-wider text-neutral-400 mb-4">
+                    Select a Category
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {masters.map((master) => {
+                      const isSelected = selectedCategory?.id === master.id;
+                      const imageUrl = getImageUrl(master.image_path);
 
-                return (
-                  <div key={category} className="rounded-2xl border border-neutral-200 bg-white shadow-sm overflow-hidden">
-
-                    {/* ── Category Header ────────────────────────────────── */}
-                    <div className="flex items-center gap-4 p-5 bg-gradient-to-r from-neutral-50 to-white border-b border-neutral-100">
-                      {/* Category thumbnail */}
-                      <div className="shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-neutral-100 shadow-sm">
-                        {imageUrl ? (
-                          <img src={imageUrl} alt={category} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-neutral-300 text-xs">
-                            No image
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Category info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h2 className="font-serif text-xl text-neutral-900">{category}</h2>
-                          <span className="px-2 py-0.5 rounded-full bg-[#AB8C4B]/10 text-[9px] text-[#AB8C4B] font-mono uppercase tracking-wide">
-                            Category
-                          </span>
-                          {master && !master.active && (
-                            <span className="px-2 py-0.5 rounded-full bg-neutral-100 text-[10px] text-neutral-400 uppercase">
-                              Inactive
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-neutral-500">
-                          {children.length === 0
-                            ? "Standalone category (no packages)"
-                            : `${children.length + 1} package${children.length > 0 ? "s" : ""} available`}
-                        </p>
-                      </div>
-
-                      {/* Category actions */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => navigate(`/admin/offerings/${encodeURIComponent(category)}/session-types/new`)}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-dashed border-[#AB8C4B]/30 bg-[#AB8C4B]/5 text-xs text-[#AB8C4B] hover:border-[#AB8C4B]/50 hover:bg-[#AB8C4B]/10 transition font-medium"
-                          title="Add session type under this category"
+                      return (
+                        <div
+                          key={master.id}
+                          onClick={() => handleSelectCategory(master)}
+                          className={`group cursor-pointer rounded-xl border overflow-hidden bg-white shadow-sm transition-all
+                            ${isSelected
+                              ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20 shadow-md"
+                              : "border-black/10 hover:border-black/20 hover:shadow-md"
+                            }
+                          `}
                         >
-                          <Plus size={13} /> Add Package
-                        </button>
-                        
-                        {children.length > 0 && (
-                          <button
-                            onClick={() => toggleExpand(category)}
-                            className="p-2 rounded-lg border border-neutral-200 hover:bg-neutral-50 transition"
-                            title={isExpanded ? "Collapse packages" : "Show packages"}
-                          >
-                            {isExpanded ? (
-                              <ChevronUp size={16} className="text-neutral-500" />
+                          {/* Image */}
+                          <div className="h-28 w-full bg-neutral-100 overflow-hidden relative">
+                            {imageUrl ? (
+                              <img
+                                src={imageUrl}
+                                alt={master.category}
+                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+                                onError={(e) => { e.currentTarget.style.display = "none"; }}
+                              />
                             ) : (
-                              <ChevronDown size={16} className="text-neutral-500" />
+                              <div className="h-full w-full flex items-center justify-center bg-neutral-50">
+                                <span className="text-neutral-300 text-xs">No image</span>
+                              </div>
                             )}
-                          </button>
-                        )}
-                      </div>
+                            {!master.active && (
+                              <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/90 text-[9px] text-neutral-500 uppercase tracking-wide">
+                                Inactive
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Label */}
+                          <div className="flex items-center gap-2 px-3 py-2.5">
+                            <span className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 transition
+                              ${isSelected ? "border-[#7E4C3C]" : "border-black/30"}`}>
+                              {isSelected && <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />}
+                            </span>
+                            <span className="font-serif text-sm text-neutral-800">{master.category}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* ── Step 2: Expanded Package Grid ────────────────────── */}
+                {selectedCategory && (
+                  <div className="mt-6 rounded-xl border border-[#7E4C3C]/20 bg-[#FAF7F2] p-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] uppercase tracking-widest text-neutral-400">
+                        Available packages in {selectedCategory.category}
+                      </p>
+                      <button
+                        onClick={() => navigate(`/admin/offerings/${encodeURIComponent(selectedCategory.category)}/session-types/new`)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-[#AB8C4B]/30 bg-white text-xs text-[#AB8C4B] hover:border-[#AB8C4B]/50 hover:bg-[#AB8C4B]/5 transition font-medium"
+                      >
+                        <Plus size={12} /> Add Package
+                      </button>
                     </div>
 
-                    {/* ── Package Grid ──────────────────────────────────── */}
-                    {isExpanded && (
-                      <div className="p-6 bg-[#FAF7F2]">
-                        <p className="text-[10px] uppercase tracking-widest text-neutral-400 mb-4">
-                          Available packages in {category}
-                        </p>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {/* Master card */}
-                          {master && (
-                            <SessionTypeCard
-                              st={master}
-                              isSelected={false}
-                              showEditControls={true}
-                              onEdit={handleEdit}
-                              onDelete={(st) => handleDelete(st.id, true, category)}
-                              variant="grid"
-                            />
-                          )}
+                    {/* Grid of all packages (master + children) */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Master card */}
+                      <SessionTypeCard
+                        st={selectedCategory}
+                        isSelected={false}
+                        onSelect={() => handleEdit(selectedCategory)}
+                        showEditControls={true}
+                        onEdit={handleEdit}
+                        onDelete={handleDelete}
+                        variant="grid"
+                      />
 
-                          {/* Child session types */}
-                          {children
-                            .slice()
-                            .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-                            .map((child) => (
-                              <SessionTypeCard
-                                key={child.id}
-                                st={child}
-                                isSelected={false}
-                                showEditControls={true}
-                                onEdit={handleEdit}
-                                onDelete={(st) => handleDelete(st.id, false, category)}
-                                variant="grid"
-                              />
-                            ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* ── Collapsed view (master only as preview) ───────── */}
-                    {!isExpanded && master && (
-                      <div className="p-5 border-t border-neutral-100">
-                        <div className="max-w-md">
-                          <SessionTypeCard
-                            st={master}
-                            isSelected={false}
-                            showEditControls={true}
-                            onEdit={handleEdit}
-                            onDelete={(st) => handleDelete(st.id, true, category)}
-                            variant="list"
-                          />
-                        </div>
-                        {children.length > 0 && (
-                          <button
-                            onClick={() => toggleExpand(category)}
-                            className="mt-3 text-xs text-[#AB8C4B] hover:text-[#7E4C3C] font-medium flex items-center gap-1"
-                          >
-                            View all {children.length + 1} packages
-                            <ChevronDown size={12} />
-                          </button>
-                        )}
-                      </div>
-                    )}
+                      {/* Child packages */}
+                      {categoryChildren.map((child) => (
+                        <SessionTypeCard
+                          key={child.id}
+                          st={child}
+                          isSelected={false}
+                          onSelect={() => handleEdit(child)}
+                          showEditControls={true}
+                          onEdit={handleEdit}
+                          onDelete={handleDelete}
+                          variant="grid"
+                        />
+                      ))}
+                    </div>
                   </div>
-                );
-              })}
-            </div>
+                )}
+
+              </div>
+            )}
 
           </div>
         </Frame>
