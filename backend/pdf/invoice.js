@@ -9,10 +9,11 @@ const router = express.Router();
 // Invoice for Sessions
 const TAX_RATE = 0.0725; // 7.25% tax rate, can be adjusted as needed
 
+// generate an invoice for specific session with remaining amount passed in
 router.post("/generate/:session_id", async (req, res) => {
   try {
     const { session_id } = req.params;
-    const { remaining, due_date } = req.body;
+    const { remaining } = req.body;
 
     const { data: sessionData, error: sessionError } = await supabase
       .from("Session")
@@ -23,16 +24,11 @@ router.post("/generate/:session_id", async (req, res) => {
     if (sessionError) return res.status(404).json({ message: "Session not found" });
 
     const now = new Date();
-    const issueDate = `${now.getFullYear().toString()}` + "-" +
-                      `${(now.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
-                      `${now.getDate().toString().padStart(2, '0')}`;
 
     const { data: invoiceData, error: insertError } = await supabase
       .from("Invoice")
       .insert({
         session_id: session_id,
-        issue_date: issueDate,
-        due_date: due_date,
         remaining: remaining,
         status: "Unpaid",
         items: [
@@ -78,6 +74,105 @@ router.post("/generate/:session_id", async (req, res) => {
   }
 });
 
+// update an invoice for specific session with remaining amount passed in --
+// used for capturing "deposit" payments and session confirmation
+router.patch("/confirm/:invoice_id", async (req, res) => {
+  try {
+    const { invoice_id } = req.params;
+    const { remaining, due_date } = req.body;
+
+    const now = new Date();
+
+    // update entry in Payment table
+    const { error: paymentError } = await supabase
+      .from("Payment")
+      .update({ status: "Paid", paid_at: now.toISOString(), updated_at: now.toISOString() })
+      .eq("invoice_id", invoice_id)
+      .eq("type", "Deposit");
+    
+    if (paymentError) throw paymentError;
+
+    const issueDate = `${now.getFullYear().toString()}` + "-" +
+      `${(now.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
+      `${now.getDate().toString().padStart(2, '0')}`;
+
+    const { data: updatedInvoice, error: invoiceError } = await supabase
+      .from("Invoice")
+      .update({ remaining, issue_date: issueDate, due_date, updated_at: now.toISOString() })
+      .eq("id", invoice_id)
+      .select()
+      .single();
+
+    if (invoiceError) throw invoiceError;
+
+    res.status(200).json(updatedInvoice);
+
+  } catch (err) {
+    console.error("Error updating invoice:", err);
+    res.status(500).json({ message: "Failed to update invoice" });
+  }
+});
+
+// update an invoice for specific session with remaining amount passed in -- 
+// used for "rest" payments for invoices
+router.patch("/pay/:invoice_id", async (req, res) => {
+  try {
+    const { invoice_id } = req.params;
+    const { remaining } = req.body;
+
+    const now = new Date();
+
+    // update entry in Payment table
+    const { error: paymentError } = await supabase
+      .from("Payment")
+      .update({ status: "Paid", paid_at: now.toISOString(), updated_at: now.toISOString() })
+      .eq("invoice_id", invoice_id)
+      .eq("type", "Rest");
+
+    if (paymentError) throw paymentError;
+
+    const updatePayload = { remaining, updated_at: now.toISOString() };
+    if (remaining == 0) updatePayload.status = "Paid";
+
+    const { data: updatedInvoice, error: invoiceError } = await supabase
+      .from("Invoice")
+      .update(updatePayload)
+      .eq("id", invoice_id)
+      .select()
+      .single();
+
+    if (invoiceError) throw invoiceError;
+
+    res.status(200).json(updatedInvoice);
+
+  } catch (err) {
+    console.error("Error updating invoice:", err);
+    res.status(500).json({ message: "Failed to update invoice" });
+  }
+});
+
+// map session id to invoice id
+router.get("/:session_id", async (req, res) => {
+  try {
+    const { session_id } = req.params;
+
+    const { data: invoiceData, error: invoiceError } = await supabase
+      .from("Invoice")
+      .select("id")
+      .eq("session_id", session_id)
+      .select()
+      .single();
+
+    if (invoiceError) throw invoiceError;
+
+    res.status(200).json(invoiceData);
+
+  } catch (err) {
+    console.error("Error updating invoice:", err);
+    res.status(500).json({ message: "Failed to update invoice" });
+  }
+});
+
 router.get("/:invoice_id/pdf", async (req, res) => {
   try {
     const { invoice_id } = req.params;
@@ -103,7 +198,7 @@ router.get("/:invoice_id/pdf", async (req, res) => {
       "en-US",
       {
         year: "numeric", month: "long", day: "numeric",
-  });
+      });
 
     // PDF Creation
 
@@ -116,7 +211,7 @@ router.get("/:invoice_id/pdf", async (req, res) => {
     const beige = "#f4f1eb";
     doc.rect(0, 0, doc.page.width, doc.page.height).fill(beige);
     doc.image(logoPath, 30, 50, { width: 100 });
-    
+
 
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
@@ -150,7 +245,7 @@ router.get("/:invoice_id/pdf", async (req, res) => {
       "en-US",
       { year: "numeric", month: "long", day: "numeric" }
     );
-    
+
     //Invoice Information
     const labelX = 320;
     const valueX = 330;
@@ -197,23 +292,23 @@ router.get("/:invoice_id/pdf", async (req, res) => {
     // ITEMS
     doc.font("Helvetica").fontSize(11);
 
-let posY = tableTop + 40;
+    let posY = tableTop + 40;
 
-const serviceName = invoiceData.Session.SessionType.name;
-const price = invoiceData.Session.SessionType.base_price;
-const quantity = 1;
-const total = price * quantity;
+    const serviceName = invoiceData.Session.SessionType.name;
+    const price = invoiceData.Session.SessionType.base_price;
+    const quantity = 1;
+    const total = price * quantity;
 
-doc
-  .text(serviceName, 50, posY)
-  .text(quantity, 300, posY, { width: 50, align: "right" })
-  .text(`$${price.toFixed(2)}`, 350, posY, { width: 100, align: "right" })
-  .text(`$${total.toFixed(2)}`, 450, posY, {
-    width: 100,
-    align: "right",
-  });
+    doc
+      .text(serviceName, 50, posY)
+      .text(quantity, 300, posY, { width: 50, align: "right" })
+      .text(`$${price.toFixed(2)}`, 350, posY, { width: 100, align: "right" })
+      .text(`$${total.toFixed(2)}`, 450, posY, {
+        width: 100,
+        align: "right",
+      });
 
-posY += 25;
+    posY += 25;
 
     // TOTALS
     doc

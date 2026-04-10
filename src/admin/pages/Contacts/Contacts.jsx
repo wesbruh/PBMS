@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import {supabase } from "../../../lib/supabaseClient.js";
+import { supabase } from "../../../lib/supabaseClient.js";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -21,7 +21,7 @@ function Contacts() {
   const normalizePhone = (phone) => {
     // Count digits only, ignore formatting characters
     const digits = String(phone || "").replace(/\D/g, "")
-    return (digits) ? `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}` : "";
+    return (digits) ? `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}` : "";
   };
 
   const tableContactsColumns = [
@@ -40,7 +40,8 @@ function Contacts() {
     { key: "firstName", label: "First Name", sortable: true },
     { key: "lastName", label: "Last Name", sortable: true },
     { key: "email", label: "Email", sortable: true },
-    { key: "phone", label: "Phone", sortable: false,
+    {
+      key: "phone", label: "Phone", sortable: false,
       render: (value) => (
         normalizePhone(value)
       )
@@ -98,58 +99,56 @@ function Contacts() {
     fetchContacts();
   }, []);
 
-  
-
   // Deletes a contact from the database and updates the table
-const handleDeleteContact = async () => {
-  if (!selectedContact) return;
+  const handleDeleteContact = async () => {
+    if (!selectedContact) return;
 
-  try {
-    setErrorMsg("");
+    try {
+      setErrorMsg("");
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-    const token = session?.access_token;
+      const token = session?.access_token;
 
-    if (!token) {
-      setErrorMsg("Missing admin session token.");
-      return;
-    }
-
-    const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          targetUserId: selectedContact.userid,
-        }),
+      if (!token) {
+        setErrorMsg("Missing admin session token.");
+        return;
       }
-    );
 
-    const result = await response.json();
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            targetUserId: selectedContact.userid,
+          }),
+        }
+      );
 
-    if (!response.ok) {
-      setErrorMsg(result.error || result.message || "Failed to delete user.");
-      return;
+      const result = await response.json();
+
+      if (!response.ok) {
+        setErrorMsg(result.error || result.message || "Failed to delete user.");
+        return;
+      }
+
+      setContacts((prev) =>
+        prev.filter((c) => c.userid !== selectedContact.userid)
+      );
+
+      setSelectedContact(null);
+      setShowDeleteModal(false);
+    } catch (error) {
+      console.error("Delete user error:", error);
+      setErrorMsg("Failed to delete user.");
     }
-
-    setContacts((prev) =>
-      prev.filter((c) => c.userid !== selectedContact.userid)
-    );
-
-    setSelectedContact(null);
-    setShowDeleteModal(false);
-  } catch (error) {
-    console.error("Delete user error:", error);
-    setErrorMsg("Failed to delete user.");
-  }
-};
+  };
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
@@ -206,7 +205,7 @@ const handleDeleteContact = async () => {
           </div>
         </Frame>
       </div>
-     
+
       {/* Delete Contact Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center"

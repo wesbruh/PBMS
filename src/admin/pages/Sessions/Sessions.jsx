@@ -21,7 +21,11 @@ function Sessions() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch("http://localhost:5001/api/sessions");
+      const response = await fetch("http://localhost:5001/api/sessions", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+      
       const data = await response.json();
       // added client_name and session_type fields to the session data for easier table rendering and searching
       const flattened = data.map((row) => ({
@@ -48,9 +52,21 @@ function Sessions() {
 
   const getPaymentIntent = async (checkoutSessionId) => {
     if (!checkoutSessionId) return { status: null, paymentIntent: null }
-    const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
-    const { payment_intent: paymentIntent } = await response.json();
-    return { status: response.ok, paymentIntent };
+    try {
+      const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      if (!csResponse.ok)
+        throw new Error("Could not get payment intent");
+      
+      const csData = await csResponse.json();
+      
+      return { status: csResponse.ok, paymentIntent: csData.payment_intent  };
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   const capturePayment = async (checkoutSessionId) => {
@@ -62,7 +78,7 @@ function Sessions() {
       const response = await fetch(`http://localhost:5001/api/intent/capture`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payment_intent: paymentIntent })
+        body: JSON.stringify({ payment_intent_id: paymentIntent.id })
       });
 
       if (!response.ok) throw Error("Failed to capture payment intent");
@@ -71,15 +87,27 @@ function Sessions() {
     }
   }
 
-  const generateInvoice = async (session_id) => {
+  const updateInvoice = async (session_id) => {
     try {
+      // ensure session exists and map session id to invoice id
+      const mapResponse = await fetch(`http://localhost:5001/api/invoice/${session_id}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      if (!mapResponse.ok) throw new Error("Could not map session id to an invoice id");
+
+      const mapData = await mapResponse.json();
+      const { id: invoiceId } = mapData;
+
+      // obtain time/pricing information
       const { data: sessionData, error } = await supabase
         .from("Session")
         .select("start_at, SessionType(base_price)")
         .eq("id", session_id)
         .single();
 
-      if (error) throw new Error("Session not found");
+      if (error) throw error;
 
       // calculate remaining balance after deposit for invoice generation
       const remaining = (sessionData.SessionType.base_price) * (1 - DEPOSIT_PERCENTAGE);
@@ -90,7 +118,7 @@ function Sessions() {
         `${(date.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
         `${date.getDate().toString().padStart(2, '0')}`;
 
-      const response = await fetch(`http://localhost:5001/api/invoice/generate/${session_id}`, {
+      const response = await fetch(`http://localhost:5001/api/invoice/confirm/${invoiceId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -136,7 +164,7 @@ function Sessions() {
 
   const confirmSession = (sessionId, checkoutSessionId) => {
     capturePayment(checkoutSessionId);
-    generateInvoice(sessionId);
+    updateInvoice(sessionId);
     handleUpdate(sessionId, "status", "Confirmed");
   };
 
@@ -350,7 +378,7 @@ function Sessions() {
   return (
     <>
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex w-1/5 min-w-50 overflow-y-auto">
+      <div className="flex min-w-50 overflow-y-auto">
         <Sidebar />
       </div>
 

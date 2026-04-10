@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext"
 import ContractDetail from "./ContractDetail";
 
 export default function ContractView() {
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const { id: contractId } = useParams();
 
   const navigate = useNavigate();
@@ -16,15 +16,13 @@ export default function ContractView() {
   useEffect(() => {
     setLoading(true);
 
-    if (!user || !contractId) {
-      return;
-    }
+    if ( !profile || !contractId ) return;
 
     async function fetchContract() {
       const response = await fetch(`http://localhost:5001/api/contract/${contractId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user.id })
+        body: JSON.stringify({ user_id: profile.id })
       });
 
       if (!response.ok) {
@@ -37,7 +35,7 @@ export default function ContractView() {
     };
 
     fetchContract();
-  }, [user]);
+  }, [profile]);
 
   useEffect(() => {
     if (!contract) {

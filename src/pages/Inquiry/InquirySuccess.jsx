@@ -2,17 +2,6 @@ import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 
-// const sessionTypeLabel = (v) => {
-//   const map = {
-//     wedding: "Wedding",
-//     engagement: "Engagement",
-//     family: "Family",
-//     corporate: "Corporate",
-//     lifestyle: "Lifestyle",
-//   };
-//   return map[v] || v || "Session";
-// };
-
 export default function InquirySuccess() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,7 +17,7 @@ export default function InquirySuccess() {
   const [location, setLocation] = useState(null);
 
   // get user information
-  const { profile: user } = useAuth();
+  const { profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
   // If someone refreshes this page, state will be lost.
@@ -40,7 +29,7 @@ export default function InquirySuccess() {
   }, [sessionId, navigate]);
 
   useEffect(() => {
-    if (!user || !sessionId) return;
+    if (!profile || !sessionId) return;
 
     const loadParameters = async () => {
       try {
@@ -57,7 +46,7 @@ export default function InquirySuccess() {
         const sessionData = await response.json();
         
         // error checks
-        if (user && sessionData.User.id !== user.id) throw new Error({ message: "Session not found or does not belong to user" });
+        if (profile && sessionData.User.id !== profile.id) throw new Error({ message: "Session not found or does not belong to user" });
 
         // set parameters
         setFullName(`${sessionData.User.first_name} ${sessionData.User.last_name}`);
@@ -74,7 +63,7 @@ export default function InquirySuccess() {
     }
 
     loadParameters();
-  }, [user, sessionId, navigate])
+  }, [profile, sessionId, navigate])
 
   if (loading) {
     return (

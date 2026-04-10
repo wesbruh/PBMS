@@ -13,6 +13,9 @@ import DynamicQuestionnaire from "./DynamicQuestionnaire";
 import TimeSlotGrid from "../TimeSlotGrid/TimeSlotGrid";
 import SessionTypeCard from "../SessionTypeCard/SessionTypeCard";
 
+// constant for invoice generation logic
+const DEPOSIT_PERCENTAGE = 0.05;
+
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET       = "session-images";
 
@@ -24,11 +27,13 @@ function getImageUrl(path) {
 
 // ── Validation ────────────────────────────────────────────────────────────────
 
+// check minDate for actual value -- 7 days ahead
 const isPastMinDate = (value) => {
   if (!value) return false;
   const minDate = new Date();
   minDate.setDate(minDate.getDate() + 7);
   minDate.setHours(0, 0, 0, 0);
+
   const inputDate = new Date(value);
   inputDate.setHours(0, 0, 0, 0);
   return inputDate >= minDate;
@@ -52,7 +57,7 @@ const Schema = z.object({
 
 export default function InquiryForm() {
   const navigate = useNavigate();
-  const { profile: user } = useAuth();
+  const { profile } = useAuth();
 
   const [searchParams]     = useSearchParams();
   const [sessionId,          setSessionId]          = useState(null);
@@ -84,11 +89,30 @@ export default function InquiryForm() {
   const [qLoading,        setQLoading]       = useState(false);
   const [sessionTypeLoading, setSessionTypeLoading] = useState(false);
 
-  // ── Load search params ────────────────────────────────────────────────────
+  // ── Load params ────────────────────────────────────────────────────
   useEffect(() => {
-    setSessionId(searchParams.get("session_id") || null);
-    setCheckoutSessionId(searchParams.get("checkout_session_id") || null);
-    setLoadingParams(false);
+    const loadingParams = async () => {
+      const csId = searchParams.get("checkout_session_id") || null;
+
+      if (csId) {
+        const { data: paymentData, error } = await supabase
+          .from("Payment")
+          .select("Invoice(Session(id))")
+          .eq("provider_payment_id", csId)
+          .single();
+
+        if (error) throw error;
+
+        const sessionData = paymentData.Invoice.Session;
+
+        setCheckoutSessionId(csId);
+        setSessionId(sessionData.id);
+      }
+      
+      setLoadingParams(false);
+    }
+
+    loadingParams();
   }, []);
 
   // ── Load all active session types ─────────────────────────────────────────
@@ -134,32 +158,37 @@ export default function InquiryForm() {
   useEffect(() => {
     async function loadContracts() {
       try {
-        const res  = await fetch("http://localhost:5001/api/contract/templates", {
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch("http://localhost:5001/api/contract/templates", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
         });
-        const data = await res.json();
-        const map  = {};
+
+        const data = await response.json();
+        const map = {};
         data.forEach((t) => { map[`${t.id}`] = { body: t.body, name: t.name }; });
         setContractTemplates(map);
       } catch (err) {
         console.error("Failed to load contract templates:", err);
       }
     }
+
     loadContracts();
   }, []);
 
   // ── Load / create default contract ───────────────────────────────────────
   useEffect(() => {
     async function getDefaultContract() {
-      if (!user || loadingParams) return;
+      if (!profile || loadingParams) return;
+
       try {
         const body = (sessionId && checkoutSessionId)
-          ? { user_id: user.id, session_id: sessionId }
-          : { user_id: user.id };
-        const res  = await fetch("http://localhost:5001/api/contract", {
+          ? { user_id: profile.id, session_id: sessionId }
+          : { user_id: profile.id };
+
+        const response = await fetch("http://localhost:5001/api/contract", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
+          body: JSON.stringify(body)
         });
         setContract(await res.json());
       } catch (err) {
@@ -169,7 +198,7 @@ export default function InquiryForm() {
       }
     }
     getDefaultContract();
-  }, [user, loadingParams]);
+  }, [profile, loadingParams]);
 
   const updateContractTemplate = async (templateId) => {
     try {
@@ -184,7 +213,7 @@ export default function InquiryForm() {
     }
   };
 
-  // minDate = 7 days from today
+  // minDate for calendar = 7 days from today
   const minDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
@@ -307,21 +336,48 @@ export default function InquiryForm() {
   // ── Prefill form (auth + Stripe return) ──────────────────────────────────
   useEffect(() => {
     async function prefillForm() {
-      if (!user || loadingParams || sessionTypesLoading) return;
+      if (!profile || loadingParams || sessionTypesLoading) return;
 
       if (sessionId && checkoutSessionId) {
         try {
-          const { data: sessionData, error: sessionError } = await supabase
-            .from("Session")
-            .select("session_type_id, start_at, location_text, notes")
-            .eq("id", sessionId)
-            .eq("is_active", false)
+          const { data: paymentData, error } = await supabase
+            .from("Payment")
+            .select("provider_payment_id, Invoice(Session(id, session_type_id, start_at, location_text, notes, client_id, is_active))")
+            .eq("provider_payment_id", checkoutSessionId)
             .single();
 
-          if (sessionError) throw new Error("Session not found");
+          if (error) throw new Error("Payment entry not found");
 
-          // Find and select the master category for this session type
-          const matchedST = allSessionTypes.find((st) => st.id === sessionData.session_type_id);
+          const sessionData = paymentData.Invoice.Session;
+
+          if (!sessionData || sessionData.is_active === true) throw new Error("No inactive session not found");
+          else if (sessionData.client_id !== profile.id) throw new Error("Session does not belong to this user");
+
+          // work with checkout session and payment intent to check for payment authorization
+          const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+            method: "GET",
+            headers: { "Content-Type": "application/json" },
+          });
+          const csData = await csResponse.json();
+          const { status: csStatus, payment_intent: piData } = csData;
+          const { status: piStatus } = piData;
+
+          // if session has been authorized
+          if (csStatus === "complete" && piStatus === "requires_capture") {
+            // update payment table
+            const { error: paymentError } = await supabase
+              .from("Payment")
+              .update({ status: "Authorized" })
+              .eq("provider_payment_id", checkoutSessionId)
+              .single();
+
+            if (paymentError) throw paymentError;
+          }
+
+          // Match the session type from loaded list
+          const matchedST = sessionTypes.find(
+            (st) => st.id === sessionData.session_type_id,
+          );
           if (matchedST) {
             const masterForST = allSessionTypes.find(
               (m) => m.is_master && m.category === matchedST.category
@@ -350,10 +406,10 @@ export default function InquiryForm() {
             setQALoading(true);
           } catch (_) { /* no questionnaire yet */ }
 
-          setValue("firstName",     user?.first_name?.trim() ?? "");
-          setValue("lastName",      user?.last_name?.trim()  ?? "");
-          setValue("email",         user.email ?? "");
-          setValue("phone",         user.phone ?? "");
+          setValue("firstName",     profile?.first_name?.trim() ?? "");
+          setValue("lastName",      profile?.last_name?.trim()  ?? "");
+          setValue("email",         profile.email ?? "");
+          setValue("phone",         profile.phone ?? "");
           setValue("date",          datePart, { shouldValidate: true });
           setValue("startTime",     timePart, { shouldValidate: true });
           setValue("sessionTypeId", sessionData.session_type_id, { shouldValidate: true });
@@ -366,23 +422,27 @@ export default function InquiryForm() {
           console.error("Error pre-filling from session:", err);
         }
       } else {
-        if (user?.first_name) setValue("firstName", user.first_name.trim());
-        if (user?.last_name)  setValue("lastName",  user.last_name.trim());
-        if (user?.email)      setValue("email",     user.email);
-        if (user?.phone)      setValue("phone",     user.phone);
+        if (profile?.first_name) setValue("firstName", profile.first_name.trim());
+        if (profile?.last_name)  setValue("lastName",  profile.last_name.trim());
+        if (profile?.email)      setValue("email",     profile.email);
+        if (profile?.phone)      setValue("phone",     profile.phone);
         await trigger(["firstName","lastName","email","phone"]);
       }
     }
     prefillForm();
-  }, [user, loadingParams, sessionTypesLoading]);
+  }, [profile, loadingParams, sessionTypesLoading]);
 
   // ── Payment ───────────────────────────────────────────────────────────────
   const handlePayment = async () => {
     try {
       const now = new Date().toISOString();
 
-      await supabase.from("Session").delete()
-        .eq("client_id", user.id).eq("is_active", false);
+      // Delete all inactive (draft) sessions for this user to prevent duplicates
+      await supabase
+        .from("Session")
+        .delete()
+        .eq("client_id", profile.id)
+        .eq("is_active", false);
 
       const startAt = new Date(`${getValues("date")}T${getValues("startTime")}`).toISOString();
       const endAt   = new Date(
@@ -393,7 +453,7 @@ export default function InquiryForm() {
       const { data: sessionData, error: sessionError } = await supabase
         .from("Session")
         .insert({
-          client_id:       user.id,
+          client_id:       profile.id,
           session_type_id: getValues("sessionTypeId"),
           start_at:        startAt,
           end_at:          endAt,
@@ -412,16 +472,22 @@ export default function InquiryForm() {
 
       if (activeTemplate) {
         const { data: qInstance, error: qInstError } = await supabase
-          .from("questionnaire")
-          .insert({ session_id: sessionData.id, template_id: activeTemplate.id, status: "In Progress" })
-          .select("id").single();
+          .from("QuestionnaireResponse")
+          .insert({
+            session_id: sessionData.id,
+            template_id: activeTemplate.id,
+            status: "In Progress",
+            created_at: now
+          })
+          .select("id")
+          .single();
 
         if (qInstError) {
           await supabase.from("Session").delete().eq("id", sessionData.id);
           throw qInstError;
         }
 
-        const responseRows = activeTemplate.questions.map((q) => {
+        const responseRows = Promise.all(activeTemplate.questions.map((q) => {
           const raw = qAnswers[q.tempId];
           const isCheckbox = (q.type ?? "").toLowerCase() === "checkbox";
           return {
@@ -429,7 +495,7 @@ export default function InquiryForm() {
             question_id:      q.tempId,
             answer:           isCheckbox ? (Array.isArray(raw) ? raw : []) : (raw ?? null),
           };
-        });
+        }));
 
         const { error: respError } = await supabase
           .from("QuestionnaireAnswer").insert(responseRows);
@@ -440,29 +506,72 @@ export default function InquiryForm() {
         }
       }
 
-      const response = await fetch("http://localhost:5001/api/checkout/deposit", {
-        method:  "POST",
+      console.log();
+
+      // create Invoice related to session
+      const invoiceResponse = await fetch(`http://localhost:5001/api/invoice/generate/${sessionData.id}`, {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          session_id:   sessionData.id,
-          from_url:     window.location.href,
-          product_data: {
-            name:        `${selectedSessionType?.name ?? "Session"} Deposit`,
-            description: selectedSessionType?.description ?? "",
-          },
-          price:     (selectedSessionType?.base_price ?? 0) * 0.05,
-          apply_tax: true,
-          tax_rate:  7.25,
-        }),
+          remaining: selectedSessionType.base_price, // send remaining balance with tax for invoice generation
+        })
       });
 
-      if (!response.ok) throw new Error("Stripe connection failed. Please try again.");
+      if (!invoiceResponse.ok) {
+        supabase.from("Session").delete().eq("id", sessionData.id);
+        throw new Error("Failed to generate invoice");
+      }
 
-      const checkoutSession = await response.json();
-      window.location.href  = checkoutSession.url;
-    } catch (err) {
-      console.error("Payment error:", err);
-      alert(`Payment failed: ${err?.message ?? err}`);
+      const invoiceData = await invoiceResponse.json();
+      const amountDue = selectedSessionType.base_price * DEPOSIT_PERCENTAGE; // calculate amountDue based on base price and DEPOSIT_PERCENTAGE
+
+      // create Stripe checkout session
+      const stripeResponse = await fetch("http://localhost:5001/api/checkout/deposit", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from_url: window.location.href,
+            product_data: {
+              name: `${selectedSessionType.name} Deposit`,
+              description: selectedSessionType.description,
+            },
+            price: amountDue,
+            apply_tax: true,
+            tax_rate: 7.25,
+          }),
+        },
+      );
+
+      if (!stripeResponse.ok) {
+        supabase.from("Session").delete().eq("id", sessionData.id);
+        throw new Error("Stripe connection failed. Please try again.");
+      }
+
+      const checkoutSession = await stripeResponse.json();
+
+      // create new Payment table entry linked to deposit
+      const { error: paymentError } = await supabase
+        .from("Payment")
+        .insert({
+          invoice_id: invoiceData.id,
+          provider: "Stripe",
+          provider_payment_id: checkoutSession.id,
+          amount: amountDue + (amountDue * 0.0725), // add tax to amount
+          currency: "USD",
+          status: "Pending",
+          type: "Deposit",
+          created_at: new Date().toISOString(),
+        });
+
+      if (paymentError) {
+        supabase.from("Session").delete().eq("id", sessionData.id);
+        throw paymentError;
+      }
+
+      window.location.href = checkoutSession.url;
+    } catch (error) {
+      console.error("Payment error:", error);
+      alert(`Payment failed: ${error?.message ?? error}`);
     }
   };
 

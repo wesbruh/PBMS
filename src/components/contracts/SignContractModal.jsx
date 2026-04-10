@@ -69,38 +69,40 @@ export default function SignContractModal({ open, onClose, contract, contractTem
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+      </div>
       <div className="w-full max-w-xl rounded-lg bg-white shadow-lg border">
-        <div className="p-4 border-b flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Sign “{contractTemplate.name ?? "Contract"}”</h3>
-          <button type="button" onClick={onClose} className="text-sm px-2 py-1 rounded border hover:bg-neutral-50">Close</button>
-        </div>
+          <div className="p-4 border-b flex items-center justify-between">
+            <h3 className="text-lg font-semibold">Sign “{contractTemplate.name ?? "Contract"}”</h3>
+            <button type="button" onClick={onClose} className="text-sm px-2 py-1 rounded border hover:bg-neutral-50">Close</button>
+          </div>
 
-        <div className="p-4 space-y-3">
-          <p className="text-sm text-neutral-600">
-            Please sign in the box below. By saving, you agree to the terms of this agreement.
-          </p>
-          <div className="border rounded-md">
-            <SignatureCanvas
-              ref={sigRef}
-              penColor="black"
-              canvasProps={{ className: "w-full h-48 rounded-md" }}
-            />
+          <div className="p-4 space-y-3">
+            <p className="text-sm text-neutral-600">
+              Please sign in the box below. By saving, you agree to the terms of this agreement.
+            </p>
+            <div className="border rounded-md">
+              <SignatureCanvas
+                ref={sigRef}
+                penColor="black"
+                canvasProps={{ className: "w-full h-48 rounded-md" }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={clear} className="px-3 py-2 rounded border hover:bg-neutral-50">
+                Clear
+              </button>
+              <button
+                type="button"
+                onClick={save}
+                disabled={saving}
+                className="px-3 py-2 rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
+              >
+                {saving ? "Saving…" : "Save Signature"}
+              </button>
+            </div>
           </div>
-          <div className="flex gap-2">
-            <button type="button" onClick={clear} className="px-3 py-2 rounded border hover:bg-neutral-50">
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={save}
-              disabled={saving}
-              className="px-3 py-2 rounded bg-neutral-900 text-white hover:bg-neutral-800 disabled:opacity-50"
-            >
-              {saving ? "Saving…" : "Save Signature"}
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

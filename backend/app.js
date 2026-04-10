@@ -436,7 +436,7 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
   // create and retrieve Stripe Checkout Session information
   app.post("/api/checkout/:type", async (req, res) => {
     const { type } = req.params;
-    const { session_id, from_url, product_data, price, apply_tax, tax_rate } = req.body;
+    const { from_url, product_data, price, apply_tax, tax_rate } = req.body;
 
     // compute final price based on values passed in
     // if no price is passed in, default to 150
@@ -471,7 +471,7 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
           payment_intent_data: {
             capture_method: 'manual',
           },
-          success_url: `http://localhost:5173/dashboard/inquiry?session_id=${session_id}&checkout_session_id={CHECKOUT_SESSION_ID}`,
+          success_url: `http://localhost:5173/dashboard/inquiry?checkout_session_id={CHECKOUT_SESSION_ID}`,
           cancel_url: from_url
         });
 
@@ -521,16 +521,19 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
     }
   });
 
-  // Retrieve Checkout Session and associated Stripe Payment Intent information
+  // Retrieve Checkout Session along with associated Stripe Payment Intent information
   app.get("/api/checkout/:checkout_session_id", async (req, res) => {
     const { checkout_session_id } = req.params;
 
     try {
-      const session = await stripeClient.checkout.sessions.retrieve(checkout_session_id);
-      res.status(200).json({
-        session: session,
-        payment_intent: session.payment_intent
-      });
+      const checkoutSession = await stripeClient.checkout.sessions.retrieve(checkout_session_id);
+
+      if (!checkoutSession)
+        throw new Error("Checkout session could not be found");
+
+      checkoutSession.payment_intent = await stripeClient.paymentIntents.retrieve(checkoutSession.payment_intent);
+
+      res.status(200).json(checkoutSession);
     } catch (error) {
       console.error('Error getting checkout session:', error);
       res.status(500).json({ error: "Internal Server Error" });
@@ -539,10 +542,10 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
 
   // Capture Payment Intent
   app.post("/api/intent/capture", async (req, res) => {
-    const { payment_intent } = req.body;
+    const { payment_intent_id } = req.body;
 
     try {
-      const { data, error } = await stripeClient.paymentIntents.capture(payment_intent);
+      const { data, error } = await stripeClient.paymentIntents.capture(payment_intent_id);
 
       if (error) throw error;
       res.status(200).json(data);
@@ -629,12 +632,12 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
 
   // insert questionnaire template
   app.post("/api/questionnaire/templates", async (req, res) => {
-    const paylod = req.body;
+    const payload = req.body;
 
     try {
       const { data, error } = await supabaseClient
         .from("QuestionnaireTemplate")
-        .insert(paylod)
+        .insert(payload)
         .select()
         .single();
 

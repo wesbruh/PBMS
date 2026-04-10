@@ -28,7 +28,7 @@ export function AuthProvider({ children }) {
       if (session?.user?.id && !ignore) {
         const response = await fetch(`http://localhost:5001/api/profile/${session.user.id}`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: { "Content-Type": "application/json" }
         });
 
         if (!ignore) {
@@ -62,7 +62,7 @@ export function AuthProvider({ children }) {
         (async () => {
           const response = await fetch(`http://localhost:5001/api/profile/${newSession.user.id}`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json" }
           });
 
           if (response.ok) {
