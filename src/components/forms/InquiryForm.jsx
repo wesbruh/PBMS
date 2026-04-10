@@ -443,7 +443,6 @@ export default function InquiryForm() {
         .from("Session")
         .delete()
         .eq("client_id", profile.id)
-        .eq("client_id", profile.id)
         .eq("is_active", false);
 
       const startAt = new Date(`${getValues("date")}T${getValues("startTime")}`).toISOString();

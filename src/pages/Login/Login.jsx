@@ -4,7 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
-  const { profile , loading } = useAuth();
+  const { profile, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
