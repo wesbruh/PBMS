@@ -115,7 +115,7 @@ export default function SessionsPage() {
             {/* Page header */}
             <div className="flex items-start justify-between mb-8">
               <div>
-                <h1 className="text-2xl font-semibold">Sessions & Packages</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Sessions & Packages</h1>
                 <p className="mt-1 text-sm text-neutral-500">
                   Manage session types and the packages offered within each. Active sessions are shown to clients.
                 </p>
