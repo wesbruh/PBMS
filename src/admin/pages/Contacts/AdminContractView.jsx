@@ -18,7 +18,7 @@ export default function AdminContractView() {
 
     async function fetchContract() {
       try {
-        const response = await fetch(`http://localhost:5001/api/contract/admin/contracts/${contractId}`, {
+        const response = await fetch(`http://localhost:5001/api/contract/${contractId}`, {
           method: "GET",
           headers: { "Content-Type": "application/json" },
         });

@@ -4,7 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
-  const { profile, loading } = useAuth();
+  const { session, profile , loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,7 +23,7 @@ export default function Login() {
   // navigate when everything is loaded
   useEffect(() => {
     // something hasn't been initialized or found
-    if (loading || !profile) {
+    if (loading || !session || !profile) {
       return;
     }
 
@@ -33,7 +33,7 @@ export default function Login() {
         from;
 
     navigate(navLoc, { replace: true });
-  }, [loading, profile, from, navigate]);
+  }, [loading, session, profile, from, navigate]);
 
 
   const onChange = (e) => {
@@ -79,10 +79,13 @@ export default function Login() {
     }
 
     // we are logged in – update the User table
-    if (profile?.id) {
+    if (session?.access_token && profile?.id) {
       const response = await fetch(`http://localhost:5001/api/profile/${profile.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           is_active: true,
           last_login_at: new Date().toISOString()

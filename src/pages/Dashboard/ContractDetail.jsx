@@ -3,10 +3,10 @@ import SignContractModal from "../../components/contracts/SignContractModal";
 
 export default function ContractDetail({ contract, contractTemplate, onSigned, readOnly = false }) {
   const [signing, setSigning] = useState(false);
-    
+
   const [statusKey, setStatusKey] = useState(contract?.status || "Draft");
   const signedUrl = contract?.signed_pdf_url || null;
-  
+
   if (!contractTemplate) return null;
   return (
     <div className="space-y-4">

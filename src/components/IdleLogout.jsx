@@ -7,7 +7,7 @@ import { useAuth } from "../context/AuthContext";
  * Listens to common activity events and resets a timeout while the user is active.
  */
 export default function IdleLogout({ timeoutMs = 10 * 60 * 1000 }) { // changed to default: 10 minute timeout
-  const { user, loading } = useAuth();
+  const { session, user, loading } = useAuth();
   const timerRef = useRef(null);
 
   useEffect(() => {
@@ -23,15 +23,18 @@ export default function IdleLogout({ timeoutMs = 10 * 60 * 1000 }) { // changed 
 
     const scheduleLogout = () => {
       clearTimer();
-      if (!user) return;
+      if (!user || !session) return;
 
       timerRef.current = setTimeout(async () => {
-        if (!user) return;
+        if (!user || !session) return;
 
         // best-effort mark user inactive
         const response = await fetch(`http://localhost:5001/api/profile/${user.id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify({ is_active: false })
         });
 
@@ -55,7 +58,7 @@ export default function IdleLogout({ timeoutMs = 10 * 60 * 1000 }) { // changed 
     activityEvents.forEach((evt) => window.addEventListener(evt, handleActivity));
 
     // start timer once we know auth state
-    if (!loading && user) {
+    if (!loading && session && user) {
       scheduleLogout();
     } else {
       clearTimer();
@@ -65,7 +68,7 @@ export default function IdleLogout({ timeoutMs = 10 * 60 * 1000 }) { // changed 
       clearTimer();
       activityEvents.forEach((evt) => window.removeEventListener(evt, handleActivity));
     };
-  }, [loading, user, timeoutMs]);
+  }, [loading, session, user, timeoutMs]);
 
   return null;
 }

@@ -1,10 +1,17 @@
+import { useAuth } from "../../context/AuthContext";
+
 export default function DownloadReceiptButton({ invoiceId }) {
+  const { session } = useAuth();
+
   const handleDownload = async () => {
     try {
       const response = await fetch(
-        `http://localhost:5001/api/receipt/invoice/${invoiceId}`,
-        {
+        `http://localhost:5001/api/receipt/${invoiceId}`, {
           method: "GET",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },
           credentials: "include",
         }
       );
@@ -30,6 +37,8 @@ export default function DownloadReceiptButton({ invoiceId }) {
       alert("Error downloading receipt: " + error.message);
     }
   };
+
+  if (!session) return;
 
   return (
     <button
