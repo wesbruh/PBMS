@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import cors from "cors";
-import express, { response } from "express";
+import express from "express";
 
 export function buildBookingPayload(bookingRequest, now = new Date()) {
   const {
