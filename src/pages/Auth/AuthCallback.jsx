@@ -2,27 +2,88 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+const ResendSchema = z
+  .object({
+    email: z.string(),
+  });
+
+// password rules
+const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .regex(/[a-z]/, "Must contain a lowercase letter")
+  .regex(/[A-Z]/, "Must contain an uppercase letter")
+  .regex(/[0-9]/, "Must contain a number");
+
+const ResetSchema = z
+  .object({
+    password: passwordSchema,
+    confirmPassword: z.string().min(1, "Please confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 export default function AuthCallback() {
   const [message, setMessage] = useState("Finishing sign-in...");
   const [allowResend, setAllowResend] = useState(false);
+  const [allowReset, setAllowReset] = useState(false);
   const navigate = useNavigate();
   const handledRef = useRef(false);
 
-  // Resend Confirmation modal state 
-  const [showResend, setShowResend] = useState(false);
-  const [resendEmail, setResendEmail] = useState("");
-  const [resendMsg, setResendMsg] = useState("");
+  // Resend Confirmation state
+  const {
+    register: registerEmail,
+    handleSubmit: submitEmail,
+    formState: { errors: emailErrors },
+  } = useForm({
+    resolver: zodResolver(ResendSchema),
+    mode: "onBlur",
+    defaultValues: {
+      email: ""
+    },
+  });
 
-  const markUserActive = useCallback(async (userId) => {
-    if (!userId) return;
+  // Reset Password state 
+  const {
+    register: registerPassword,
+    handleSubmit: submitPassword,
+    formState: { errors: passwordErrors },
+  } = useForm({
+    resolver: zodResolver(ResetSchema),
+    mode: "onBlur",
+    defaultValues: {
+      password: "",
+      confirmPassword: ""
+    },
+  });
+
+  const markUserActive = useCallback(async (session) => {
+    if (!session || !session?.user?.id) return;
+    const userId = session.user.id;
+
     const updates = {
       is_active: true,
       last_login_at: new Date().toISOString(),
     };
-    const { error } = await supabase.from("User").update(updates).eq("id", userId);
-    if (error) {
-      console.error("Failed updating user activity:", error);
+
+    const response = await fetch(`http://localhost:5001/api/profile/${userId}`, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(updates)
+    });
+
+    if (!response.ok) {
+      const { errorData } = await response.json();
+      console.error("Failed updating user activity:", errorData.error);
     }
   }, []);
 
@@ -30,10 +91,11 @@ export default function AuthCallback() {
     if (handledRef.current) return;
     handledRef.current = true;
 
-    const goToNext = (type) => {
-      // If this is a password recovery link, keep sending them to dashboard
+    const next = (type) => {
+      // If this is a password recovery link, set allow reset true
       if (type === "recovery") {
-        navigate("/dashboard", { replace: true });
+        setMessage("Reset your password...");
+        setAllowReset(true);
         return;
       }
 
@@ -50,8 +112,8 @@ export default function AuthCallback() {
       } = await supabase.auth.getSession();
 
       if (existingSession?.user?.id) {
-        await markUserActive(existingSession.user.id);
-        goToNext(type);
+        await markUserActive(existingSession);
+        next(type);
         return true;
       }
       return false;
@@ -82,12 +144,10 @@ export default function AuthCallback() {
 
       if (error) {
         console.error("supabase auth error:", error, errorDesc);
-        setMessage(errorDesc || "Link not valid anymore. Please log in again.");
+        setMessage(errorDesc || "Link is no longer not valid.");
         setAllowResend(true);
         return;
       }
-
-      setAllowResend(false);
 
       let data;
       try {
@@ -118,14 +178,14 @@ export default function AuthCallback() {
       window.history.replaceState({}, document.title, window.location.pathname);
 
       // update custom profile metadata
-      const activeUserId = data?.session?.user?.id;
-      if (activeUserId) {
-        await markUserActive(activeUserId);
+      const activeSession = data?.session;
+      if (activeSession) {
+        await markUserActive(activeSession);
       }
 
       // redirect based on link type
       if (data?.session) {
-        goToNext(type);
+        next(type);
         return;
       }
 
@@ -135,90 +195,110 @@ export default function AuthCallback() {
     run();
   }, [markUserActive, navigate]);
 
-  const openResend = () => {
-    setResendEmail("");
-    setResendMsg("");
-    setShowResend(true);
-  };
-
-  const resendConfirmation = async (e) => {
-    e.preventDefault();
-
-    const formEl = e.currentTarget;
-    if (!formEl.checkValidity()) {
-      formEl.reportValidity();
-      return;
-    }
-
-    setResendMsg("");
+  const resendConfirmation = async (values) => {
+    setMessage("");
 
     const redirectUrl = `${window.location.origin}/auth/callback`; // reuse callback
 
     await supabase.auth.resend({
       type: 'signup',
-      email: resendEmail,
+      email: values.email,
       options: {
         emailRedirectTo: redirectUrl
       }
     });
 
-    setResendMsg("If an account exists for that email, the confirmation link has been resent.");
+    setAllowResend(false);
+    setMessage("If an account exists for that email, the confirmation link has been resent.");
+    setTimeout(() => navigate("/login", { replace: true }), 1500);
+  }
+
+  const resetPassword = async (values) => {
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: values.password
+      })
+
+      if (error) throw error;
+
+      setAllowReset(false);
+      setMessage("Password has been reset.");
+      setTimeout(() => navigate("/dashboard", { replace: true }), 1500);
+
+    } catch (error) {
+      console.error(error);
+      alert(`Password could not be reset. Please try again.`);
+    }
   }
 
   return (
-    <div className="flex flex-col py-16 text-center text-brown font-serif gap-4">
+    <div className="flex flex-col py-16 text-2xl text-center text-brown font-serif gap-4">
       <p>{message}</p>
-      {
-        allowResend ?
-          <button
-            type="button"
-            onClick={openResend}
-            className="hover:underline hover:cursor-pointer"
-          >
-            Resend Confirmation Link
-          </button> :
-          <></>
-      }
-
-      {/* Modal popup for Resend Confirmation */}
-      {showResend && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          role="dialog" aria-modal="true"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowResend(false); }}
-        >
-          <div className="absolute inset-0 bg-black/50"></div>
+      {allowResend && (
+        <div className="flex items-center justify-center">
           <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border-2 border-black rounded-md shadow-lg">
             <h2 className="text-center text-2xl font-serif font-extralight mb-4">Resend Confirmation Link</h2>
-            <form className="flex flex-col font-mono text-xs" noValidate onSubmit={resendConfirmation}>
+            <form className="flex flex-col font-mono text-xs gap-4" noValidate onSubmit={submitEmail(resendConfirmation)}>
               <label>
                 <p className="text-center text-brown py-3">EMAIL *</p>
                 <input
-                  className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
-                  type="email" required
-                  value={resendEmail}
-                  onChange={(e) => { setResendEmail(e.target.value); if (resendMsg) setResendMsg(""); }}
-                  placeholder="you@example.com"
+                  className="w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]"
+                  type="email"
+                  {...registerEmail("email")}
                 />
+                {emailErrors.email && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {emailErrors.email.message}
+                  </p>
+                )}
               </label>
-              {resendMsg && (
-                <p className="text-center text-xs mt-3 mb-1">{resendMsg}</p>
-              )}
-              <div className="flex items-center justify-center gap-3 mt-6">
-                <button
-                  type="button"
-                  onClick={() => setShowResend(false)}
-                  className="px-4 py-2 bg-white text-black text-sm font-sans border-2 border-black rounded-md hover:opacity-80 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition"
-                >
-                  Resend Confirmation Link
-                </button>
-              </div>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition"
+              >
+                Submit
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Show Password Reset when allowed*/}
+      {allowReset && (
+        <div className="flex items-center justify-center">
+          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border-2 border-black rounded-md shadow-lg">
+            <h2 className="text-center text-2xl font-serif font-extralight mb-4">Change Password</h2>
+            <form className="flex flex-col font-mono text-xs gap-4" noValidate onSubmit={submitPassword(resetPassword)}>
+              <label>
+                <p className="text-center text-brown py-3">New Password *</p>
+                <input
+                  className="w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]"
+                  type="password"
+                  {...registerPassword("password")}
+                />
+                {passwordErrors.password && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {passwordErrors.password.message}
+                  </p>
+                )}
+                <p className="text-center text-brown py-3">Confirm Password *</p>
+                <input
+                  className="w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]"
+                  type="password"
+                  {...registerPassword("confirmPassword")}
+                />
+                {passwordErrors.confirmPassword && (
+                  <p className="mt-2 text-sm text-red-600">
+                    {passwordErrors.confirmPassword.message}
+                  </p>
+                )}
+              </label>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white text-sm font-sans border-2 border-black rounded-md transition"
+              >
+                Submit
+              </button>
             </form>
           </div>
         </div>

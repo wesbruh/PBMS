@@ -4,7 +4,7 @@ export default function anonRoutes(supabaseClient) {
     const router = express.Router();
 
     // --- Signup Route ---
-    router.post("signup", async (req, res) => {
+    router.post("/signup", async (req, res) => {
         const { signup_payload, profile_payload } = req.body;
 
         try {

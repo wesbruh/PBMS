@@ -522,8 +522,6 @@ export default function InquiryForm() {
         }
       }
 
-      console.log();
-
       // create Invoice related to session
       const invoiceResponse = await fetch(`http://localhost:5001/api/invoice/generate/${sessionData.id}`, {
         method: "POST",
