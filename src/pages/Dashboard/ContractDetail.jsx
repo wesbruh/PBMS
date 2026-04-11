@@ -1,7 +1,7 @@
 import { useState } from "react";
 import SignContractModal from "../../components/contracts/SignContractModal";
 
-export default function ContractDetail({ contract, contractTemplate, onSigned }) {
+export default function ContractDetail({ contract, contractTemplate, onSigned, readOnly = false }) {
   const [signing, setSigning] = useState(false);
     
   const [statusKey, setStatusKey] = useState(contract?.status || "Draft");
@@ -14,7 +14,7 @@ export default function ContractDetail({ contract, contractTemplate, onSigned })
 
       {/* Actions */}
       <div className="flex gap-2">
-        {statusKey === "Draft" && !signedUrl ? (
+        {!readOnly && statusKey === "Draft" && !signedUrl ? (
           <button
             type="button"
             onClick={() => setSigning(true)}
@@ -52,7 +52,7 @@ export default function ContractDetail({ contract, contractTemplate, onSigned })
           </div>
         ) : (<></>)}
       </div>
-
+      {!readOnly &&(
       <SignContractModal
         open={signing}
         contract={contract}
@@ -63,6 +63,7 @@ export default function ContractDetail({ contract, contractTemplate, onSigned })
         }}
         onClose={() => setSigning(false)}
       />
+      )}
     </div>
   );
 }

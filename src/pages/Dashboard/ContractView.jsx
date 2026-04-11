@@ -45,7 +45,7 @@ export default function ContractView() {
     }
 
     async function fetchContractTemplate() {
-      const response = await fetch(`https://localhost:5001/api/contract/templates/${contract.template_id}`, {
+      const response = await fetch(`http://localhost:5001/api/contract/templates/${contract.template_id}`, {
         method: "GET",
         headers: { "Content-Type": "application/json" }
       });
