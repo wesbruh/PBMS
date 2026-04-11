@@ -543,10 +543,12 @@ export default function InquiryForm() {
       const amountDue = selectedSessionType.base_price * DEPOSIT_PERCENTAGE; // calculate amountDue based on base price and DEPOSIT_PERCENTAGE
 
       // create Stripe checkout session
-      const stripeResponse = await fetch(
-        "http://localhost:5001/api/checkout/deposit", {
+      const stripeResponse = await fetch("http://localhost:5001/api/checkout/deposit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           from_url: window.location.href,
           product_data: {
@@ -556,9 +558,8 @@ export default function InquiryForm() {
           price: amountDue,
           apply_tax: true,
           tax_rate: 7.25,
-        }),
-      },
-      );
+        })
+      });
 
       if (!stripeResponse.ok) {
         supabase.from("Session").delete().eq("id", sessionData.id);
