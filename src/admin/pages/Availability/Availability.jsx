@@ -161,7 +161,7 @@ const Availability = () => {
       </div>
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="relative w-full font-sans bg-[#fdfbf7] p-5 md:p-6 rounded-2xl shadow-inner overflow-scroll">
+          <div className="relative w-full font-sans  bg-[#fcfcfc] p-5 md:p-6 rounded-lg shadow-inner overflow-scroll">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div>
@@ -195,9 +195,9 @@ const Availability = () => {
               <table className="w-full border-collapse bg-white">
                 <thead>
                   <tr>
-                    <th className="p-2 border bg-gray-100 sticky left-0 z-20 min-w-[100px]">Date</th>
+                    <th className="p-2 border bg-gray-100 sticky left-0 z-20 min-w-25">Date</th>
                     {timeSlots.map(slot => (
-                      <th key={slot} className="p-2 border text-xs font-medium text-gray-600 bg-gray-50 min-w-[40px]">{slot}</th>
+                      <th key={slot} className="p-2 border text-xs font-medium text-gray-600 bg-gray-50 min-w-10">{slot}</th>
                     ))}
                   </tr>
                 </thead>

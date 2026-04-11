@@ -9,9 +9,9 @@ function Forms() {
       <div className="flex w-1/5 min-w-50">
         <Sidebar />
       </div>
-      <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
+      <div className="flex h-full w-full shadow-inner bg-[#fcfcfc] rounded-lg overflow-hidden">
         <Frame>
-          <div className="w-screen flex flex-col gap-5 my-10 mx-2 ">
+          <div className="w-screen flex flex-col p-4">
             <Outlet />
           </div>
         </Frame>

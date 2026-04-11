@@ -240,7 +240,7 @@ function Notifications() {
 
         <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
           <Frame>
-            <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-scroll">
+            <div className="relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-scroll">
               <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications</h1>
                 <p className="text-gray-600">

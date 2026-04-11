@@ -133,7 +133,7 @@ export default function QuestionnairesList() {
   ];
 
   return (
-    <div className="w-full h-full flex flex-col px-2">
+    <div className="w-full h-full flex flex-col px-">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
