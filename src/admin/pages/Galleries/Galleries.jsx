@@ -70,7 +70,7 @@ function AdminGalleries() {
         const dateStr = start ? start.toLocaleDateString() : "—";
         const timeStr = start
           ? start.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
-          : "—";
+          : "-";
 
         // if a Gallery row exisit then consider it to be uploaded already
         const hasGallery = Array.isArray(s.Gallery)
@@ -85,10 +85,10 @@ function AdminGalleries() {
           id: s.id,
           // table columns
           clientName,
-          type: s?.SessionType?.name ?? "—",
+          type: s?.SessionType?.name ?? "-",
           date: dateStr,
           time: timeStr,
-          location: s.location_text ?? "—",
+          location: s.location_text ?? "-",
           status: hasGallery ? "Gallery Uploaded" : "Awaiting Gallery",
           uploadDate,
         };
@@ -190,7 +190,7 @@ function AdminGalleries() {
                 //   window.location.href = `/admin/galleries/view/${row.id}`;
                 // }}
                 className="flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-green-700 rounded-md text-sm font-medium"
-                title="View uploaded gallery"
+                title="Client Notified via email"
               >
                 <FolderCheck size={16} />
                 Notified on{" "}

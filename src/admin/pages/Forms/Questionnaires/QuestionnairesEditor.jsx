@@ -20,30 +20,6 @@ const TYPE_OPTIONS = [
   { value: "date", label: "Date" },
 ];
 
-// Must match the `name` column in your SessionType table (case-insensitive match used)
-// AND the `value` strings in InquiryForm's SESSION_TYPES array
-const SESSION_TYPE_OPTIONS = [
-  // testing session types
-  { value: "maternity", label: "maternity test" }, 
-  { value: "newborn", label: "Newborn test" }, 
-  { value: "family", label: "Family test" }, 
-  { value: "weddings", label: "Weddings test" },
-  
-  // !!! real session types !!!
-  { value: "Mini Session", label: "Mini Session" },
-  { value: "Full Session", label: "Full Session" },
-  { value: "Family Session", label: "Family Session" },
-  { value: "Maternity", label: "Maternity" },
-  { value: "Newborn (Lifestyle)", label: "Lifestyle" },
-  { value: "Couples/Engagment", label: "Couples/Engagment" },
-  { value: "First Breath", label: "L&D: First Breath" },
-  { value: "The Birth Story", label: "L&D: The Birth Story" },
-  { value: "From Womb To World", label: "L&D: From Womb To World" },
-  { value: "Positive Test To First Breath", label: "L&D: Positive Test To First Breath" },
-  { value: "Ivory", label: "Weddings: Ivory" },
-  { value: "Champagne", label: "Weddings: Champagne" },
-  { value: "Pearl", label: "Weddings: Pearl" },
-];
 
 export default function QuestionnaireEditor({ mode }) {
   const { id } = useParams();

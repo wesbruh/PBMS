@@ -135,7 +135,7 @@ export default function OfferingsPage() {
             {/* Header */}
             <div className="flex items-start justify-between mb-8">
               <div>
-                <h1 className="text-2xl font-semibold">Sessions &amp; Categories</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Sessions &amp; Packages</h1>
                 <p className="mt-1 text-sm text-neutral-500">
                   Click a category to view and edit its packages. All cards are clickable to edit.
                 </p>
