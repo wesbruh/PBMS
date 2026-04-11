@@ -54,18 +54,16 @@ export default function ContractDetail({ contract, contractTemplate, onSigned })
 
           ) : (<></>)}
         </div>
-        <div className="relative">
-          <SignContractModal
-            open={signing}
-            contract={contract}
-            contractTemplate={contractTemplate}
-            onSigned={(contract) => {
-              onSigned(contract);
-              setStatusKey("Signed");
-            }}
-            onClose={() => setSigning(false)}
-          />
-        </div>
+        <SignContractModal
+          open={signing}
+          contract={contract}
+          contractTemplate={contractTemplate}
+          onSigned={(contract) => {
+            onSigned(contract);
+            setStatusKey("Signed");
+          }}
+          onClose={() => setSigning(false)}
+        />
       </div>
     </div>
   );
