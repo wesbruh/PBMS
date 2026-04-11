@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {supabase } from "../../../lib/supabaseClient.js";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -12,14 +13,11 @@ function Contacts() {
   const [errorMsg, setErrorMsg] = useState("");
 
   // Controls modal visibility
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Holds selected contact for deletion
   const [selectedContact, setSelectedContact] = useState(null);
 
-  // Add form validation errors (separate from fetch/delete errors if you want)
-  const [addErrorMsg, setAddErrorMsg] = useState("");
 
   // Basic validators
   const isValidEmail = (email) => {
@@ -106,28 +104,55 @@ function Contacts() {
   
 
   // Deletes a contact from the database and updates the table
-  const handleDeleteContact = async () => {
-    if (!selectedContact) return;
+const handleDeleteContact = async () => {
+  if (!selectedContact) return;
 
-    const response = await fetch(`http://localhost:5001/api/contact/${selectedContact.email}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-    });
+  try {
+    setErrorMsg("");
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      setErrorMsg(errorData.error);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+
+    if (!token) {
+      setErrorMsg("Missing admin session token.");
       return;
     }
 
-    // Remove contact from UI
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          targetUserId: selectedContact.userid,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setErrorMsg(result.error || result.message || "Failed to delete user.");
+      return;
+    }
+
     setContacts((prev) =>
-      prev.filter((c) => c.email !== selectedContact.email)
+      prev.filter((c) => c.userid !== selectedContact.userid)
     );
 
     setSelectedContact(null);
     setShowDeleteModal(false);
-  };
+  } catch (error) {
+    console.error("Delete user error:", error);
+    setErrorMsg("Failed to delete user.");
+  }
+};
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
@@ -154,14 +179,6 @@ function Contacts() {
                 <span className="inline-flex items-center rounded-full border border-[#E7DFCF] bg-white px-4 py-1.5 text-sm text-[#5a3e2b] shadow-sm">
                   {contacts?.length ?? 0} Contacts
                 </span>
-
-                {/* Add Contact button */}
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="ml-8 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
-                >
-                  Add Contact
-                </button>
               </div>
             </div>
 
