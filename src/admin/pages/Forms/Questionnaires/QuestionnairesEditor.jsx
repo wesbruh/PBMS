@@ -139,6 +139,40 @@ export default function QuestionnaireEditor({ mode }) {
     );
   }
 
+  useEffect(() => {
+    if (!session) return;
+    
+    const loadSessionTypeOptions = async () => {
+      setLoading(true);
+
+      try {
+        const response = await fetch(`http://localhost:5001/api/sessions/types`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) throw new Error("Could not fetch session types");
+
+        const data = await response.json();
+
+        const sessionTypeOptions = new Set();
+        data.forEach((sessionType) => {
+          sessionTypeOptions.add({ label: `${sessionType.name}`, value: `${sessionType.name}`});
+        });
+
+        setSessionTypeOptions([...sessionTypeOptions]);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    loadSessionTypeOptions();
+
+  }, [session]);
+
   // ── Load existing template in edit mode ───────────────────────────────────────
   useEffect(() => {
     if (!isEdit || !session || !sessionTypeOptions) return;
@@ -464,12 +498,12 @@ export default function QuestionnaireEditor({ mode }) {
             <div>
               <label className="block text-sm font-medium">Session Type</label>
               <select
-                value={sessionType}
+                value={sessionType ?? ""}
                 onChange={(e) => setSessionType(e.target.value)}
                 className="mt-1 w-full border rounded px-3 py-2 text-sm cursor-pointer"
               >
-                <option value="">Select a session type</option>
-                {SESSION_TYPE_OPTIONS.map((opt) => (
+                <option value="" disabled>Select a session type</option>
+                {sessionTypeOptions.map((opt) => (
                   <option key={opt.value} value={opt.value}>
                     {opt.label}
                   </option>
