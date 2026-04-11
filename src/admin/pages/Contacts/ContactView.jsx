@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
+
 import { supabase } from "../../../lib/supabaseClient.js";
+import { useAuth } from "../../../context/AuthContext.jsx"
 
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
 import { saveAs } from "file-saver";
@@ -15,6 +17,9 @@ function ContactView() {
   const [user, setUser] = useState(null);
   const [fullName, setFullName] = useState("");
 
+  // call useAuth for Supabase session
+  const { session } = useAuth();
+
   const [sessions, setSessions] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [galleries, setGalleries] = useState([]);
@@ -26,12 +31,15 @@ function ContactView() {
 
   // check if user exists
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || session) return;
 
     async function checkUser() {
       const response = await fetch(`http://localhost:5001/api/profile/${userId}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
       });
 
       if (!response.ok) {
@@ -47,7 +55,7 @@ function ContactView() {
     }
 
     checkUser();
-  }, [userId]);
+  }, [userId, session]);
 
   // load all data that belongs to THIS user only
   useEffect(() => {

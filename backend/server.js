@@ -4,23 +4,9 @@ dotenv.config();
 
 import { createApp } from "./app.js";
 import { supabase } from "./supabaseClient.js";
-import { stripe } from "./stripeClient.js"
-
-import contractRoutes from "./routes/contractRoutes.js"
-import contactRoutes from "./routes/contactRoutes.js"
-import invoiceRoutes from "./pdf/invoice.js";
-import receiptRoutes from "./pdf/receipt.js";
-import galleryRoutes from "./routes/galleryRoutes.js";
+import { stripe } from "./stripeClient.js";
 
 const app = createApp({ supabaseClient: supabase, stripeClient: stripe });
-
-// --- Routes ---
-
-app.use("/api/contract", contractRoutes);
-app.use("/api/contact", contactRoutes);
-app.use("/api/invoice", invoiceRoutes);
-app.use("/api/receipts", receiptRoutes);
-app.use("/api/gallery", galleryRoutes);
 
 const PORT = process.env.PORT || 5001;
 

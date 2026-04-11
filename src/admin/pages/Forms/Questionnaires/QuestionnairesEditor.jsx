@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 
+import { useAuth } from "../../../../context/AuthContext";
+
 const OPTION_TYPES = ["select", "radio", "checkbox"];
 
 const TYPE_OPTIONS = [
@@ -25,6 +27,9 @@ export default function QuestionnaireEditor({ mode }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = mode === "edit";
+  
+  // call useAuth for Supabase session
+  const { session } = useAuth();
 
   const [name, setName] = useState("");
   const [sessionType, setSessionType] = useState("");
@@ -98,7 +103,7 @@ export default function QuestionnaireEditor({ mode }) {
 
   // ── Load existing template in edit mode ───────────────────────────────────────
   useEffect(() => {
-    if (!isEdit) return;
+    if (!isEdit || !session) return;
 
     async function load() {
       setError("");
@@ -106,7 +111,10 @@ export default function QuestionnaireEditor({ mode }) {
       try {
         const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" }
+          headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+          }
         })
 
         if (!response.ok) {
@@ -121,7 +129,10 @@ export default function QuestionnaireEditor({ mode }) {
         if (qTemplate.session_type_id) {
           const response = await fetch(`http://localhost:5001/api/sessions/type`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Authorization": `Bearer ${session?.access_token}`,
+              "Content-Type": "application/json"
+            },
             body: JSON.stringify({ "session_type_id": qTemplate.session_type_id })
           });
 
@@ -151,7 +162,7 @@ export default function QuestionnaireEditor({ mode }) {
     }
 
     load();
-  }, [isEdit, id]);
+  }, [isEdit, id, session]);
 
   // ── Validation ────────────────────────────────────────────────────────────────
   function validate() {
@@ -192,7 +203,10 @@ export default function QuestionnaireEditor({ mode }) {
   async function resolveSessionTypeId(value) {
     const response = await fetch(`http://localhost:5001/api/sessions/type`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify({ "session_type_name": value })
     });
 
@@ -217,7 +231,10 @@ export default function QuestionnaireEditor({ mode }) {
       if (isEdit) {
         const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify(payload)
         });
 
@@ -228,7 +245,10 @@ export default function QuestionnaireEditor({ mode }) {
       } else {
         const response = await fetch(`http://localhost:5001/api/questionnaire/templates`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },          
           body: JSON.stringify(payload)
         });
 
@@ -262,7 +282,10 @@ export default function QuestionnaireEditor({ mode }) {
       if (isEdit) {
         const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },          
           body: JSON.stringify(payload)
         });
 
@@ -273,7 +296,10 @@ export default function QuestionnaireEditor({ mode }) {
       } else {
         const response = await fetch(`http://localhost:5001/api/questionnaire/templates`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },          
           body: JSON.stringify(payload)
         });
 
@@ -289,7 +315,10 @@ export default function QuestionnaireEditor({ mode }) {
       // set only one questionnaire template active for this session type
       const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${templateId}/set`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ session_type_id: sessionTypeId })
       });
 

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../context/AuthContext.jsx"
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -10,6 +11,9 @@ function Contacts() {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // call useAuth for Supabase session
+  const { session } = useAuth();
 
   // Controls modal visibility
   const [showAddModal, setShowAddModal] = useState(false);
@@ -76,13 +80,18 @@ function Contacts() {
   ];
 
   useEffect(() => {
+    if (!session) return;
+
     const fetchContacts = async () => {
       setLoading(true);
       setErrorMsg("");
 
-      const response = await fetch("http://localhost:5001/api/profiles", {
+      const response = await fetch("http://localhost:5001/api/profile", {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
       });
 
       if (!response.ok) {
@@ -109,7 +118,7 @@ function Contacts() {
     };
 
     fetchContacts();
-  }, []);
+  }, [session]);
 
   // Inserts a new contact into the database and updates the table
   const handleAddContact = async () => {
@@ -161,7 +170,10 @@ function Contacts() {
 
     const response = await fetch(`http://localhost:5001/api/contact/add`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      },
       body: JSON.stringify(contactPayload)
     });
 
@@ -195,7 +207,10 @@ function Contacts() {
 
     const response = await fetch(`http://localhost:5001/api/contact/${selectedContact.email}`, {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" }
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      },
     });
 
     if (!response.ok) {

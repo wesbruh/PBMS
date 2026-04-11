@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext"
 import ContractDetail from "./ContractDetail";
 
 export default function ContractView() {
-  const { profile } = useAuth();
+  const { session, profile } = useAuth();
   const { id: contractId } = useParams();
 
   const navigate = useNavigate();
@@ -16,12 +16,15 @@ export default function ContractView() {
   useEffect(() => {
     setLoading(true);
 
-    if ( !profile || !contractId ) return;
+    if (!session || !profile || !contractId) return;
 
     async function fetchContract() {
       const response = await fetch(`http://localhost:5001/api/contract/${contractId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ user_id: profile.id })
       });
 
@@ -35,7 +38,7 @@ export default function ContractView() {
     };
 
     fetchContract();
-  }, [profile]);
+  }, [session, profile]);
 
   useEffect(() => {
     if (!contract) {
@@ -45,7 +48,10 @@ export default function ContractView() {
     async function fetchContractTemplate() {
       const response = await fetch(`https://localhost:5001/api/contract/templates/${contract.template_id}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
       });
 
       if (!response.ok) {

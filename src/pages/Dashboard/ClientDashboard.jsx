@@ -16,6 +16,9 @@ export default function ClientDashboard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const checkoutSessionId = searchParams.get('checkout_session_id') || null;
 
+  // call useAuth for Supabase session
+  const { session } = useAuth();
+
   const { user, profile, setProfile } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [invoices, setInvoices] = useState([]);
@@ -85,7 +88,10 @@ export default function ClientDashboard() {
       // retrieve session type info for product data
       const sessionResponse = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
       });
 
       if (!sessionResponse.ok) throw new Error("Session not found.");
@@ -122,7 +128,10 @@ export default function ClientDashboard() {
       // create checkout session in backend
       const checkoutSession = await fetch("http://localhost:5001/api/checkout/rest", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           product_data: {
             name: `${sessionTypeData.name} Session - Rest`,
@@ -185,10 +194,7 @@ export default function ClientDashboard() {
 
           // ensure checkout session belongs to user
           if (user.id === client_id) {
-            const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
-              method: "GET",
-              headers: { "Content-Type": "application/json" }
-            });
+            const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
             const status = await response.json()
               .then((data) => {
                 // console.log("Checkout session: ", data.session); // DEBUGGING

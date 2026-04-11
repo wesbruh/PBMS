@@ -57,7 +57,7 @@ const Schema = z.object({
 
 export default function InquiryForm() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { session, profile } = useAuth();
 
   const [searchParams] = useSearchParams();
   const [sessionId, setSessionId] = useState(null);
@@ -140,10 +140,15 @@ export default function InquiryForm() {
   // ── Load contract templates ───────────────────────────────────────────────
   useEffect(() => {
     const loadContracts = async () => {
+      if (!session) return;
+
       try {
         const response = await fetch("http://localhost:5001/api/contract/templates", {
           method: "GET",
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
         });
 
         const data = await response.json();
@@ -158,25 +163,31 @@ export default function InquiryForm() {
     };
 
     loadContracts();
-  }, []);
+  }, [session]);
 
   // ── Load / create default contract ───────────────────────────────────────
   useEffect(() => {
     const getDefaultContract = async () => {
-      if (!profile || loadingParams) return;
+      if (!session || !profile || loadingParams) return;
 
       try {
         if (sessionId && checkoutSessionId) {
           const response = await fetch("http://localhost:5001/api/contract", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Authorization": `Bearer ${session?.access_token}`,
+              "Content-Type": "application/json"
+            },
             body: JSON.stringify({ user_id: profile.id, session_id: sessionId })
           });
           setContract(await response.json());
         } else {
           const response = await fetch("http://localhost:5001/api/contract", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Authorization": `Bearer ${session?.access_token}`,
+              "Content-Type": "application/json"
+            },
             body: JSON.stringify({ user_id: profile.id })
           });
           setContract(await response.json());
@@ -188,7 +199,7 @@ export default function InquiryForm() {
       }
     };
     getDefaultContract();
-  }, [profile, loadingParams]);
+  }, [session, profile, loadingParams]);
 
   const updateContractTemplate = async (templateId) => {
     try {
@@ -196,8 +207,11 @@ export default function InquiryForm() {
         `http://localhost:5001/api/contract/${contract?.id}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ template_id: templateId }),
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ template_id: templateId })
         },
       );
       if (response.ok) setContract({ ...contract, template_id: templateId });
@@ -315,7 +329,7 @@ export default function InquiryForm() {
   // ── Prefill form (from auth + Stripe return) ──────────────────────────────
   useEffect(() => {
     const prefillForm = async () => {
-      if (!profile || loadingParams || sessionTypesLoading) return;
+      if (!session || !profile || loadingParams || sessionTypesLoading) return;
 
       if (sessionId && checkoutSessionId) {
         // Returning from Stripe — load existing session from DB
@@ -336,7 +350,10 @@ export default function InquiryForm() {
           // work with checkout session and payment intent to check for payment authorization
           const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Authorization": `Bearer ${session?.access_token}`,
+              "Content-Type": "application/json"
+            }
           });
           const csData = await csResponse.json();
           const { status: csStatus, payment_intent: piData } = csData;
@@ -446,7 +463,7 @@ export default function InquiryForm() {
       }
     };
     prefillForm();
-  }, [profile, loadingParams, sessionTypesLoading]);
+  }, [session, profile, loadingParams, sessionTypesLoading]);
 
   // ── Payment handler ───────────────────────────────────────────────────────
   const handlePayment = async () => {
@@ -542,7 +559,10 @@ export default function InquiryForm() {
       // create Invoice related to session
       const invoiceResponse = await fetch(`http://localhost:5001/api/invoice/generate/${sessionData.id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           remaining: selectedSessionType.base_price, // send remaining balance with tax for invoice generation
         })
@@ -557,22 +577,23 @@ export default function InquiryForm() {
       const amountDue = selectedSessionType.base_price * DEPOSIT_PERCENTAGE; // calculate amountDue based on base price and DEPOSIT_PERCENTAGE
 
       // create Stripe checkout session
-      const stripeResponse = await fetch(
-        "http://localhost:5001/api/checkout/deposit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from_url: window.location.href,
-            product_data: {
-              name: `${selectedSessionType.name} Deposit`,
-              description: selectedSessionType.description,
-            },
-            price: amountDue,
-            apply_tax: true,
-            tax_rate: 7.25,
-          }),
+      const stripeResponse = await fetch("http://localhost:5001/api/checkout/deposit", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
         },
-      );
+        body: JSON.stringify({
+          from_url: window.location.href,
+          product_data: {
+            name: `${selectedSessionType.name} Deposit`,
+            description: selectedSessionType.description,
+          },
+          price: amountDue,
+          apply_tax: true,
+          tax_rate: 7.25,
+        })
+      });
 
       if (!stripeResponse.ok) {
         supabase.from("Session").delete().eq("id", sessionData.id);

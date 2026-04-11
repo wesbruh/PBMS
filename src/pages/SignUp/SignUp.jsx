@@ -4,6 +4,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 // password rules
 const passwordSchema = z
@@ -27,6 +28,7 @@ const SignUpSchema = z
   });
 
 export default function SignUp() {
+  const { session } = useAuth();
   const [submitError, setSubmitError] = useState("");
   const [infoMsg, setInfoMsg] = useState("");
 
@@ -72,7 +74,10 @@ export default function SignUp() {
 
     const response = await fetch("http://localhost:5001/api/signup", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         signup_payload: signupPayload,
         profile_payload: profilePayload,
@@ -89,6 +94,8 @@ export default function SignUp() {
       setInfoMsg(data.info.message);
     }
   };
+  
+  if (!session) return;
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#FFFDF4]">

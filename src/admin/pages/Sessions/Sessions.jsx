@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient.js"
+import { useAuth } from "../../../context/AuthContext.jsx"
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -11,16 +12,23 @@ const DEPOSIT_PERCENTAGE = 0.05;
 function Sessions() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // call useAuth for Supabase session
+  const { session } = useAuth();
 
   useEffect(() => {
+    if (!session) return;
     fetchSessions();
-  }, []);
+  }, [session]);
 
   const fetchSessions = async () => {
     try {
       const response = await fetch("http://localhost:5001/api/sessions", {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
       });
       
       const data = await response.json();
@@ -46,7 +54,10 @@ function Sessions() {
     try {
       const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
       });
 
       if (!csResponse.ok)
@@ -68,7 +79,10 @@ function Sessions() {
 
       const response = await fetch(`http://localhost:5001/api/intent/capture`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ payment_intent_id: paymentIntent.id })
       });
 
@@ -83,7 +97,10 @@ function Sessions() {
       // ensure session exists and map session id to invoice id
       const mapResponse = await fetch(`http://localhost:5001/api/invoice/${session_id}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
       });
 
       if (!mapResponse.ok) throw new Error("Could not map session id to an invoice id");
@@ -111,7 +128,10 @@ function Sessions() {
 
       const response = await fetch(`http://localhost:5001/api/invoice/confirm/${invoiceId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           remaining: remaining, // send remaining balance with tax for invoice generation
           due_date: dueDate
@@ -135,9 +155,13 @@ function Sessions() {
 
       if (invoiceError) throw new Error("Invoice not found.")
 
-      const pdfResponse = await fetch(
-        `http://localhost:5001/api/invoice/${invoiceData.id}/pdf`
-      );
+      const pdfResponse = await fetch(`http://localhost:5001/api/invoice/${invoiceData.id}/pdf`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+      });
 
       const blob = await pdfResponse.blob();
       const url = window.URL.createObjectURL(blob);
@@ -183,7 +207,10 @@ function Sessions() {
     try {
       const response = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify(payload),
       });
 

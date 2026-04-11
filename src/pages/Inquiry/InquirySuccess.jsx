@@ -17,7 +17,7 @@ export default function InquirySuccess() {
   const [location, setLocation] = useState(null);
 
   // get user information
-  const { profile } = useAuth();
+  const { session, profile } = useAuth();
   const [loading, setLoading] = useState(true);
 
   // If someone refreshes this page, state will be lost.
@@ -29,13 +29,16 @@ export default function InquirySuccess() {
   }, [sessionId, navigate]);
 
   useEffect(() => {
-    if (!profile || !sessionId) return;
+    if (!session || !profile || !sessionId) return;
 
     const loadParameters = async () => {
       try {
         const response = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
         });
 
         if (!response.ok) {
@@ -63,7 +66,7 @@ export default function InquirySuccess() {
     }
 
     loadParameters();
-  }, [profile, sessionId, navigate])
+  }, [session, profile, sessionId, navigate])
 
   if (loading) {
     return (
@@ -159,7 +162,7 @@ export default function InquirySuccess() {
           <div className="mt-8 text-center">
             <p className="text-sm text-neutral-600">
               Want to submit another request?{" "}
-              <Link className="text-[#7E4C3C] underline underline-offset-4 hover:text-[#AB8C4B]" to="/inquiry">
+              <Link className="text-[#7E4C3C] underline underline-offset-4 hover:text-[#AB8C4B]" to="/dashboard/inquiry">
                 Submit Another Inquiry
               </Link>
             </p>

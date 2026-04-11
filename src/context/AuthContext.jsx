@@ -25,10 +25,13 @@ export function AuthProvider({ children }) {
       }
 
       // if logged in, try to load the row from "User" and user's role name
-      if (session?.user?.id && !ignore) {
+      if (session?.access_token && session?.user?.id && !ignore) {
         const response = await fetch(`http://localhost:5001/api/profile/${session.user.id}`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
         });
 
         if (!ignore) {
@@ -62,7 +65,10 @@ export function AuthProvider({ children }) {
         (async () => {
           const response = await fetch(`http://localhost:5001/api/profile/${newSession.user.id}`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" }
+            headers: {
+              "Authorization": `Bearer ${newSession?.access_token}`,
+              "Content-Type": "application/json"
+            }
           });
 
           if (response.ok) {

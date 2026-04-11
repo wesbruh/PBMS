@@ -8,7 +8,7 @@ function Navbar() {
   // determines location of user based on current page
   const location = useLocation();
   
-  const { profile } = useAuth();
+  const { session, profile } = useAuth();
   const navigate = useNavigate();
 
   // for mobile menu management and special services accordian
@@ -16,11 +16,14 @@ function Navbar() {
   const [isSpecialServicesOpen, setIsSpecialServicesOpen] = useState(false);
 
   const handleLogout = async () => {
-    if (profile?.id) {
+    if (session?.access_token && profile?.id) {
       const response = await fetch(`http://localhost:5001/api/profile/${profile.id}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ is_active: false })
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ is_active: false })
       });
 
       if (!response.ok) {
