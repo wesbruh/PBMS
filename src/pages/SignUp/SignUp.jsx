@@ -4,7 +4,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../../context/AuthContext";
 
 // password rules
 const passwordSchema = z
@@ -28,7 +27,6 @@ const SignUpSchema = z
   });
 
 export default function SignUp() {
-  const { session } = useAuth();
   const [submitError, setSubmitError] = useState("");
   const [infoMsg, setInfoMsg] = useState("");
 
