@@ -25,6 +25,8 @@ export default function availabilityRoutes(supabaseClient) {
   });
 
   router.post("/settings", async (req, res) => {
+    if (req?.user?.role?.name !== "Admin") return;
+
     const { start, end } = req.body;
     const { data, error } = await supabaseClient
       .from("AvailabilitySettings")
@@ -36,14 +38,23 @@ export default function availabilityRoutes(supabaseClient) {
   });
 
   router.post("/blocks", async (req, res) => {
+    if (req?.user?.role?.name !== "Admin") return;
+
     const { blocks, rangeStart, rangeEnd } = req.body;
     try {
+      const now = new Date().toISOString();
+      
+      await supabaseClient
+        .from("AvailabilityBlocks")
+        .delete()
+        .lte("start_time", now);
+
       await supabaseClient
         .from("AvailabilityBlocks")
         .delete()
         .gte("start_time", rangeStart)
         .lte("start_time", rangeEnd);
-
+      
       if (blocks && blocks.length > 0) {
         const { error: insertError } = await supabaseClient.from("AvailabilityBlocks").insert(blocks);
         if (insertError) throw insertError;

@@ -20,6 +20,23 @@ export default function sessionsRoutes(supabaseClient) {
         }
     });
 
+    // retrieve all active session type details
+    router.post("/types", async (_req, res) => {
+        try {                
+            const { data, error } = await supabaseClient
+                .from("SessionType")
+                .select()
+                .eq("active", true);
+
+            if (error) throw error;
+
+            res.status(200).json(data ?? null);
+        } catch (error) {
+            console.error("Error fetching Session Types:", error);
+            res.status(500).json({ error: "Internal Server Error" });
+        }
+    });
+
     // retrieve session type details for specified session_type_id
     router.post("/type", async (req, res) => {
         const { session_type_id, session_type_name } = req.body;

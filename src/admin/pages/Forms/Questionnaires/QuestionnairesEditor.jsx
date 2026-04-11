@@ -22,16 +22,16 @@ const TYPE_OPTIONS = [
   { value: "date", label: "Date" },
 ];
 
-
 export default function QuestionnaireEditor({ mode }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = mode === "edit";
-  
+
   // call useAuth for Supabase session
   const { session } = useAuth();
 
   const [name, setName] = useState("");
+  const [sessionTypeOptions, setSessionTypeOptions] = useState([]);
   const [sessionType, setSessionType] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
@@ -139,19 +139,18 @@ export default function QuestionnaireEditor({ mode }) {
     );
   }
 
-  // ------ Load existing template in edit mode ------
+  // ── Load existing template in edit mode ───────────────────────────────────────
   useEffect(() => {
-    if (!isEdit || !session) return;
+    if (!isEdit || !session || !sessionTypeOptions) return;
 
     async function load() {
       setError("");
-      setLoading(true);
       try {
         const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
           method: "GET",
           headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
           }
         })
 
@@ -200,7 +199,7 @@ export default function QuestionnaireEditor({ mode }) {
     }
 
     load();
-  }, [isEdit, id, session]);
+  }, [loading, isEdit, id, session, sessionTypeOptions]);
 
   // ------ Validation ------
   function validate() {
@@ -252,7 +251,7 @@ export default function QuestionnaireEditor({ mode }) {
 
     if (!response.ok) throw new Error(`SessionType "${value}" not found`);
 
-    const data = await response.json();
+    const data = await response.json()
     return data.id;
   }
 
@@ -296,7 +295,7 @@ export default function QuestionnaireEditor({ mode }) {
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
             "Content-Type": "application/json"
-          },          
+          },
           body: JSON.stringify(payload)
         });
 
@@ -347,7 +346,7 @@ export default function QuestionnaireEditor({ mode }) {
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
             "Content-Type": "application/json"
-          },          
+          },
           body: JSON.stringify(payload)
         });
 
@@ -361,7 +360,7 @@ export default function QuestionnaireEditor({ mode }) {
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
             "Content-Type": "application/json"
-          },          
+          },
           body: JSON.stringify(payload)
         });
 
