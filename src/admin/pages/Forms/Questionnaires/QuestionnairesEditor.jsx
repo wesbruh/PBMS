@@ -14,24 +14,16 @@ const TYPE_OPTIONS = [
   { value: "date", label: "Date" },
 ];
 
-// Must match the `name` column in your SessionType table (case-insensitive match used)
-// AND the `value` strings in InquiryForm's SESSION_TYPES array
-const SESSION_TYPE_OPTIONS = [
-  { value: "maternity", label: "Maternity" },
-  { value: "newborn", label: "Newborn" },
-  { value: "family", label: "Family" },
-  { value: "weddings", label: "Weddings" },
-];
-
 export default function QuestionnaireEditor({ mode }) {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = mode === "edit";
-  
+
   // call useAuth for Supabase session
   const { session } = useAuth();
 
   const [name, setName] = useState("");
+  const [sessionTypeOptions, setSessionTypeOptions] = useState([]);
   const [sessionType, setSessionType] = useState("");
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(isEdit);
@@ -101,19 +93,52 @@ export default function QuestionnaireEditor({ mode }) {
     );
   }
 
+  useEffect(() => {
+    if (!session) return;
+    
+    const loadSessionTypeOptions = async () => {
+      setLoading(true);
+
+      try {
+        const response = await fetch(`http://localhost:5001/api/sessions/types`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) throw new Error("Could not fetch session types");
+
+        const data = await response.json();
+
+        const sessionTypeOptions = new Set();
+        data.forEach((sessionType) => {
+          sessionTypeOptions.add({ label: `${sessionType.name}`, value: `${sessionType.name}`});
+        });
+
+        setSessionTypeOptions([...sessionTypeOptions]);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    loadSessionTypeOptions();
+
+  }, [session]);
+
   // ── Load existing template in edit mode ───────────────────────────────────────
   useEffect(() => {
-    if (!isEdit || !session) return;
+    if (!isEdit || !session || !sessionTypeOptions) return;
 
     async function load() {
       setError("");
-      setLoading(true);
       try {
         const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
           method: "GET",
           headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
           }
         })
 
@@ -162,7 +187,7 @@ export default function QuestionnaireEditor({ mode }) {
     }
 
     load();
-  }, [isEdit, id, session]);
+  }, [loading, isEdit, id, session, sessionTypeOptions]);
 
   // ── Validation ────────────────────────────────────────────────────────────────
   function validate() {
@@ -211,7 +236,7 @@ export default function QuestionnaireEditor({ mode }) {
     });
 
     if (!response.ok) throw new Error(`SessionType "${value}" not found`);
-    
+
     const data = await response.json()
     return data.id;
   }
@@ -248,7 +273,7 @@ export default function QuestionnaireEditor({ mode }) {
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
             "Content-Type": "application/json"
-          },          
+          },
           body: JSON.stringify(payload)
         });
 
@@ -285,7 +310,7 @@ export default function QuestionnaireEditor({ mode }) {
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
             "Content-Type": "application/json"
-          },          
+          },
           body: JSON.stringify(payload)
         });
 
@@ -299,7 +324,7 @@ export default function QuestionnaireEditor({ mode }) {
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
             "Content-Type": "application/json"
-          },          
+          },
           body: JSON.stringify(payload)
         });
 
@@ -382,12 +407,12 @@ export default function QuestionnaireEditor({ mode }) {
           <div>
             <label className="block text-sm font-medium">Session Type</label>
             <select
-              value={sessionType}
+              value={sessionType ?? ""}
               onChange={(e) => setSessionType(e.target.value)}
               className="mt-1 w-full border rounded px-3 py-2 text-sm"
             >
-              <option value="">Select a session type</option>
-              {SESSION_TYPE_OPTIONS.map((opt) => (
+              <option value="" disabled>Select a session type</option>
+              {sessionTypeOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>

@@ -256,7 +256,7 @@ export default function InquiryForm() {
 
   const watchedDate = watch("date");
   const watchedStartTime = watch("startTime");
-
+  
   // ── When session type is selected, set default package + duration ─────────
   function handleSelectSessionType(st) {
     setSelectedSessionType(st);
@@ -342,9 +342,9 @@ export default function InquiryForm() {
 
           if (error) throw new Error("Payment entry not found");
 
-          const sessionData = paymentData.Invoice.Session;
+          const sessionData = paymentData?.Invoice?.Session;
 
-          if (!sessionData || sessionData.is_active === true) throw new Error("No inactive session not found");
+          if (!sessionData || sessionData?.is_active === true) throw new Error("No inactive session found");
           else if (sessionData.client_id !== profile.id) throw new Error("Session does not belong to this user");
 
           // work with checkout session and payment intent to check for payment authorization
@@ -985,6 +985,7 @@ export default function InquiryForm() {
             {/* Hidden input for form validation */}
             <input type="hidden" {...register("startTime")} />
             <TimeSlotGrid
+              key={`${selectedSessionType ?? ""}${watchedDate ?? ""}`}
               selectedDate={watchedDate}
               durationMinutes={durationMinutes}
               startTime={watchedStartTime || ""}

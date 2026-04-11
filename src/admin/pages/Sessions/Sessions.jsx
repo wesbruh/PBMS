@@ -127,7 +127,7 @@ function Sessions() {
         `${date.getDate().toString().padStart(2, '0')}`;
 
       const response = await fetch(`http://localhost:5001/api/invoice/confirm/${invoiceId}`, {
-        method: "POST",
+        method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
           "Content-Type": "application/json"

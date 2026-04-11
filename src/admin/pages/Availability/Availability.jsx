@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
 import { format, addDays, addMinutes, startOfDay, isBefore, isSameDay } from 'date-fns';
+
+import { useAuth } from "../../../context/AuthContext"
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -13,37 +14,49 @@ const Availability = () => {
   const [loading, setLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
 
+  const { session } = useAuth();
+
   useEffect(() => {
+    if (!session) return;
     fetchAvailability();
-  }, []);
+  }, [session]);
 
   const fetchAvailability = async () => {
     try {
-      const res = await axios.get('http://localhost:5001/api/availability');
+      const res = await fetch('http://localhost:5001/api/availability', {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
+      });
 
-      if (res.data.settings) {
+      const data = await res.json();
+
+      if (data.settings) {
         setWorkDay({
-          start: res.data.settings.work_start_time.slice(0, 5),
-          end: res.data.settings.work_end_time.slice(0, 5)
+          start: data.settings.work_start_time.slice(0, 5),
+          end: data.settings.work_end_time.slice(0, 5)
         });
       }
+      if (data.blocks && data.blocks.length > 0) {
+        const loadedSelection = new Set();
+        data.blocks.forEach(block => {
+          const dateObj = new Date(block.start_time);
+          const dateKey = format(dateObj, 'yyyy-MM-dd');
+          const timeKey = format(dateObj, 'HH:mm');
+          loadedSelection.add(`${dateKey}_${timeKey}`);
+        });
 
-            if (res.data.blocks && res.data.blocks.length > 0) {
-                const loadedSelection = new Set();
-                res.data.blocks.forEach(block => {
-                    const dateObj = new Date(block.start_time);
-                    const dateKey = format(dateObj, 'yyyy-MM-dd');
-                    const timeKey = format(dateObj, 'HH:mm');
-                    loadedSelection.add(`${dateKey}_${timeKey}`);
-                });
-                setSelection(loadedSelection);
-            }
-            setLoading(false);
-        } catch (error) {
-            console.error("Error loading availability:", error);
-            setLoading(false);
-        }
-    };
+        setSelection(loadedSelection);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error("Error loading availability:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getTimeSlots = () => {
     const slots = [];
@@ -103,17 +116,18 @@ const Availability = () => {
 
   const isPastDate = (day) => isBefore(day, startOfDay(new Date()));
 
-    // --- Save Logic ---
-    const saveChanges = async () => {
-        // 1. Prepare the RED blocks
-        const blocksToSave = Array.from(selection).map(key => {
-            const [date, time] = key.split('_');
-            return {
-                start_time: new Date(`${date}T${time}:00`),
-                end_time: new Date(`${date}T${time}:15`),   
-                is_available: false
-            };
-        });
+  // --- Save Logic ---
+  const saveChanges = async () => {
+    // 1. Prepare the RED blocks
+    const blocksToSave = Array.from(selection).map(key => {
+      const [date, time] = key.split('_');
+      const startDateObj = new Date(`${date}T${time}:00`);
+      const endDateObj = new Date(startDateObj.getTime() + (15 * 60 * 1000));  // add 15 minutes to start time
+      return {
+        start_time: startDateObj,
+        end_time: endDateObj
+      };
+    });
 
     // 2. Define the date range we are currently viewing/editing
     // The backend needs this to know which old records to delete.
@@ -122,11 +136,21 @@ const Availability = () => {
     const rangeEnd = format(days[days.length - 1], 'yyyy-MM-dd');
 
     try {
-      await axios.post('http://localhost:5001/api/availability/blocks', {
-        blocks: blocksToSave,
-        rangeStart: `${rangeStart}T00:00:00`,
-        rangeEnd: `${rangeEnd}T23:59:59`
+      const response = await fetch('http://localhost:5001/api/availability/blocks', {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          blocks: blocksToSave,
+          rangeStart: `${rangeStart}T00:00:00`,
+          rangeEnd: `${rangeEnd}T23:59:59`
+        })
       });
+
+      if (!response.ok) throw new Error("Error saving schedule")
+
       alert("Schedule saved successfully!");
     } catch (err) {
       console.error(err);
@@ -136,12 +160,23 @@ const Availability = () => {
 
   const saveSettings = async () => {
     try {
-      await axios.post('http://localhost:5001/api/availability/settings', {
-        start: workDay.start,
-        end: workDay.end
+      const response = await fetch('http://localhost:5001/api/availability/settings', {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          start: workDay.start,
+          end: workDay.end
+        })
       });
+
+      if (!response.ok) throw new Error("Error saving settings")
+
       window.location.reload();
     } catch (err) {
+      console.error(err);
       alert("Error saving settings");
     }
   };
