@@ -39,9 +39,17 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
 
   const app = express();
 
+
+  const allowedOrigins = ["http://localhost:5173"];
   app.use(
     cors({
-      origin: ["http://localhost:5173"],
+      origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
       credentials: true,
     })
@@ -566,6 +574,82 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
     } catch (error) {
       console.error("Error setting active questionnaire template:", error.message);
       res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
+
+  app.get("/api/invoice/getInvoiceTableData", async (req, res) => {
+    const { data, error } = await supabaseClient.from('Invoice').select('*');
+    if (error) return res.status(500).json(error);
+    res.json(data);
+  });
+  
+  app.get("/api/invoice/getInvoiceByID", async (req, res) => {
+    const invoice_id = req.query.term;
+    const { data, error } = await supabaseClient.from('Invoice').select().eq('id', invoice_id).single();
+    if (error) return res.status(400).json(error);
+    res.json(data);
+  });
+  
+  app.post("/api/invoice/:id/reduceRemainingInvoiceBalance", async (req, res) => {
+    const { id } = req.params;
+    const { amount, payment_method } = req.body;
+  
+    if (!amount || isNaN(amount) || amount <= 0) {
+      return res.status(400).json({ error: "Invalid reduction amount" });
+    }
+  
+    try {
+      const { data: invoice, error: fetchError } = await supabaseClient
+        .from('Invoice')
+        .select('remaining')
+        .eq('id', id)
+        .single();
+  
+      if (fetchError || !invoice) {
+        return res.status(404).json({ error: "Invoice not found" });
+      }
+  
+      const newTotal = invoice.remaining - amount;
+  
+      if (newTotal < 0) {
+        return res.status(400).json({ error: "Reduction exceeds current balance" });
+      }
+  
+      const { data, error: updateError } = await supabaseClient
+        .from('Invoice')
+        .update({ remaining: newTotal })
+        .eq('id', id)
+        .select();
+  
+      if (updateError) throw updateError;
+  
+      res.json({ message: "Balance updated successfully", data });
+
+      let date = new Date().toISOString();
+
+      const { error } = await supabaseClient
+        .from('Payment')
+        .insert({
+          invoice_id: id,
+          provider: payment_method,
+          provider_payment_id: 'N/A - ' + date,
+          amount: amount,
+          currency: 'USD',
+          status: 'Paid',
+          paid_at: date,
+          receipt_url: null,
+          created_at: date,
+          type: 'Deposit',
+        });
+      if (error) {
+        console.error("Error logging payment:", error);
+        res.status(500).json({ error: "Balance updated but failed to log payment" });
+      }
+
+      
+    } catch (err) {
+      console.error("Database error:", err);
+      res.status(500).json({ error: "Internal server error" });
     }
   });
   
