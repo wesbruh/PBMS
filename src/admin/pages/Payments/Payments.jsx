@@ -162,7 +162,7 @@ function AdminPayments() {
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className='relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll'>
+          <div className='relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-y-scroll'>
 
             {/*Header*/}
 

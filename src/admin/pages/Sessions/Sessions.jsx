@@ -347,8 +347,8 @@ function Sessions() {
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="flex w-full shadow-inner rounded-lg overflow-y-scroll">
-            <div className="flex flex-col bg-white p-6 w-full h-full">
+          <div className="flex w-full rounded-lg overflow-y-scroll">
+            <div className="flex flex-col bg-[#fcfcfc] p-6 w-full h-full shadow-inner">
               <div className="mb-6">
                 <h1 className="text-3xl font-bold text-gray-900">Photography Sessions</h1>
                 <p className="text-gray-500">Manage client booking requests, view session details, and/or update session information.</p>
