@@ -165,7 +165,7 @@ const Availability = () => {
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
               <div>
-                <h1 className="text-2xl font-serif text-brown mb-2">Admin Availability</h1>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">Photographer Availability</h1>
                 <div className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded border">
                   <span className="font-bold text-gray-600">Hours:</span>
                   <input type="time" value={workDay.start} onChange={(e) => setWorkDay({ ...workDay, start: e.target.value })} className="border rounded p-1" />
