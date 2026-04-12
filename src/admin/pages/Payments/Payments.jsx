@@ -2,7 +2,6 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import { supabase } from "../../../lib/supabaseClient";
-import { triggerAdminToast } from "../../../components/AdminNotificationToast.jsx";
 import { useState, useEffect } from "react";
 
 

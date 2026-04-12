@@ -25,7 +25,7 @@ export default function SignContractModal({ open, onClose, contract, contractTem
       const dataUrl = sigRef.current.toDataURL("image/png");
 
       // 2) Upload to Supabase Storage
-      const filePath = `signatures/${contract.id}.png`;
+      const filePath = `signatures/${contract.id}-${crypto.randomUUID()}.png`;
       const signResponse = await fetch(`http://localhost:5001/api/contract/${contract.id}/sign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
