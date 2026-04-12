@@ -445,7 +445,6 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
           console.warn("[Gallery Upload] Skipping notification — client_id is missing. sessionData:", sessionData);
         } else {
           const { error: notifError } = await supabase.from("Notification").insert({
-            id: crypto.randomUUID(),
             user_id: sessionData.client_id,
             session_id: session.id,
             channel: "email",
