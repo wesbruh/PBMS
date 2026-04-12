@@ -480,7 +480,37 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
     }
   });
 
-  // get all payments
+  // Capture Payment Intent
+  app.post("/api/intent/cancel", async (req, res) => {
+    const { payment_intent } = req.body;
+
+    try {
+      // Retrieve Payment Intent
+      const paymentIntent = await stripeClient.paymentIntents.retrieve(payment_intent);
+
+      // Cancel OR Refund
+      if (paymentIntent.status === "requires_capture") {
+        await stripeClient.paymentIntents.cancel(payment_intent);
+      } else if (paymentIntent.status === "succeeded") {
+        // Refund
+        try {
+          await stripeClient.refunds.create({
+            payment_intent: payment_intent,
+          });
+        } catch (err) {
+          if (err.code == "charge_already_refunded")
+            throw new Error("Payment Intent already refunded");
+          else
+            throw err;
+        }
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Error capturing payment intent:', error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
 
   // --- Questionnaire Routes ---
 
@@ -568,7 +598,7 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
       res.status(500).json({ error: "Internal Server Error" });
     }
   });
-  
+
   app.get("/test-server", (_req, res) => {
     res.json({ message: "HTTP server running and is both Supabase- and Stripe-compatible!" });
   });
