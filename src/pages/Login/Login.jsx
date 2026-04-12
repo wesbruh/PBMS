@@ -4,7 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
-  const { profile: user, loading } = useAuth();
+  const { profile , loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -23,17 +23,17 @@ export default function Login() {
   // navigate when everything is loaded
   useEffect(() => {
     // something hasn't been initialized or found
-    if (loading || !user) {
+    if (loading || !profile) {
       return;
     }
 
     // get real, target (navigation location)
-    const navLoc = user.roleName === "Admin" ? "/admin" :
-      user.roleName === "User" ? from || "/dashboard" :
+    const navLoc = profile.roleName === "Admin" ? "/admin" :
+      profile.roleName === "User" ? from || "/dashboard" :
         from;
 
     navigate(navLoc, { replace: true });
-  }, [loading, user, from, navigate]);
+  }, [loading, profile, from, navigate]);
 
 
   const onChange = (e) => {
@@ -79,8 +79,8 @@ export default function Login() {
     }
 
     // we are logged in – update the User table
-    if (user?.id) {
-      const response = await fetch(`http://localhost:5001/api/profile/${user.id}`, {
+    if (profile?.id) {
+      const response = await fetch(`http://localhost:5001/api/profile/${profile.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

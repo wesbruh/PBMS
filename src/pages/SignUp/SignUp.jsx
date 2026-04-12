@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 // password rules
 const passwordSchema = z
@@ -27,7 +27,6 @@ const SignUpSchema = z
   });
 
 export default function SignUp() {
-  const navigate = useNavigate();
   const [submitError, setSubmitError] = useState("");
   const [infoMsg, setInfoMsg] = useState("");
 

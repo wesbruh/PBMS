@@ -160,7 +160,10 @@ export default function ClientDashboard() {
 
           // ensure checkout session belongs to user
           if (user.id === client_id) {
-            const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
+            const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+              method: "GET",
+              headers: { "Content-Type": "application/json" }
+            });
             const status = await response.json()
               .then((data) => {
                 // console.log("Checkout session: ", data.session); // DEBUGGING
@@ -217,9 +220,10 @@ export default function ClientDashboard() {
         const { data, error } = await supabase
           .from("Invoice")
           .select(
-            "id, session_id, invoice_number, issue_date, due_date, remaining, status, Payment(id)"
+            "id, session_id, invoice_number, issue_date, due_date, remaining, status, Payment(id), Session!inner(status)"
           )
           .in("session_id", sessionIds)
+          .in("Session.status", ["Confirmed", "Completed"]) // ensure pending invoices aren't shown
           .order("issue_date", { ascending: false });
         if (!error) {
           invoiceRows = data ?? [];

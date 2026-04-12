@@ -21,7 +21,11 @@ function Sessions() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch("http://localhost:5001/api/sessions");
+      const response = await fetch("http://localhost:5001/api/sessions", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+
       const data = await response.json();
       // added client_name and session_type fields to the session data for easier table rendering and searching
       const flattened = data.map((row) => ({
@@ -48,9 +52,21 @@ function Sessions() {
 
   const getPaymentIntent = async (checkoutSessionId) => {
     if (!checkoutSessionId) return { status: null, paymentIntent: null }
-    const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
-    const { payment_intent: paymentIntent } = await response.json();
-    return { status: response.ok, paymentIntent };
+    try {
+      const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" }
+      });
+
+      if (!csResponse.ok)
+        throw new Error("Could not get payment intent");
+
+      const csData = await csResponse.json();
+
+      return { status: csResponse.ok, paymentIntent: csData.payment_intent };
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   const capturePayment = async (checkoutSessionId) => {
@@ -62,7 +78,7 @@ function Sessions() {
       const response = await fetch(`http://localhost:5001/api/intent/capture`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payment_intent: paymentIntent })
+        body: JSON.stringify({ payment_intent_id: paymentIntent.id })
       });
 
       if (!response.ok) throw Error("Failed to capture payment intent");
@@ -71,15 +87,16 @@ function Sessions() {
     }
   }
 
-  const generateInvoice = async (session_id) => {
+  const updateInvoice = async (session_id, invoiceId) => {
     try {
+      // obtain time/pricing information
       const { data: sessionData, error } = await supabase
         .from("Session")
         .select("start_at, SessionType(base_price)")
         .eq("id", session_id)
         .single();
 
-      if (error) throw new Error("Session not found");
+      if (error) throw error;
 
       // calculate remaining balance after deposit for invoice generation
       const remaining = (sessionData.SessionType.base_price) * (1 - DEPOSIT_PERCENTAGE);
@@ -90,8 +107,8 @@ function Sessions() {
         `${(date.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
         `${date.getDate().toString().padStart(2, '0')}`;
 
-      const response = await fetch(`http://localhost:5001/api/invoice/generate/${session_id}`, {
-        method: "POST",
+      const response = await fetch(`http://localhost:5001/api/invoice/confirm/${invoiceId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           remaining: remaining, // send remaining balance with tax for invoice generation
@@ -134,9 +151,30 @@ function Sessions() {
     }
   };
 
-  const confirmSession = (sessionId, checkoutSessionId) => {
+  const confirmSession = async (sessionId) => {
+    // ensure session exists and map session id to invoice id
+    const mapResponse = await fetch(`http://localhost:5001/api/invoice/${sessionId}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" }
+    });
+
+    if (!mapResponse.ok) throw new Error("Could not map session id to an invoice id");
+
+    const mapData = await mapResponse.json();
+    const { id: invoiceId } = mapData;
+
+    const { data, error } = await supabase.from("Payment")
+      .select("provider_payment_id")
+      .eq("invoice_id", invoiceId)
+      .eq("type", "Deposit")
+      .single()
+
+    if (error) throw error;
+
+    const { provider_payment_id: checkoutSessionId } = data;
+
     capturePayment(checkoutSessionId);
-    generateInvoice(sessionId);
+    updateInvoice(sessionId, invoiceId);
     handleUpdate(sessionId, "status", "Confirmed");
   };
 
@@ -144,11 +182,11 @@ function Sessions() {
     try {
       const { error } = await supabase
         .from("Payment")
-        .update({status: "Cancelled"})
+        .update({ status: "Cancelled" })
         .eq("provider_payment_id", checkoutSessionId)
         .select()
         .single();
-    
+
       if (error) throw error;
 
       const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
@@ -158,7 +196,7 @@ function Sessions() {
       const response = await fetch(`http://localhost:5001/api/intent/uncapture`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payment_intent: paymentIntent })
+        body: JSON.stringify({ payment_intent_id: paymentIntent.id })
       });
 
       if (!response.ok) throw Error("Failed to capture payment intent");
@@ -167,8 +205,45 @@ function Sessions() {
     }
   };
 
-  const cancelSession = (sessionId, checkoutSessionId) => {
+  const cancelInvoice = async (invoiceId) => {
+    try {
+      const { error } = await supabase
+        .from("Invoice")
+        .update({ status: "Cancelled" })
+        .eq("id", invoiceId)
+        .select()
+        .single();
+
+      if (error) throw error;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const cancelSession = async (sessionId) => {
+    // ensure session exists and map session id to invoice id
+    const mapResponse = await fetch(`http://localhost:5001/api/invoice/${sessionId}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" }
+    });
+
+    if (!mapResponse.ok) throw new Error("Could not map session id to an invoice id");
+
+    const mapData = await mapResponse.json();
+    const { id: invoiceId } = mapData;
+
+    const { data, error } = await supabase.from("Payment")
+      .select("provider_payment_id")
+      .eq("invoice_id", invoiceId)
+      .eq("type", "Deposit")
+      .single()
+
+    if (error) throw error;
+
+    const { provider_payment_id: checkoutSessionId } = data;
+
     uncapturePayment(checkoutSessionId);
+    cancelInvoice(invoiceId);
     handleUpdate(sessionId, "status", "Cancelled");
   };
 
@@ -232,9 +307,9 @@ function Sessions() {
       render: (_, row) => {
         return (
           <button
-          type="button"
-          onClick={() => setSelectedSessionId(row.id)}
-          className="hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded-md text-sm font-semibold border"
+            type="button"
+            onClick={() => setSelectedSessionId(row.id)}
+            className="hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded-md text-sm font-semibold border"
           >
             View
           </button>
@@ -340,7 +415,7 @@ function Sessions() {
               Cancel
             </button>
           </div>
-        ) : 
+        ) :
           (<div></div>)
         )
       )
@@ -349,48 +424,48 @@ function Sessions() {
 
   return (
     <>
-    <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex w-1/5 min-w-50 overflow-y-auto">
-        <Sidebar />
-      </div>
+      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+        <div className="flex min-w-50 overflow-y-auto">
+          <Sidebar />
+        </div>
 
-      <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
-        <Frame>
-          <div className="flex w-full rounded-lg overflow-y-scroll">
-            <div className="flex flex-col bg-[#fcfcfc] p-6 w-full h-full shadow-inner">
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Photography Sessions</h1>
-                <p className="text-gray-500">Manage client booking requests, view session details, and/or update session information.</p>
-              </div>
+        <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
+          <Frame>
+            <div className="flex w-full rounded-lg overflow-y-scroll">
+              <div className="flex flex-col bg-[#fcfcfc] p-6 w-full h-full shadow-inner">
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold text-gray-900">Photography Sessions</h1>
+                  <p className="text-gray-500">Manage client booking requests, view session details, and/or update session information.</p>
+                </div>
 
-              <div className="grow flex flex-col">
-                {loading ? (
-                  <div className="grow flex flex-col justify-center items-center text-gray-500">
-                    <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
-                    <p className="text-md">Loading Sessions...</p>
-                  </div>
-                ) : (
-                  <Table
-                    columns={tableSessionColumns}
-                    data={sessions}
-                    searchable={true}
-                    searchPlaceholder={"Search Sessions by keyword..."}
-                    rowsPerPage={6}
-                  />
-                )}
+                <div className="grow flex flex-col">
+                  {loading ? (
+                    <div className="grow flex flex-col justify-center items-center text-gray-500">
+                      <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
+                      <p className="text-md">Loading Sessions...</p>
+                    </div>
+                  ) : (
+                    <Table
+                      columns={tableSessionColumns}
+                      data={sessions}
+                      searchable={true}
+                      searchPlaceholder={"Search Sessions by keyword..."}
+                      rowsPerPage={6}
+                    />
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </Frame>
+          </Frame>
+        </div>
       </div>
-    </div>
-    {selectedSessionId && (
-      <SessionDetailsModal
-        sessionId={selectedSessionId}
-        onClose={() => setSelectedSessionId(null)}
-      />
-    )}
-  </>
+      {selectedSessionId && (
+        <SessionDetailsModal
+          sessionId={selectedSessionId}
+          onClose={() => setSelectedSessionId(null)}
+        />
+      )}
+    </>
   );
 }
 
