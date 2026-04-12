@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {supabase } from "../../../lib/supabaseClient.js";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -12,34 +13,16 @@ function Contacts() {
   const [errorMsg, setErrorMsg] = useState("");
 
   // Controls modal visibility
-  const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
 
   // Holds selected contact for deletion
   const [selectedContact, setSelectedContact] = useState(null);
 
-  // Add form validation errors (separate from fetch/delete errors if you want)
-  const [addErrorMsg, setAddErrorMsg] = useState("");
-
-  // Basic validators
-  const isValidEmail = (email) => {
-    // Simple and reliable email format check
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim());
-  };
-
   const normalizePhone = (phone) => {
     // Count digits only, ignore formatting characters
-    return String(phone || "").replace(/\D/g, "");
+    const digits = String(phone || "").replace(/\D/g, "")
+    return (digits) ? `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}` : "";
   };
-
-  // Form state for adding a contact
-  const [newContact, setNewContact] = useState({
-    userid: "",
-    first_name: "",
-    last_name: "",
-    email: "",
-    phone: "",
-  });
 
   const tableContactsColumns = [
     {
@@ -57,7 +40,11 @@ function Contacts() {
     { key: "firstName", label: "First Name", sortable: true },
     { key: "lastName", label: "Last Name", sortable: true },
     { key: "email", label: "Email", sortable: true },
-    { key: "phone", label: "Phone", sortable: false },
+    { key: "phone", label: "Phone", sortable: false,
+      render: (value) => (
+        normalizePhone(value)
+      )
+    },
     {
       key: "actions",
       label: "Actions",
@@ -111,107 +98,58 @@ function Contacts() {
     fetchContacts();
   }, []);
 
-  // Inserts a new contact into the database and updates the table
-  const handleAddContact = async () => {
-
-    setAddErrorMsg("");
-    setErrorMsg("");
-
-    // Trim inputs (prevents spaces-only entries)
-    const firstName = (newContact.first_name || "").trim();
-    const lastName = (newContact.last_name || "").trim();
-    const email = (newContact.email || "").trim();
-    const phoneRaw = (newContact.phone || "").trim();
-
-    // Required fields check
-    if (!firstName || !lastName || !email || !phoneRaw) {
-      setAddErrorMsg("Please fill out all fields before saving.");
-      return;
-    }
-
-    // Email format check
-    if (!isValidEmail(email)) {
-      setAddErrorMsg("Please enter a valid email address.");
-      return;
-    }
-
-    // Phone length check (at least 10 digits)
-    const phoneDigits = normalizePhone(phoneRaw);
-    if (phoneDigits.length < 10) {
-      setAddErrorMsg("Phone number must be at least 10 digits.");
-      return;
-    }
-
-    // Prevent duplicate emails 
-    const emailLower = email.toLowerCase();
-    const alreadyExists = contacts.some(
-      (c) => String(c.email || "").toLowerCase() === emailLower
-    );
-    if (alreadyExists) {
-      setAddErrorMsg("A contact with this email already exists.");
-      return;
-    }
-
-    const contactPayload = {
-      first_name: firstName,
-      last_name: lastName,
-      email: email,
-      phone: phoneRaw
-    }
-
-    const response = await fetch(`http://localhost:5001/api/contact/add`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(contactPayload)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      setAddErrorMsg(errorData.error || "Failed to add contact.");
-      return;
-    }
-
-    const data = await response.json();
-
-    // Add new contact to table without reloading
-    setContacts((prev) => [
-      ...prev,
-      {
-        firstName: data.first_name,
-        lastName: data.last_name,
-        email: data.email,
-        phone: data.phone,
-      }
-    ]);
-
-    // Reset and close modal
-    setNewContact({ first_name: "", last_name: "", email: "", phone: "" });
-    setShowAddModal(false);
-  };
+  
 
   // Deletes a contact from the database and updates the table
-  const handleDeleteContact = async () => {
-    if (!selectedContact) return;
+const handleDeleteContact = async () => {
+  if (!selectedContact) return;
 
-    const response = await fetch(`http://localhost:5001/api/contact/${selectedContact.email}`, {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-    });
+  try {
+    setErrorMsg("");
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      setErrorMsg(errorData.error);
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+
+    if (!token) {
+      setErrorMsg("Missing admin session token.");
       return;
     }
 
-    // Remove contact from UI
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          targetUserId: selectedContact.userid,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setErrorMsg(result.error || result.message || "Failed to delete user.");
+      return;
+    }
+
     setContacts((prev) =>
-      prev.filter((c) => c.email !== selectedContact.email)
+      prev.filter((c) => c.userid !== selectedContact.userid)
     );
 
     setSelectedContact(null);
     setShowDeleteModal(false);
-  };
+  } catch (error) {
+    console.error("Delete user error:", error);
+    setErrorMsg("Failed to delete user.");
+  }
+};
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
@@ -238,14 +176,6 @@ function Contacts() {
                 <span className="inline-flex items-center rounded-full border border-[#E7DFCF] bg-white px-4 py-1.5 text-sm text-[#5a3e2b] shadow-sm">
                   {contacts?.length ?? 0} Contacts
                 </span>
-
-                {/* Add Contact button */}
-                <button
-                  onClick={() => setShowAddModal(true)}
-                  className="ml-8 shrink-0 inline-block px-4 py-1.5 bg-[#7E4C3C] text-white text-sm leading-tight hover:bg-[#AB8C4B] transition border border-black rounded-lg"
-                >
-                  Add Contact
-                </button>
               </div>
             </div>
 
@@ -276,98 +206,7 @@ function Contacts() {
           </div>
         </Frame>
       </div>
-      {/* Add Contact Modal */}
-      {showAddModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center"
-          role="dialog"
-          aria-modal="true"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowAddModal(false);
-          }}
-        >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50"></div>
-
-          {/* Dialog */}
-          <div className="relative bg-white w-11/12 max-w-md mx-auto p-6 md:p-8 border border-black rounded-md shadow-lg">
-            <h2 className="text-center text-2xl font-serif font-extralight mb-4">
-              Add New Contact
-            </h2>
-
-            {/* Render error message*/}
-            {addErrorMsg && (
-              <p className="text-center text-xs text-red-600 mb-2">{addErrorMsg}</p>
-            )}
-
-            {/* Modal Content */}
-            <div className="flex flex-col font-mono text-xs">
-              <label className="mb-4">
-                <p className="text-center text-brown py-3">FIRST NAME *</p>
-                <input
-                  type="text"
-                  value={newContact.first_name}
-                  onChange={(e) =>
-                    setNewContact((prev) => ({ ...prev, first_name: e.target.value }))
-                  }
-                  className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
-                />
-              </label>
-
-              <label className="mb-4">
-                <p className="text-center text-brown py-3">LAST NAME *</p>
-                <input
-                  type="text"
-                  value={newContact.last_name}
-                  onChange={(e) =>
-                    setNewContact((prev) => ({ ...prev, last_name: e.target.value }))
-                  }
-                  className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
-                />
-              </label>
-
-              <label className="mb-4">
-                <p className="text-center text-brown py-3">EMAIL *</p>
-                <input
-                  type="email"
-                  value={newContact.email}
-                  onChange={(e) =>
-                    setNewContact((prev) => ({ ...prev, email: e.target.value }))
-                  }
-                  className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
-                />
-              </label>
-
-              <label className="mb-4">
-                <p className="text-center text-brown py-3">PHONE NUMBER *</p>
-                <input
-                  type="text"
-                  value={newContact.phone}
-                  onChange={(e) =>
-                    setNewContact((prev) => ({ ...prev, phone: e.target.value }))
-                  }
-                  className="w-full text-center border-neutral-200 border-b py-3 text-sm focus:outline-none"
-                />
-              </label>
-            </div>
-
-            <div className="flex justify-center gap-3 mt-6">
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="px-4 py-2 border border-black rounded-md"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddContact}
-                className="px-4 py-2 bg-[#5e8738] text-white rounded-md"
-              >
-                Save Contact
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+     
       {/* Delete Contact Modal */}
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center"
