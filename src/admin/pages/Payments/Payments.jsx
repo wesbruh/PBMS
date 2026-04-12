@@ -148,7 +148,7 @@ function AdminPayments() {
   const tablePaymentColumns = [
     { key: 'invoice_number', label: 'Invoice #', sortable: true },
     { key: 'issue_date', label: 'Issue Date', sortable: true, render: (value, row) => row.issue_date },
-    { key: 'remaining', label: 'Remaining', sortable: true, render: (value, row) => row.remaining },
+    { key: 'remaining', label: 'Remaining', sortable: true, render: (value, row) => `${row.remaining.toFixed(2)}` },
     {
       key: "status",
       label: "Status",
@@ -212,6 +212,7 @@ function AdminPayments() {
       label: "Manual Payment",
       render: (_, row) => {
         return (
+          (row.remaining > 0) ?
           <button
             onClick={() => { 
               console.log("Here is the id being passed for invoice_id:", row.id);
@@ -220,7 +221,8 @@ function AdminPayments() {
             className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
           >
             Manage
-          </button>
+          </button> :
+          <></>
         );
       }
     },
@@ -242,7 +244,7 @@ function AdminPayments() {
 
             <div className='mb-6'>
               <h1 className='text-3xl font-bold text-gray-900 mb-2'>
-                Payments
+                Invoices
               </h1>
               <p className='text-gray-600'>
                 View and manage all client payments.

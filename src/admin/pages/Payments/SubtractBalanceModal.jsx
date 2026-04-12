@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const SubtractBalanceModal = ({ isOpen, onClose, currentBalance, onConfirm, onRefresh }) => {
   const [amount, setAmount] = useState('');
@@ -25,14 +25,14 @@ const SubtractBalanceModal = ({ isOpen, onClose, currentBalance, onConfirm, onRe
       return;
     }
 
-    if(!window.confirm(`Are you sure you want to subtract $${numericAmount.toFixed(2)} from the balance? This action cannot be undone.`)) return;
+    if (!window.confirm(`Are you sure you want to subtract $${numericAmount.toFixed(2)} from the balance? This action cannot be undone.`)) return;
 
     onConfirm(numericAmount, paymentMethod);
     setPaymentMethod('');
     setAmount('');
     setError('');
     onClose();
-    onRefresh(); 
+    onRefresh();
   };
 
   return (
@@ -41,7 +41,7 @@ const SubtractBalanceModal = ({ isOpen, onClose, currentBalance, onConfirm, onRe
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
           <h3 className="text-xl font-semibold text-gray-800">Adjust Balance</h3>
-          <button 
+          <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
@@ -51,40 +51,42 @@ const SubtractBalanceModal = ({ isOpen, onClose, currentBalance, onConfirm, onRe
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="p-6">
-          <div className="mb-4">
+          <div className="flex flex-col mb-4 gap-4">
             <p className="text-sm text-gray-500 mb-2">
               Current Owed Balance: <span className="font-bold text-gray-900">${currentBalance.toFixed(2)}</span>
             </p>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Amount to Subtract
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-400">$</span>
-              <input
-                type="number"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="0.00"
-                className="w-full pl-7 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-                autoFocus
-              />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Amount to Subtract
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-2.25 text-gray-400">$</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="0.00"
+                  className="w-full pl-7 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  autoFocus
+                />
+              </div>
             </div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Payment Method (e.g., Debit, Credit, Cash, Zelle, etc.)
-            </label>
-            <div className="relative">
-              <span className="absolute left-3 top-2 text-gray-400"></span>
-              <input
-                type="text"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value)}
-                placeholder="enter payment method"
-                className="w-full pl-7 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-          
-              />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Payment Method (e.g., Debit, Credit, Cash, Zelle, etc.)
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value)}
+                  placeholder="Enter payment method"
+                  className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                />
+              </div>
+              {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
             </div>
-            {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
           </div>
 
           <div className="text-sm text-gray-500 bg-gray-50 p-3 rounded-md mb-6">

@@ -552,7 +552,7 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
     }
   });
 
-  // Capture Payment Intent
+  // Cancel Payment Intent
   app.post("/api/intent/cancel", async (req, res) => {
     const { payment_intent } = req.body;
 
@@ -561,9 +561,7 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
       const paymentIntent = await stripeClient.paymentIntents.retrieve(payment_intent);
 
       // Cancel OR Refund
-      if (paymentIntent.status === "requires_capture") {
-        await stripeClient.paymentIntents.cancel(payment_intent);
-      } else if (paymentIntent.status === "succeeded") {
+      if (paymentIntent.status === "succeeded") {
         // Refund
         try {
           await stripeClient.refunds.create({
@@ -575,11 +573,35 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
           else
             throw err;
         }
+      } else {
+        throw new Error("Payment intent has not suceeded.")
       }
 
       res.status(200).json({ success: true });
     } catch (error) {
-      console.error('Error capturing payment intent:', error);
+      console.error('Error cancelling payment intent:', error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
+
+  // Uncapture hold on Payment Intent
+  app.post("/api/intent/uncapture", async (req, res) => {
+    const { payment_intent } = req.body;
+
+    try {
+      // Retrieve Payment Intent
+      const paymentIntent = await stripeClient.paymentIntents.retrieve(payment_intent);
+
+      // Cancel hold on payment
+      if (paymentIntent.status === "requires_capture") {
+        await stripeClient.paymentIntents.cancel(payment_intent);
+      } else {
+        throw Error("Payment intent does not require capture");
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Error uncapturing payment intent:', error);
       res.status(500).json({ error: "Internal Server Error" });
     }
   });
