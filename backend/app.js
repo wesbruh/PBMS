@@ -85,7 +85,7 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
   });
 
   // ensure all following routes verify Supabase JWT token
-  app.use(verifyToken);
+  app.use(verifyToken(supabaseClient));
 
   // add routes that need verification
   app.use("/api/contact", contactRoutes(supabaseClient));
