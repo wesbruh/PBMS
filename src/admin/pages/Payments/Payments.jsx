@@ -1,57 +1,124 @@
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
+import SubtractBalanceModal from "./SubtractBalanceModal.jsx";
 import { supabase } from "../../../lib/supabaseClient";
 import { triggerAdminToast } from "../../../components/AdminNotificationToast.jsx";
 import { useState, useEffect } from "react";
 
-
 function AdminPayments() {
-
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("All");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [doPageRefresh, setDoPageRefresh] = useState(false);
 
-  useEffect(() => { fetchInvoices(); }, []);
 
-  const fetchInvoices = async () => {
+  useEffect(() => {
+    const fetchInvoices = async () => {
+      try {
+        const res = await fetch('http://localhost:5001/api/invoice/getInvoiceTableData');
+        console.log("Response status:", res.status);
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        const data = await res.json();
+        console.log("Fetched invoice data:", data);
+        setInvoices(data);
+      } catch (err) {
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchInvoices();
+  }, []); 
+
+  
+  useEffect(() => {
+    if (doPageRefresh) {
+      const refreshData = async () => {
+        setLoading(true);
+        try {
+          const res = await fetch('http://localhost:5001/api/invoice/getInvoiceTableData');
+          const data = await res.json();
+          setInvoices(data);
+        } catch (err) {
+          console.error("Refresh error:", err);
+        } finally {
+          setLoading(false);
+          setDoPageRefresh(false);
+        }
+      };
+      refreshData();
+    }
+  }, [doPageRefresh]);
+
+  const downloadInvoicePdf = async (invoice_id) => {
     try {
-      setLoading(true);
+      const pdfResponse = await fetch(
+        `http://localhost:5001/api/invoice/${invoice_id}/pdf`
+      );
 
-      const { data, error } = await supabase
-        .from("Invoice")
-        .select(`
-          id,
-          amount,
-          currency,
-          status,
-          paid_at,
-          provider,
-          invoice_id,
-          Invoice(
-            invoice_number,
-            Session (
-              User (
-                first_name,
-                last_name
-              )
-            )
-          )
-        `)
-        .order("created_at", { ascending: false });
+      if (!pdfResponse.ok) throw new Error("Failed to generate PDF");
 
-      if (error) throw error;
+      const blob = await pdfResponse.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
 
-      setInvoices(data || []);
+      a.href = url;
+      a.download = `PBMSInvoice.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url); // Clean up
     } catch (error) {
-      console.error("Error fetching invoices:", error);
-    } finally {
-      setLoading(false);
+      console.error("Download failed:", error);
     }
   };
 
-  const handleGenerateInvoice = async (sessionId) => {
-    console.log("Generate invoice for session:", sessionId);
+  const managePayment = async (invoice_id) => {
+    try {
+      const res = await fetch(`http://localhost:5001/api/invoice/getInvoiceByID?term=${invoice_id}`);
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Failed to fetch invoice details");
+
+      setSelectedInvoice(data);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error("Updating balance failed:", error);
+    }
+  };
+
+  const handleBalanceReduction = async (reductionAmount, paymentMethod = null) => {
+    if (!selectedInvoice) {
+      console.error("No invoice selected");
+      return;
+    }
+    
+    try {
+      const response = await fetch(`http://localhost:5001/api/invoice/${selectedInvoice.id}/reduceRemainingInvoiceBalance`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: reductionAmount, payment_method: paymentMethod }),
+      });
+
+      if (response.ok) {
+        console.log("Balance updated successfully");
+        // Trigger refresh to show updated data
+        setDoPageRefresh(true);
+      } else {
+        const errorData = await response.json();
+        console.error("Update failed:", errorData);
+      }
+    } catch (err) {
+      console.error("Update failed", err);
+    }
   };
 
   const today = new Date();
@@ -59,7 +126,7 @@ function AdminPayments() {
   const filteredInvoices = invoices.filter((invoice) => {
     if (activeTab === "All") return true;
 
-    if (activeTab == "Paid") {
+    if (activeTab === "Paid") {
       return invoice.status === "Paid";
     }
 
@@ -79,14 +146,9 @@ function AdminPayments() {
   });
 
   const tablePaymentColumns = [
-    {
-      key: 'client', label: 'Client', sortable: true, render: (_, row) =>
-        `${row.Session?.User?.first_name || ""} ${row.Session?.User?.last_name || ""}`
-    },
     { key: 'invoice_number', label: 'Invoice #', sortable: true },
-    { key: 'issue_date', label: 'Issue Date', sortable: true, render: (value) => new Date(value).toLocaleDateString() },
-    { key: 'total', label: 'Total', sortable: true, render: (value) => `$${value}` },
-
+    { key: 'issue_date', label: 'Issue Date', sortable: true, render: (value, row) => row.issue_date },
+    { key: 'remaining', label: 'Remaining', sortable: true, render: (value, row) => `${row.remaining.toFixed(2)}` },
     {
       key: "status",
       label: "Status",
@@ -128,38 +190,52 @@ function AdminPayments() {
         );
       },
     },
-
-
-    {/*Generate Invoice Button*/
+    {
       key: "actions",
       label: "Action",
       render: (_, row) => {
-        if (row.status != "Paid") return null;
-
         return (
           <button
-            onClick={() => handleGenerateInvoice(row.id)}
+            onClick={() => { 
+              console.log("Here is the id being passed for invoice_id:", row.id);
+              downloadInvoicePdf(row.id);
+            }}
             className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
           >
-            Generate Invoice
+            Download Invoice
           </button>
         );
       }
-    }
-
+    },
+    {
+      key: "manual_payment",
+      label: "Manual Payment",
+      render: (_, row) => {
+        return (
+          (row.remaining > 0) ?
+          <button
+            onClick={() => { 
+              console.log("Here is the id being passed for invoice_id:", row.id);
+              managePayment(row.id);
+            }}
+            className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
+          >
+            Manage
+          </button> :
+          <></>
+        );
+      }
+    },
   ];
 
   return (
-
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-
-      {/*SideBar*/}
+      {/* SideBar */}
       <div className="flex w-1/5 min-w-50 overflow-y-auto">
         <Sidebar />
       </div>
 
-      {/* Main Content*/}
-
+      {/* Main Content */}
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
           <div className='relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-y-scroll'>
@@ -168,25 +244,23 @@ function AdminPayments() {
 
             <div className='mb-6'>
               <h1 className='text-3xl font-bold text-gray-900 mb-2'>
-                Payments
+                Invoices
               </h1>
               <p className='text-gray-600'>
                 View and manage all client payments.
               </p>
             </div>
 
-            {/*Table*/}
-
+            {/* Table */}
             {loading ? (
               <div className="py-10 text-center text-gray-500">
                 Loading invoices...
               </div>
             ) : (
-
               <Table
                 columns={tablePaymentColumns}
                 data={filteredInvoices}
-                searchable={true}
+                searchable={false}
                 searchPlaceholder='Search Payments by Client Name...'
                 rowsPerPage={5}
               />
@@ -194,6 +268,13 @@ function AdminPayments() {
           </div>
         </Frame>
       </div>
+      <SubtractBalanceModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        currentBalance={selectedInvoice?.remaining || 0}
+        onConfirm={handleBalanceReduction}
+        onRefresh={() => setDoPageRefresh(true)}
+      />
     </div>
   );
 }

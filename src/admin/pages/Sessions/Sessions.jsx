@@ -53,7 +53,7 @@ function Sessions() {
     return { status: response.ok, paymentIntent };
   }
 
-  const capturePaymentIntent = async (checkoutSessionId) => {
+  const capturePayment = async (checkoutSessionId) => {
     try {
       const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
 
@@ -135,18 +135,27 @@ function Sessions() {
   };
 
   const confirmSession = (sessionId, checkoutSessionId) => {
-    capturePaymentIntent(checkoutSessionId);
+    capturePayment(checkoutSessionId);
     generateInvoice(sessionId);
     handleUpdate(sessionId, "status", "Confirmed");
   };
 
-  const cancelPaymentIntent = async (checkoutSessionId) => {
+  const uncapturePayment = async (checkoutSessionId) => {
     try {
+      const { error } = await supabase
+        .from("Payment")
+        .update({status: "Cancelled"})
+        .eq("provider_payment_id", checkoutSessionId)
+        .select()
+        .single();
+    
+      if (error) throw error;
+
       const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
 
       if (!status) throw new Error("Failed to retrieve payment intent");
 
-      const response = await fetch(`http://localhost:5001/api/intent/cancel`, {
+      const response = await fetch(`http://localhost:5001/api/intent/uncapture`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ payment_intent: paymentIntent })
@@ -159,7 +168,7 @@ function Sessions() {
   };
 
   const cancelSession = (sessionId, checkoutSessionId) => {
-    cancelPaymentIntent(checkoutSessionId);
+    uncapturePayment(checkoutSessionId);
     handleUpdate(sessionId, "status", "Cancelled");
   };
 
