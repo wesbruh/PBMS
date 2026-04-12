@@ -30,10 +30,10 @@ function AdminHome() {
       {/* Main content */}
       <div className="flex w-full h-full rounded-lg">
         <Frame>
-          <div className="flex flex-col w-full h-full shadow-inner bg-white">
+          <div className="flex flex-col w-full h-full shadow-inner bg-[#fcfcfc]">
             {/* Page header */}
             <div className="px-6 pt-6 pb-4 border-b border-gray-100">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900">
                 Welcome back, {username}
               </h1>
               <p className="text-sm text-gray-500 mt-0.5">

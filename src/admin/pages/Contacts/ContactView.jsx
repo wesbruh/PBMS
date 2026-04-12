@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient.js";
 
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
@@ -7,7 +7,7 @@ import { saveAs } from "file-saver";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
-import DownloadInvoiceButton from "../../../components/InvoiceButton/DownloadInvoiceButton";
+import SharedClientDashboard from "../../../components/Dashboard/SharedClientDashboard";
 
 
 function ContactView() {
@@ -81,7 +81,7 @@ function ContactView() {
         const { data, error } = await supabase
           .from("Invoice")
           .select(
-            "id, session_id, invoice_number, issue_date, due_date, total, status"
+            "id, session_id, invoice_number, issue_date, due_date, remaining, status, Payment(id)"
           )
           .in("session_id", sessionIds)
           .order("issue_date", { ascending: false });
@@ -117,7 +117,7 @@ function ContactView() {
         const { data, error } = await supabase
           .from("Contract")
           .select(
-            "id, session_id, status, signed_at, pdf_url"
+            "id, session_id, status, created_at, updated_at, signed_pdf_url, ContractTemplate(name, body)"
           )
           .in("session_id", sessionIds)
           .order("signed_at", { ascending: false });
@@ -160,7 +160,7 @@ function ContactView() {
           <div className="flex w-full shadow-inner rounded-lg">
             <Frame>
               <div className="max-w-5xl mx-auto px-4 py-12 text-center font-serif text-brown">
-                Loading dashboard...
+                <SharedClientDashboard loading = {true} />
               </div>
             </Frame>
           </div>
@@ -308,288 +308,21 @@ function ContactView() {
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="w-screen flex flex-col gap-5 my-10 mx-2 overflow-scroll">
-            {/* header */}
-            <header className="mx-auto md:mx-2">
-              <h1 className="text-3xl md:text-4xl font-serif text-brown">
-                {fullName}
-              </h1>
-            </header>
-
-            {/* Reminders / notifications */}
-            <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-serif text-brown">Reminders</h2>
-                <span className="text-xs text-neutral-500">
-                  Showing latest {notifications.length || 0}
-                </span>
-              </div>
-              {notifications.length === 0 ? (
-                <p className="text-sm text-neutral-500">
-                  You’re all caught up. New reminders will appear here.
-                </p>
-              ) : (
-                <ul className="space-y-3">
-                  {notifications.map((n) => (
-                    <li
-                      key={n.id}
-                      className="bg-white border rounded-md px-3 py-3"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm text-brown font-semibold">
-                            {n.subject || "Reminder"}
-                          </p>
-                          <p className="text-xs text-neutral-600 whitespace-pre-wrap">
-                            {n.body || "You have an update to review."}
-                          </p>
-                        </div>
-                        <span
-                          className={`text-[11px] px-2 py-1 rounded border ${n.status === "sent"
-                            ? "bg-neutral-100 border-neutral-200 text-neutral-700"
-                            : "bg-amber-50 border-amber-200 text-amber-700"
-                            }`}
-                        >
-                          {n.status || "pending"}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-neutral-500 mt-2">
-                        {n.sent_at
-                          ? `Sent ${new Date(n.sent_at).toLocaleString()}`
-                          : n.created_at
-                            ? `Created ${new Date(n.created_at).toLocaleString()}`
-                            : ""}
-                      </p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            {/* grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Sessions */}
-              <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-                <h2 className="text-lg font-serif text-brown mb-3">Your Sessions</h2>
-                {sessions.length === 0 ? (
-                  <p className="text-sm text-neutral-500">
-                    You don’t have any sessions scheduled yet.
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {sessions.map((s) => (
-                      <li
-                        key={s.id}
-                        className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                      >
-                        <div>
-                          <p className="text-sm text-brown font-semibold">
-                            {s.location_text || "Session"}
-                          </p>
-                          <p className="text-xs text-neutral-500">
-                            {s.start_at
-                              ? new Date(s.start_at).toLocaleString()
-                              : "TBD"}
-                          </p>
-                        </div>
-                        <span className="text-xs px-2 py-1 rounded bg-neutral-100 border text-neutral-700">
-                          {s.status ?? "pending"}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-
-              {/* Invoices */}
-              <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-                <h2 className="text-lg font-serif text-brown mb-3">Invoices</h2>
-                {invoices.length === 0 ? (
-                  <p className="text-sm text-neutral-500">
-                    No invoices yet. You’ll see them here when they’re issued.
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {invoices.map((inv) => (
-                      <li
-                        key={inv.id}
-                        className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                      >
-                        <div className="flex-col w-full">
-                          <div className="flex">
-                            <div className='flex flex-row gap-3'>
-                              <p className="text-sm text-brown font-semibold">
-                                Invoice No. {inv.invoice_number || inv.id.slice(0, 6)}
-                              </p>
-                              <a
-                                className='text-[#7E4C3C] hover:text-[#AB8C4B] transition cursor-pointer -translate-y-0.5'
-                                aria-label="Preview"
-                              >
-                                <i className="fa-solid fa-eye"></i>
-                              </a>
-                              <DownloadInvoiceButton invoiceId={inv.id} />
-                            </div>
-                          </div>
-
-                          <div className="flex flex-col gap-3 mx-2 mt-2">
-                            <div className='flex flex-row gap-2 items-center w-full lg:w-1/5 mr-4'>
-                              <span
-                                className={`flex min-w-3 min-h-3 rounded-full border ${inv.status === "Paid"
-                                  ? "bg-green-100 border-green-300"
-                                  : "bg-red-100 border-red-300"
-                                  }`}
-                              >
-                                {" "}
-                              </span>
-                              <div className={`flex text-sm font-semibold ${inv.status === "Paid"
-                                ? "text-green-700"
-                                : "text-red-700"
-                                }`}>
-                                {inv.status ?? "Unpaid"}
-                              </div>
-                            </div>
-                            <div className="flex flex-col gap-3 lg:flex-row lg:gap-0 mx-2 mt-2 w-4/5 justify-between">
-                              <div className="flex flex-col">
-                                <p className="text-sm text-neutral-700">
-                                  Issue Date
-                                </p>
-                                <p className="text-sm text-neutral-500">
-                                  {inv.issue_date
-                                    ? new Date(inv.issue_date).toLocaleDateString()
-                                    : "—"}
-                                </p>
-                              </div>
-                              <div className="flex flex-col">
-                                <p className="text-sm text-neutral-700">
-                                  Due Date
-                                </p>
-                                <p className="text-sm text-neutral-500">
-                                  {inv.due_date
-                                    ? new Date(inv.due_date).toLocaleDateString()
-                                    : "—"}
-                                </p>
-                              </div>
-                              <div className="flex flex-col">
-                                <p className="text-sm text-neutral-700">
-                                  Total Due
-                                </p>
-                                <p className="text-sm text-neutral-500">
-                                  {/* When invoice is paid or total is NULL, read total as 0, otherwise read total */}
-                                  ${((inv.status === "Paid") ? 0 : (inv.total ?? 0)).toFixed(2)}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-
-              {/* Galleries */}
-              <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-                <h2 className="text-lg font-serif text-brown mb-3">Galleries</h2>
-                {galleries.length === 0 ? (
-                  <p className="text-sm text-neutral-500">
-                    No galleries have been published for you yet.
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {galleries.map((g) => {
-                      // download button shows loading state if downloading
-                      const isDownloading = downloadingGalleries[g.id];
-                      return (
-                        <li
-                          key={g.id}
-                          className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                        >
-                          <div>
-                            <p className="text-sm text-brown font-semibold">
-                              {g.title || "Gallery"}
-                            </p>
-                            <p className="text-xs text-neutral-500">
-                              Published{" "}
-                              {g.published_at
-                                ? new Date(g.published_at).toLocaleDateString()
-                                : "—"}
-                            </p>
-                          </div>
-                          {g.is_password_protected ? (
-                            <span className="text-xs px-2 py-1 rounded bg-neutral-100 border text-neutral-700">
-                              Protected
-                            </span>
-                          ) : null}
-                          {/* Download Gallery Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleDownloadGallery(g.id, g.title)}
-                            disabled={isDownloading}
-                            className={`text-xs px-3 py-1 rounded border border-black font-semibold transition ${isDownloading
-                              ? "bg-neutral-200 text-neutral-500 cursor-wait"
-                              : "bg-[#446780] hover:bg-[#98c0dc] cursor-pointer text-white"
-                              }`}
-                          >
-                            {isDownloading ? "Downloading..." : "Download"}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                )}
-              </section>
-
-              {/* Forms / Contracts */}
-              <section className="bg-off-white border border-[#E7DFCF] rounded-md p-5 shadow-sm">
-                <h2 className="text-lg font-serif text-brown mb-3">Forms & Contracts</h2>
-
-                {contracts.length === 0 ? (
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-neutral-500">
-                      No contracts have been issued to you yet.
-                    </p>
-                  </div>
-                ) : (
-                  <ul className="space-y-3">
-                    {contracts.map((c) => (
-                      <li
-                        key={c.id}
-                        className="bg-white border rounded-md px-3 py-2 flex justify-between items-center"
-                      >
-                        <div>
-                          <p className="text-sm text-brown font-semibold">
-                            {c.title || "Contract"}
-                          </p>
-                          <p className="text-xs text-neutral-500">
-                            {c.status === "signed"
-                              ? `Signed ${c.updated_at ? new Date(c.updated_at).toLocaleDateString() : ""}`
-                              : `Status: ${c.status || "draft"}`}
-                          </p>
-                        </div>
-
-                        {c.status === "signed" && c.signed_pdf_url ? (
-                          <a
-                            href={c.signed_pdf_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
-                          >
-                            View Signed PDF
-                          </a>
-                        ) : (
-                          <Link
-                            to={`/dashboard/contracts?focus=${c.id}`}
-                            className="text-xs px-3 py-1 rounded bg-brown text-white hover:bg-[#AB8C4B] transition border-2 border-black"
-                          >
-                            Review &amp; Sign
-                          </Link>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            </div>
+          <div className="w-full flex flex-col gap-5 my-10 mx-2 overflow-scroll">
+             <SharedClientDashboard
+              fullName={fullName}
+              notifications={notifications}
+              sessions={sessions}
+              invoices={invoices}
+              galleries={galleries}
+              contracts={contracts}
+              loading={loading}
+              onDownloadGallery={handleDownloadGallery}
+              downloadingGalleries={downloadingGalleries}
+              showPayButton={false}
+              showDownloadButton={false}
+              isAdminView={true}
+            />
           </div>
         </Frame>
       </div>

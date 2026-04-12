@@ -82,19 +82,20 @@ Deno.serve(async (req: Request) => {
             </p>
             <p style="margin: 0 0 24px 0; font-size: 15px; color: #4a4a4a; line-height: 1.7;">
             Thank you for submitting your session booking request with Your Roots Photography.
-            Here is a summary of your request. We will be in touch shortly to confirm!
+            Here is a summary of your request. Bailey will be in touch shortly to confirm session details! You will not be charged until Bailey confirms your session details and your session is officially booked. 
+            Once confirmed, you'll receive a follow-up email with remaining payment details and final session information.
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #e5e7eb;">
             <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
-            <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Type</span><br/>
+            <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Session Type</span><br/>
             <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${sessionType}</span>
             </td>
             </tr>
             <tr>
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
             <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Location</span><br/>
-            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${location ?? "To be determined"}</span>
+            <span style="font-size: 15px; color: #2c2c2c; margin-top: 4px; display: block;">${location ?? "Not Provided"}</span>
             </td>
             </tr>
             <tr>
@@ -119,13 +120,7 @@ Deno.serve(async (req: Request) => {
             <td style="padding: 12px 0; border-bottom: 1px solid #e5e7eb;">
             <span style="font-size: 12px; color: #6b7280; text-transform: uppercase; letter-spacing: 1px;">Status</span><br/>
             <div style="display: inline-block; margin-top: 6px; background-color: #f9f6f2; border-left: 3px solid #c8a97e; 
-            padding: 8px 14px;
-            font-size: 14px;
-            color: #4a4a4a;
-            font-style: italic;
-            ">
-            ${status ?? "Pending Admin Approval"}
-            
+            padding: 8px 14px; font-size: 14px; color: #4a4a4a; font-style: italic;">${status ?? "Pending Admin Approval"}
             </div>
             </td>
             </tr>
@@ -134,8 +129,8 @@ Deno.serve(async (req: Request) => {
             What Happens Next
             </p>
             <p style="margin-bottom: 1px; font-size: 14px; color: #4a4a4a; line-height: 1.8;">
-            Bailey will review your request and reach out within 1-2 business days to confirm your session details.
-            <strong>Your deposit will not be charged until Bailey confirms your session details.</strong>
+            Bailey will review your request and reach out within 2-4 business days to confirm your session details.
+            <strong>Reminder:Your deposit will not be charged until Bailey confirms your session details.</strong>
             </p>
             </td>
             </tr>
@@ -157,9 +152,9 @@ Deno.serve(async (req: Request) => {
             </html>
             `;
             const { data, error } = await resend.emails.send({
-                from: "Your Roots Photography <noreply@yourrootsphotography.space>",
+                from: "Your Roots Photography <info@yourrootsphotography.space>",
                 to: email,
-                subject: "Booking Request Received! - Your Roots Photograpy",
+                subject: "Booking Request Received! - Your Roots Photography",
                 html,
             });
 
@@ -167,7 +162,7 @@ Deno.serve(async (req: Request) => {
             if (error) {
             await supabase.from("user_email_log").insert({
                 email_address: email,
-                email_type: "booking_request_confirmation_email",
+                email_type: "user_booking_request_received_email",
                 status: "Failed",
                 sent_at: new Date().toISOString(),
                 error_message: JSON.stringify(error),
@@ -178,7 +173,7 @@ Deno.serve(async (req: Request) => {
             // log SUCCESSFUL email send to the user_email_log table
             await supabase.from("user_email_log").insert({
                 email_address: email, 
-                email_type: "booking_request_confirmation_email",
+                email_type: "user_booking_request_received_email",
                 status: "Sent",
                 sent_at: new Date().toISOString(),
                 error_message: null,

@@ -26,6 +26,9 @@ serve(async (req: Request) => {
       );
     }
 
+    const body = await req.json().catch(() => ({}));
+    const requestedTargetUserId = body?.targetUserId ?? null;
+
     
     const supabaseUserClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -63,12 +66,60 @@ serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+     // Default: self-delete
+    let targetUserId = user.id;
+
+    // If deleting someone else, caller must be admin
+    if (requestedTargetUserId && requestedTargetUserId !== user.id) {
+      const adminRoleId = Deno.env.get("ADMIN_ROLE_ID") ?? "";
+
+      if (!adminRoleId) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Missing ADMIN_ROLE_ID env var" }),
+          {
+            status: 500,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const { data: adminRoleRow, error: adminRoleError } = await supabaseAdmin
+        .from("UserRole")
+        .select("user_id, role_id")
+        .eq("user_id", user.id)
+        .eq("role_id", adminRoleId)
+        .maybeSingle();
+
+      if (adminRoleError) {
+        return new Response(
+          JSON.stringify({ ok: false, error: adminRoleError.message }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      if (!adminRoleRow) {
+        return new Response(
+          JSON.stringify({ ok: false, error: "Only admins can delete other users" }),
+          {
+            status: 403,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      targetUserId = requestedTargetUserId;
+    }
+
     // Delete child rows first to avoid FK constraint errors
     // UserRole has a foreign key (user_id) referencing User.id
+    
     const { error: userRoleError } = await supabaseAdmin
       .from("UserRole")
       .delete()
-      .eq("user_id", user.id);
+      .eq("user_id", targetUserId);
 
     if (userRoleError) {
       throw userRoleError;
@@ -78,7 +129,7 @@ serve(async (req: Request) => {
     const { error: userTableError } = await supabaseAdmin
       .from("User")
       .delete()
-      .eq("id", user.id);
+      .eq("id", targetUserId);
 
     if (userTableError) {
       throw userTableError;
@@ -86,7 +137,7 @@ serve(async (req: Request) => {
 
     // Delete the user from Supabase Auth
     const { error: authDeleteError } =
-      await supabaseAdmin.auth.admin.deleteUser(user.id);
+      await supabaseAdmin.auth.admin.deleteUser(targetUserId);
 
     if (authDeleteError) {
       throw authDeleteError;

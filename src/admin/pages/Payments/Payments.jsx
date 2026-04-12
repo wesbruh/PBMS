@@ -2,6 +2,8 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import SubtractBalanceModal from "./SubtractBalanceModal.jsx";
+import { supabase } from "../../../lib/supabaseClient";
+import { triggerAdminToast } from "../../../components/AdminNotificationToast.jsx";
 import { useState, useEffect } from "react";
 
 function AdminPayments() {
@@ -234,8 +236,10 @@ function AdminPayments() {
       {/* Main Content */}
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className='relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll'>
-            {/* Header */}
+          <div className='relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-y-scroll'>
+
+            {/*Header*/}
+
             <div className='mb-6'>
               <h1 className='text-3xl font-bold text-gray-900 mb-2'>
                 Payments

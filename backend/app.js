@@ -265,6 +265,70 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
       res.status(500).json({ error: "Internal Server Error" });
     }
   });
+  
+  // Fetch booking request details for admin view of client questionnaire responses and any session notes
+  app.get("/api/sessions/:id/details", async (req, res) => {
+    try {
+      const {id} = req.params;
+
+      // get booking request notes
+      const {data: session, error: sessionError} = await supabaseClient
+      .from("Session")
+      .select("id, notes")
+      .eq("id", id)
+      .single();
+      if (sessionError) throw sessionError;
+
+      // get questionnaire responses for session
+      const { data: responses, error: responsesError } = await supabaseClient
+      .from("QuestionnaireResponse")
+      .select("id, status, submitted_at, QuestionnaireTemplate:template_id(id, name, schema_json)")
+      .eq("session_id", id)
+      .maybeSingle();
+      if (responsesError) throw responsesError;
+
+      let questionnaire = null;
+
+      if (responses && responses.QuestionnaireTemplate) {
+        //get all answers for this response
+        const { data: quesAnswers, error: quesAnswersError } = await supabaseClient
+        .from("QuestionnaireAnswer")
+        .select("question_id, answer")
+        .eq("questionnaire_id", responses.id);
+        if (quesAnswersError) throw quesAnswersError;
+
+        // build a question-answer map to return in a digestible format for the frontend
+        const answerMap = Object.fromEntries(
+          (quesAnswers ?? []).map((a) => [a.question_id, a.answer])
+        );
+
+        const schema = responses.QuestionnaireTemplate.schema_json ?? [];
+        const items = [...schema]
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        .map((q) => ({
+          question_id: q.id,
+          label: q.label,
+          type: q.type,
+          answer: answerMap[q.id] ?? null,
+        }));
+
+        questionnaire = {
+          template_name: responses.QuestionnaireTemplate.name,
+          status: responses.status,
+          submitted_at: responses.submitted_at,
+          items,
+        };
+      }
+
+      res.status(200).json ({
+        notes: session.notes ?? null,
+        questionnaire
+      });
+    } catch (error) {
+      console.error("error fetching session details:", error.message);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
 
   // Update session details
   app.patch("/api/sessions/:id", async (req, res) => {
@@ -488,7 +552,37 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
     }
   });
 
-  // get all payments
+  // Capture Payment Intent
+  app.post("/api/intent/cancel", async (req, res) => {
+    const { payment_intent } = req.body;
+
+    try {
+      // Retrieve Payment Intent
+      const paymentIntent = await stripeClient.paymentIntents.retrieve(payment_intent);
+
+      // Cancel OR Refund
+      if (paymentIntent.status === "requires_capture") {
+        await stripeClient.paymentIntents.cancel(payment_intent);
+      } else if (paymentIntent.status === "succeeded") {
+        // Refund
+        try {
+          await stripeClient.refunds.create({
+            payment_intent: payment_intent,
+          });
+        } catch (err) {
+          if (err.code == "charge_already_refunded")
+            throw new Error("Payment Intent already refunded");
+          else
+            throw err;
+        }
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error) {
+      console.error('Error capturing payment intent:', error);
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  });
 
   // --- Questionnaire Routes ---
 

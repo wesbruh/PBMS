@@ -3,6 +3,7 @@ import { X, Upload, ImagePlus, Image as ImageIcon, Trash2, CheckCircle, FolderOp
 import { supabase } from "../../../lib/supabaseClient.js";
 import "./UploadGalleryModal.css";
 import { useAuth } from "../../../context/AuthContext.jsx";
+import { triggerAdminToast } from "../../../components/AdminNotificationToast.jsx";
 
 const MAX_MESSAGE_LENGTH = 1000; // Max character length for personalized messages, includes spaces, punctuation, etc.
 
@@ -444,7 +445,6 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
           console.warn("[Gallery Upload] Skipping notification — client_id is missing. sessionData:", sessionData);
         } else {
           const { error: notifError } = await supabase.from("Notification").insert({
-            id: crypto.randomUUID(),
             user_id: sessionData.client_id,
             session_id: session.id,
             channel: "email",
@@ -457,6 +457,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
             console.error("[Gallery Upload] Notification insert failed:", notifError);
           } else {
             console.log("[Gallery Upload] Notification inserted successfully for user_id:", sessionData.client_id);
+            triggerAdminToast();
           }
         }
       // Success!

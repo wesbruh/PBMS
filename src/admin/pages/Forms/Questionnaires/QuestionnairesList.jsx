@@ -1,11 +1,14 @@
-import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../../lib/supabaseClient";
+import { Plus, LoaderCircle } from "lucide-react";
+import Table from "../../../components/shared/Table/Table.jsx";
 
 export default function QuestionnairesList() {
-  const [items,   setItems]   = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error,   setError]   = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   async function loadTemplates() {
     setError("");
@@ -13,7 +16,9 @@ export default function QuestionnairesList() {
     try {
       const { data, error: fetchErr } = await supabase
         .from("QuestionnaireTemplate")
-        .select("id, name, active, session_type_id, SessionType:session_type_id(name), schema_json")
+        .select(
+          "id, name, active, session_type_id, SessionType:session_type_id(name), schema_json",
+        )
         .order("session_type_id", { ascending: true });
 
       if (fetchErr) throw fetchErr;
@@ -30,116 +35,149 @@ export default function QuestionnairesList() {
   }, []);
 
   async function handleDelete(templateId) {
-    if (!window.confirm("Delete this template? Existing submitted questionnaires will keep their data but lose the template link.")) return;
+    const template = items.find((t) => t.id === templateId);
+    const templateName = template?.name ?? "Template";
+
+    if (
+      !window.confirm(
+        "Delete this template? Existing submitted questionnaires will keep their data but lose the template link.",
+      )
+    )
+      return;
 
     try {
-      // Step 1: Null out template_id on any questionnaire rows referencing this template.
-      // This is the safe in-code alternative to ON DELETE SET NULL if the FK
-      // constraint wasn't updated via SQL yet.
-      const { error: nullErr } = await supabase
-        .from("questionnaire")
-        .update({ template_id: null })
-        .eq("template_id", templateId);
-
-      if (nullErr) throw nullErr;
-
-      // Step 2: Now delete the template safely
+      // delete the template safely, give success alert
       const { error: delErr } = await supabase
         .from("QuestionnaireTemplate")
         .delete()
         .eq("id", templateId);
 
       if (delErr) throw delErr;
+      alert(`${templateName} was successfully deleted.`);
 
       loadTemplates();
     } catch (e) {
-      alert(`Failed to delete: ${e.message}`);
+      alert(`Failed to delete ${templateName}: ${e.message}`);
     }
   }
 
+  // map data to table
+  const questionnaireTableData = items.map((t) => ({
+    id: t.id,
+    name: t.name,
+    sessionType: t.SessionType?.name ?? "—",
+    questionCount: Array.isArray(t.schema_json) ? t.schema_json.length : 0,
+    active: t.active,
+  }));
+
+  const tableQuestionnaireColumns = [
+    {
+      key: "name",
+      label: "Template Name",
+      sortable: true,
+      render: (value) => <span className="font-medium">{value}</span>,
+    },
+    { key: "sessionType", label: "Session Type", sortable: false },
+    {
+      key: "questionCount",
+      label: "Questions",
+      sortable: true,
+      render: (value) => (
+        <span className="text-gray-500 capitalize">
+          {value} question{value === 1 ? "" : "s"}
+        </span>
+      ),
+    },
+    {
+      key: "active",
+      label: "Status",
+      sortable: true,
+      render: (value) =>
+        value ? (
+          <span className="px-3 py-1 rounded-md bg-green-100 text-green-800 text-sm font-medium">
+            Active
+          </span>
+        ) : (
+          <span className="px-3 py-1 rounded-md bg-gray-100 text-gray-600 text-sm font-medium">
+            Draft
+          </span>
+        ),
+    },
+    {
+      key: "actions",
+      label: "Actions",
+      sortable: false,
+      render: (_, row) => (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/admin/forms/questionnaires/${row.id}/edit`);
+            }}
+            className="underline text-blue-600 cursor-pointer"
+          >
+            Edit
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete(row.id);
+            }}
+            className="underline text-red-500 cursor-pointer"
+          >
+            Delete
+          </button>
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <div className="w-full overflow-y-scroll">
+    <div className="w-full h-full flex flex-col px-">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Questionnaire Templates</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Questionnaire Templates</h1>
           <p className="mt-1 text-sm text-gray-500">
-            One active template per session type. Publishing a new one deactivates the previous.
+            One active template per session type. Publishing a new one
+            deactivates the previous.
+            <br />
+            Click on a column header to sort ascending or descending order.
           </p>
         </div>
-        <Link
-          to="/admin/forms/questionnaires/new"
-          className="px-4 py-2 rounded bg-black text-white text-sm"
+        <button
+          onClick={() => navigate("/admin/forms/questionnaires/new")}
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm hover:bg-gray-700 cursor-pointer"
         >
-          + Create Template
-        </Link>
+          <Plus size={15} />
+          Create Template
+        </button>
       </div>
 
-      <div className="mt-6">
-        {loading && <p className="text-sm">Loading...</p>}
-        {error   && <p className="text-sm text-red-600">{error}</p>}
-
-        {!loading && !error && items.length === 0 && (
-          <p className="text-sm text-gray-600">
-            No templates yet. Create one to get started.
-          </p>
-        )}
-
-        {!loading && !error && items.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-sm border">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="text-left p-3 border-b">Template Name</th>
-                  <th className="text-left p-3 border-b">Session Type</th>
-                  <th className="text-left p-3 border-b">Questions</th>
-                  <th className="text-left p-3 border-b">Status</th>
-                  <th className="text-left p-3 border-b">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((t) => (
-                  <tr key={t.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 font-medium">{t.name}</td>
-                    <td className="p-3 capitalize">
-                      {t.SessionType?.name ?? "—"}
-                    </td>
-                    <td className="p-3 text-gray-500">
-                      {Array.isArray(t.schema_json) ? t.schema_json.length : 0}
-                      {" "}question{Array.isArray(t.schema_json) && t.schema_json.length === 1 ? "" : "s"}
-                    </td>
-                    <td className="p-3">
-                      {t.active ? (
-                        <span className="px-2 py-1 rounded bg-green-100 text-green-800 text-xs font-medium">
-                          Active
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-medium">
-                          Draft
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-3">
-                        <Link
-                          to={`/admin/forms/questionnaires/${t.id}/edit`}
-                          className="underline text-blue-600"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(t.id)}
-                          className="underline text-red-500"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {/* body */}
+      <div className="mt-6 grow flex flex-col">
+        {loading ? (
+          <div className="flex flex-col items-center justify-center grow text-gray-500">
+            <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
+            <p className="text-sm">Loading templates...</p>
           </div>
+        ) : error ? (
+          <div className="grow flex flex-col text-center items-center justify-center">
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+          </div>
+        ) : items.length === 0 ? (
+          <div className="grow flex flex-col items-center justify-center">
+            <p className="text-sm text-gray-600">
+              No templates yet. Create one to get started.
+            </p>
+          </div>
+        ) : (
+          <Table
+            columns={tableQuestionnaireColumns}
+            data={questionnaireTableData}
+            searchable={false}
+            rowsPerPage={7}
+          />
         )}
       </div>
     </div>
