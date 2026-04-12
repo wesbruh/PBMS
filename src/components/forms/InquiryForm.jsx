@@ -398,9 +398,9 @@ export default function InquiryForm() {
           // Load questionnaire answers
           try {
             const { data: qInstance } = await supabase
-              .from("questionnaire").select("id").eq("session_id", sessionId).single();
+              .from("QuestionnaireResponse").select("id").eq("session_id", sessionId).single();
             const { data: answers } = await supabase
-              .from("QuestionnaireResponse").select().eq("questionnaire_id", qInstance.id);
+              .from("QuestionnaireAnswer").select().eq("questionnaire_id", qInstance.id);
             const answersMap = {};
             (answers ?? []).forEach((r) => { answersMap[r.question_id] = r.answer; });
             setQAnswers(answersMap);
@@ -442,6 +442,7 @@ export default function InquiryForm() {
       await supabase
         .from("Session")
         .delete()
+        .eq("client_id", profile.id)
         .eq("client_id", profile.id)
         .eq("is_active", false);
 
@@ -488,7 +489,8 @@ export default function InquiryForm() {
           throw qInstError;
         }
 
-        const responseRows = Promise.all(activeTemplate.questions.map((q) => {
+        // One row per answer (relational, not blob)
+        const responseRows = await Promise.all(activeTemplate.questions.map((q) => {
           const raw = qAnswers[q.tempId];
           const isCheckbox = (q.type ?? "").toLowerCase() === "checkbox";
           return {

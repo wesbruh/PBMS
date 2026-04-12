@@ -56,7 +56,7 @@ export default function SignContractModal({ open, onClose, contract, contractTem
 
       // 5) return contract as signed
       const contractData = await contractResponse.json()
-    
+
       onSigned(contractData);
       onClose();
       alert("Contract signed!");
@@ -71,8 +71,7 @@ export default function SignContractModal({ open, onClose, contract, contractTem
   return (
     <div>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      </div>
-      <div className="w-full max-w-xl rounded-lg bg-white shadow-lg border">
+        <div className="w-full max-w-xl rounded-lg bg-white shadow-lg border">
           <div className="p-4 border-b flex items-center justify-between">
             <h3 className="text-lg font-semibold">Sign “{contractTemplate.name ?? "Contract"}”</h3>
             <button type="button" onClick={onClose} className="text-sm px-2 py-1 rounded border hover:bg-neutral-50">Close</button>
@@ -103,6 +102,8 @@ export default function SignContractModal({ open, onClose, contract, contractTem
               </button>
             </div>
           </div>
+        </div>
+
       </div>
     </div>
   );

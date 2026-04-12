@@ -86,7 +86,7 @@ router.patch("/confirm/:invoice_id", async (req, res) => {
     // update entry in Payment table
     const { error: paymentError } = await supabase
       .from("Payment")
-      .update({ status: "Paid", paid_at: now.toISOString(), updated_at: now.toISOString() })
+      .update({ status: "Paid", paid_at: now.toISOString() })
       .eq("invoice_id", invoice_id)
       .eq("type", "Deposit");
     
@@ -125,7 +125,7 @@ router.patch("/pay/:invoice_id", async (req, res) => {
     // update entry in Payment table
     const { error: paymentError } = await supabase
       .from("Payment")
-      .update({ status: "Paid", paid_at: now.toISOString(), updated_at: now.toISOString() })
+      .update({ status: "Paid", paid_at: now.toISOString() })
       .eq("invoice_id", invoice_id)
       .eq("type", "Rest");
 

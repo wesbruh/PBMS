@@ -557,18 +557,18 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
 
   // Cancel Payment Intent
   app.post("/api/intent/cancel", async (req, res) => {
-    const { payment_intent } = req.body;
+    const { payment_intent_id } = req.body;
 
     try {
       // Retrieve Payment Intent
-      const paymentIntent = await stripeClient.paymentIntents.retrieve(payment_intent);
+      const paymentIntent = await stripeClient.paymentIntents.retrieve(payment_intent_id);
 
       // Cancel OR Refund
       if (paymentIntent.status === "succeeded") {
         // Refund
         try {
           await stripeClient.refunds.create({
-            payment_intent: payment_intent,
+            payment_intent: payment_intent_id,
           });
         } catch (err) {
           if (err.code == "charge_already_refunded")
@@ -589,15 +589,15 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
 
   // Uncapture hold on Payment Intent
   app.post("/api/intent/uncapture", async (req, res) => {
-    const { payment_intent } = req.body;
+    const { payment_intent_id } = req.body;
 
     try {
       // Retrieve Payment Intent
-      const paymentIntent = await stripeClient.paymentIntents.retrieve(payment_intent);
+      const paymentIntent = await stripeClient.paymentIntents.retrieve(payment_intent_id);
 
       // Cancel hold on payment
       if (paymentIntent.status === "requires_capture") {
-        await stripeClient.paymentIntents.cancel(payment_intent);
+        await stripeClient.paymentIntents.cancel(payment_intent_id);
       } else {
         throw Error("Payment intent does not require capture");
       }
