@@ -18,19 +18,12 @@ function Contacts() {
   // Holds selected contact for deletion
   const [selectedContact, setSelectedContact] = useState(null);
 
-
-  // Basic validators
-  const isValidEmail = (email) => {
-    // Simple and reliable email format check
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim());
-  };
-
   const normalizePhone = (phone) => {
     // Count digits only, ignore formatting characters
-    return String(phone || "").replace(/\D/g, "");
+    const digits = String(phone || "").replace(/\D/g, "")
+    return (digits) ? `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}` : "";
   };
 
- 
   const tableContactsColumns = [
     {
       key: "userid",
@@ -47,7 +40,11 @@ function Contacts() {
     { key: "firstName", label: "First Name", sortable: true },
     { key: "lastName", label: "Last Name", sortable: true },
     { key: "email", label: "Email", sortable: true },
-    { key: "phone", label: "Phone", sortable: false },
+    { key: "phone", label: "Phone", sortable: false,
+      render: (value) => (
+        normalizePhone(value)
+      )
+    },
     {
       key: "actions",
       label: "Actions",

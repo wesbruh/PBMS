@@ -14,7 +14,7 @@ import SectionPager from "../../components/SectionPager";
 import SharedClientDashboard from "../../components/Dashboard/SharedClientDashboard";
 
 export default function ClientDashboard() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams, _setSearchParams] = useSearchParams();
   const checkoutSessionId = searchParams.get('checkout_session_id') || null;
 
   const { user, profile, setProfile } = useAuth();
@@ -24,7 +24,7 @@ export default function ClientDashboard() {
   const [contracts, setContracts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [changingPassword, setChangingPassword] = useState(false);
+  const [_changingPassword, setChangingPassword] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -32,12 +32,10 @@ export default function ClientDashboard() {
     confirmNewPassword: "",
   });
 
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Will be used to display settings modal 
   const [showSettings, setShowSettings] = useState(false);
-  const [deletingAccount, setDeletingAccount] = useState(false);
-  const [deleteError, setDeleteError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // To allow a user to edit their profile information and to check if they are editting
   const [isEditing, setIsEditing] = useState(false);
