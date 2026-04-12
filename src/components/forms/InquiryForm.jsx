@@ -87,7 +87,6 @@ export default function InquiryForm() {
   const [qAnswers,        setQAnswers]       = useState({});
   const [qALoading,       setQALoading]      = useState(false);
   const [qLoading,        setQLoading]       = useState(false);
-  const [sessionTypeLoading, setSessionTypeLoading] = useState(false);
 
   // ── Load params ────────────────────────────────────────────────────
   useEffect(() => {
@@ -190,7 +189,10 @@ export default function InquiryForm() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(body)
         });
-        setContract(await res.json());
+
+        const data = await response.json();
+
+        setContract(data);
       } catch (err) {
         console.error("Failed to load contract:", err);
       } finally {
@@ -375,7 +377,7 @@ export default function InquiryForm() {
           }
 
           // Match the session type from loaded list
-          const matchedST = sessionTypes.find(
+          const matchedST = allSessionTypes.find(
             (st) => st.id === sessionData.session_type_id,
           );
           if (matchedST) {
@@ -383,7 +385,6 @@ export default function InquiryForm() {
               (m) => m.is_master && m.category === matchedST.category
             );
             if (masterForST) {
-              setSessionTypeLoading(true);
               setSelectedCategory(masterForST);
             }
             setSelectedSessionType(matchedST);
