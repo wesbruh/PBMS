@@ -126,35 +126,33 @@ function Sessions() {
   };
 
   const confirmSession = (sessionId, checkoutSessionId) => {
-    
     capturePaymentIntent(checkoutSessionId);
     generateInvoice(sessionId);
     handleUpdate(sessionId, "status", "Confirmed");
   };
-const handleCancel = async (sessionId) => {
-  const confirmCancel = window.confirm("Are you sure you want to cancel this session?");
-  if (!confirmCancel) return;
 
-  try {
-    const res = await fetch(`http://localhost:5001/api/sessions/${sessionId}/cancel`, {
-      method: "PATCH",
-    });
+  const cancelPaymentIntent = async (checkoutSessionId) => {
+    try {
+      const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
 
-    if (!res.ok) throw new Error("Failed to cancel session");
+      if (!status) throw new Error("Failed to retrieve payment intent");
 
-    
-    setSessions((prev) =>
-      prev.map((s) =>
-        s.id === sessionId ? { ...s, status: "Cancelled" } : s
-      )
-    );
+      const response = await fetch(`http://localhost:5001/api/intent/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ payment_intent: paymentIntent })
+      });
 
-  } catch (err) {
-    console.error(err);
-    alert("Error cancelling session");
-  }
-};
-  
+      if (!response.ok) throw Error("Failed to capture payment intent");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const cancelSession = (sessionId, checkoutSessionId) => {
+    cancelPaymentIntent(checkoutSessionId);
+    handleUpdate(sessionId, "status", "Cancelled");
+  };
 
   const handleUpdate = async (sessionId, field, value) => {
     let payload = {}
@@ -269,38 +267,44 @@ const handleCancel = async (sessionId) => {
       label: 'Actions',
       render: (value, row) => (
         (row.status === "Pending" ? (
-          <div className="flex gap-3 justify-center">
-            {row.deposit_cs_id && (
-          <button
-            type={"button"}
-            onClick={() => { confirmSession(row.id, row.deposit_cs_id)}}
-            className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border`}
-          >
-            Confirm
-          </button> 
-          )}
-          <button
-          type="button"
-          onClick={() => handleCancel(row.id)}
-          className="px-3 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
-          >
-            Cancel
-            </button>
-          
-          </div>
-        ) : row.status === "Confirmed" ? (
+          <div className="min-w-60 grid grid-cols-2 gap-5">
             <button
               type={"button"}
+              onClick={() => { confirmSession(row.id, row.deposit_cs_id) }}
+              className={`w-full min-w-30 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border`}
+            >
+              Confirm
+            </button>
+            <button
+              type="button"
+              onClick={() => cancelSession(row.id, row.deposit_cs_id)}
+              className="w-full min-w-30 hover:cursor-pointer px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : row.status === "Confirmed" ? (
+          <div className="min-w-60 grid grid-cols-2 gap-5">
+            <button
+              type="button"
               onClick={() => { downloadInvoicePdf(row.id) }}
-              className={`hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border`}
+              className="w-full min-w-30 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border"
             >
               Download
-            </button> 
-            ) : (
-            <div></div>
-       )
+            </button>
+            <button
+              type="button"
+              onClick={() => cancelSession(row.id, row.deposit_cs_id)}
+              className="w-full min-w-30 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+            >
+              Cancel
+            </button>
+          </div>
+        ) : 
+          (<div></div>)
+        )
       )
-    )}
+    }
   ];
 
   return (

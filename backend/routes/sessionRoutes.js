@@ -4,12 +4,12 @@ import { stripe } from "../stripeClient.js";
 
 const router = express.Router();
 
-//CANCEL SESSION + HANDLE STRIPE PAYMENT
+// CANCEL SESSION + HANDLE STRIPE PAYMENT
 router.patch("/:id/cancel", async (req, res) => {
   const { id } = req.params;
 
   try {
-    //Get Payment from DB
+    // Get Payment from DB
     const { data: payment, error: paymentError } = await supabase
       .from("Payment")
       .select(`id, provider_payment_id, status, invoice_id,
@@ -25,86 +25,68 @@ router.patch("/:id/cancel", async (req, res) => {
 
     const checkoutSessionId = payment.provider_payment_id;
 
-    if (!checkoutSessionId) {
-      throw new Error("No provider_payment_id (checkout session ID)");
-    }
+    if (!checkoutSessionId) throw new Error("Checkout Session Id cannot be found.");
 
-    //Retrieve Stripe Checkout Session
+    // Retrieve Stripe Checkout Session
     const session = await stripe.checkout.sessions.retrieve(checkoutSessionId);
 
     const paymentIntentId = session.payment_intent;
 
     if (!paymentIntentId) {
-      if (!paymentIntentId) {
-  console.log("No payment intent");
+      console.error("No payment intent");
 
-  
-  await supabase
-    .from("Payment")
-    .update({ status: "Cancelled" })
-    .eq("id", payment.id);
+      await supabase
+        .from("Payment")
+        .update({ status: "Cancelled" })
+        .eq("id", payment.id);
 
-  await supabase
-    .from("Session")
-    .update({ status: "Cancelled" })
-    .eq("id", id);
+      await supabase
+        .from("Session")
+        .update({ status: "Cancelled" })
+        .eq("id", id);
 
-  return res.json({
-    success: true,
-    message: "Session cancelled (no payment made)"
-  });
-}
+      return res.json({
+        success: true,
+        message: "Session cancelled (no payment made)"
+      });
     }
 
     // Retrieve Payment Intent
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-    console.log("Stripe status:", paymentIntent.status);
-
-    //Cancel OR Refund
+    // Cancel OR Refund
     if (paymentIntent.status === "requires_capture") {
-      
       await stripe.paymentIntents.cancel(paymentIntentId);
-      console.log("Payment cancelled before capture");
-    } 
-    else if (paymentIntent.status === "succeeded") {
+    } else if (paymentIntent.status === "succeeded") {
       // refund
-      try{
-      await stripe.refunds.create({
-        payment_intent: paymentIntentId,
-      });
-      console.log("Refund issued");
-    } catch (err) {
-        if(err.code == "charge_already_refunded"){
-            console.log("Already refunded");
-        } else {
-            throw err;
-        }
-        }
-    }
-    else {
-      console.log("No action needed for status:", paymentIntent.status);
+      try {
+        await stripe.refunds.create({
+          payment_intent: paymentIntentId,
+        });
+      } catch (err) {
+        if (err.code == "charge_already_refunded")
+          throw new Error("Payment Intent already refunded");
+        else 
+          throw err;
+      }
     }
 
-    //Update Payment table
+    // Update Payment table
     await supabase
       .from("Payment")
       .update({ status: "Cancelled" })
       .eq("id", payment.id);
 
-    //Update Session table
+    // Update Session table
     await supabase
       .from("Session")
       .update({ status: "Cancelled" })
       .eq("id", id);
 
-    console.log("Session & Payment cancelled:", id);
-
-    res.json({ success: true });
-
+    res.status(200).json({ success: true });
   } catch (err) {
-    console.error("Cancel error:", err);
-    res.status(500).json({ error: err.message });
+    console.error("Error cancelling Payment Intent: ", err);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
