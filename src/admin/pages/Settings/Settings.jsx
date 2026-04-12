@@ -12,6 +12,7 @@ import {
   MAX_PHOTO_BYTES,
   SETTINGS_BUCKET,
 } from "./settings.utils";
+import { LoaderCircle } from "lucide-react";
 
 function AdminSettings() {
   const { user, profile } = useAuth();
@@ -447,8 +448,11 @@ function AdminSettings() {
         </div>
         <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
           <Frame>
-            <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll">
-              <div className="p-2 text-gray-600">Loading your settings...</div>
+            <div className="relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-y-scroll justify-center">
+              <div className="flex flex-col text-xl text-center items-center text-gray-600">
+                Loading your settings...
+                <LoaderCircle className="text-brown animate-spin" size={32} />
+              </div>
             </div>
           </Frame>
         </div>
@@ -464,7 +468,7 @@ function AdminSettings() {
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="relative flex flex-col bg-white p-4 w-full rounded-lg shadow-inner overflow-y-scroll">
+          <div className="relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-y-scroll">
             <div className="mb-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Personal Settings</h1>
               <p className="text-gray-600">
@@ -484,11 +488,11 @@ function AdminSettings() {
               </div>
             )}
 
-            <section className="rounded-lg border border-gray-200 p-4 mb-5">
+            <section className="rounded-lg border border-gray-200 p-4 mb-5 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile</h2>
 
               <div className="grid md:grid-cols-[140px_1fr] gap-4 items-start">
-                <div className="w-[120px] h-[120px] rounded-full border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center text-gray-500 text-sm">
+                <div className="w-30 h-30 rounded-full border border-gray-200 bg-gray-50 overflow-hidden flex items-center justify-center text-gray-500 text-sm">
                   {activePhoto ? (
                     <img
                       src={activePhoto}
@@ -500,7 +504,7 @@ function AdminSettings() {
                   )}
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-4 ">
                   <div>
                     <label htmlFor="displayName" className="block text-sm font-medium text-gray-700 mb-1">
                       Display Name
@@ -564,10 +568,10 @@ function AdminSettings() {
               </div>
             </section>
 
-            <section className="rounded-lg border border-gray-200 p-4">
+            <section className="rounded-lg border border-gray-200 p-4 shadow-sm">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Notification Preferences</h2>
               <div className="space-y-4">
-                <div className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 p-3">
+                <div className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 p-3 shadow-sm">
                   <div>
                     <p className="font-medium text-gray-900">Email Notifications</p>
                     <p className="text-sm text-gray-600">
@@ -593,7 +597,7 @@ function AdminSettings() {
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 p-3">
+                <div className="flex items-center justify-between rounded-md border border-gray-100 bg-gray-50 p-3 shadow-sm">
                   <div>
                     <p className="font-medium text-gray-900">Dashboard Alerts</p>
                     <p className="text-sm text-gray-600">
