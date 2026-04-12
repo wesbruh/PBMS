@@ -23,7 +23,7 @@ export default function Login() {
   // navigate when everything is loaded
   useEffect(() => {
     // something hasn't been initialized or found
-    if (loading || profile) {
+    if (loading || !profile) {
       return;
     }
 
