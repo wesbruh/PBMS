@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 
 import { triggerAdminToast } from "../../../components/AdminNotificationToast.jsx";
-import { useAuth } from "../../../context/AuthContext"
+import { useAuth } from "../../../context/AuthContext";
+import { LoaderCircle } from "lucide-react";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import SubtractBalanceModal from "./SubtractBalanceModal.jsx";
-
 
 function AdminPayments() {
   const [invoices, setInvoices] = useState([]);
@@ -16,6 +16,7 @@ function AdminPayments() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [doPageRefresh, setDoPageRefresh] = useState(false);
+  const [error, setError] = useState("");
 
   const { session } = useAuth();
 
@@ -23,21 +24,24 @@ function AdminPayments() {
     const fetchInvoices = async () => {
       if (!session) return;
       try {
-        const res = await fetch('http://localhost:5001/api/invoice/getInvoiceTableData', {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json"
-          }
-        });
-        console.log("Response status:", res.status);
+        const res = await fetch(
+          "http://localhost:5001/api/invoice/getInvoiceTableData",
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${session?.access_token}`,
+              "Content-Type": "application/json",
+            },
+          },
+        );
+        //console.log("Response status:", res.status);
 
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
 
         const data = await res.json();
-        console.log("Fetched invoice data:", data);
+        //console.log("Fetched invoice data:", data);
         setInvoices(data);
       } catch (err) {
         console.error("Fetch error:", err);
@@ -54,13 +58,16 @@ function AdminPayments() {
       const refreshData = async () => {
         setLoading(true);
         try {
-          const res = await fetch('http://localhost:5001/api/invoice/getInvoiceTableData', {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${session?.access_token}`,
-              "Content-Type": "application/json"
-            }
-          });
+          const res = await fetch(
+            "http://localhost:5001/api/invoice/getInvoiceTableData",
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${session?.access_token}`,
+                "Content-Type": "application/json",
+              },
+            },
+          );
           const data = await res.json();
           setInvoices(data);
         } catch (err) {
@@ -76,13 +83,16 @@ function AdminPayments() {
 
   const downloadInvoicePdf = async (invoice_id) => {
     try {
-      const pdfResponse = await fetch(`http://localhost:5001/api/invoice/${invoice_id}/pdf`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
-        }
-      });
+      const pdfResponse = await fetch(
+        `http://localhost:5001/api/invoice/${invoice_id}/pdf`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
 
       if (!pdfResponse.ok) throw new Error("Failed to generate PDF");
 
@@ -103,16 +113,20 @@ function AdminPayments() {
 
   const managePayment = async (invoice_id) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/invoice/getInvoiceByID?term=${invoice_id}`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
-        }
-      });
+      const res = await fetch(
+        `http://localhost:5001/api/invoice/getInvoiceByID?term=${invoice_id}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
       const data = await res.json();
 
-      if (!res.ok) throw new Error(data.message || "Failed to fetch invoice details");
+      if (!res.ok)
+        throw new Error(data.message || "Failed to fetch invoice details");
 
       setSelectedInvoice(data);
       setIsModalOpen(true);
@@ -121,24 +135,34 @@ function AdminPayments() {
     }
   };
 
-  const handleBalanceReduction = async (reductionAmount, paymentMethod = null) => {
+  const handleBalanceReduction = async (
+    reductionAmount,
+    paymentMethod = null,
+  ) => {
     if (!selectedInvoice) {
       console.error("No invoice selected");
       return;
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/api/invoice/${selectedInvoice.id}/reduceRemainingInvoiceBalance`, {
-        method: 'POST',
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
+      const response = await fetch(
+        `http://localhost:5001/api/invoice/${selectedInvoice.id}/reduceRemainingInvoiceBalance`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: reductionAmount,
+            payment_method: paymentMethod,
+          }),
         },
-        body: JSON.stringify({ amount: reductionAmount, payment_method: paymentMethod }),
-      });
+      );
 
       if (response.ok) {
-        console.log("Balance updated successfully");
+        alert("Balance updated successfully");
+        //console.log("Balance updated successfully");
         // Trigger refresh to show updated data
         setDoPageRefresh(true);
       } else {
@@ -175,9 +199,19 @@ function AdminPayments() {
   });
 
   const tablePaymentColumns = [
-    { key: 'invoice_number', label: 'Invoice #', sortable: true },
-    { key: 'issue_date', label: 'Issue Date', sortable: true, render: (value, row) => row.issue_date },
-    { key: 'remaining', label: 'Remaining', sortable: true, render: (value, row) => `${row.remaining.toFixed(2)}` },
+    { key: "invoice_number", label: "Invoice #", sortable: true },
+    {
+      key: "issue_date",
+      label: "Issue Date",
+      sortable: true,
+      render: (value, row) => row.issue_date,
+    },
+    {
+      key: "remaining",
+      label: "Remaining",
+      sortable: true,
+      render: (value, row) => `${row.remaining.toFixed(2)}`,
+    },
     {
       key: "status",
       label: "Status",
@@ -226,7 +260,10 @@ function AdminPayments() {
         return (
           <button
             onClick={() => {
-              console.log("Here is the id being passed for invoice_id:", row.id);
+              // console.log(
+              //   "Here is the id being passed for invoice_id:",
+              //   row.id,
+              // );
               downloadInvoicePdf(row.id);
             }}
             className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
@@ -234,32 +271,34 @@ function AdminPayments() {
             Download Invoice
           </button>
         );
-      }
+      },
     },
     {
       key: "manual_payment",
       label: "Manual Payment",
       render: (_, row) => {
-        return (
-          (row.remaining > 0) ?
-            <button
-              onClick={() => {
-                console.log("Here is the id being passed for invoice_id:", row.id);
-                managePayment(row.id);
-              }}
-              className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
-            >
-              Manage
-            </button> :
-            <></>
+        return row.remaining > 0 ? (
+          <button
+            onClick={() => {
+              // console.log(
+              //   "Here is the id being passed for invoice_id:",
+              //   row.id,
+              // );
+              managePayment(row.id);
+            }}
+            className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
+          >
+            Manage
+          </button>
+        ) : (
+          <></>
         );
-      }
+      },
     },
   ];
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-
       {/* SideBar */}
       <div className="flex min-w-50 overflow-y-auto">
         <Sidebar />
@@ -268,33 +307,42 @@ function AdminPayments() {
       {/* Main Content */}
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className='relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-y-scroll'>
-
+          <div className="flex w-full rounded-lg overflow-y-auto">
+          <div className="relative flex flex-col bg-[#fcfcfc] p-6 w-full rounded-lg shadow-inner">
             {/*Header*/}
 
-            <div className='mb-6'>
-              <h1 className='text-3xl font-bold text-gray-900 mb-2'>
-                Invoices
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-gray-900">
+                Payments &amp; Invoices
               </h1>
-              <p className='text-gray-600'>
+              <p className="text-sm text-gray-600 mt-0.5">
                 View and manage all client payments.
               </p>
             </div>
 
             {/* Table */}
             {loading ? (
-              <div className="py-10 text-center text-gray-500">
-                Loading invoices...
+              <div className="flex flex-col items-center justify-center grow text-gray-500">
+                <LoaderCircle
+                  className="text-brown animate-spin mb-2"
+                  size={32}
+                />
+                <p className="text-sm">Loading payments...</p>
+              </div>
+            ) : error ? (
+              <div className="grow flex flex-col text-center items-center justify-center">
+                <p className="text-sm text-red-600 mb-2">{error}</p>
               </div>
             ) : (
               <Table
                 columns={tablePaymentColumns}
                 data={filteredInvoices}
                 searchable={false}
-                searchPlaceholder='Search Payments by Client Name...'
-                rowsPerPage={5}
+                searchPlaceholder="Search Payments by Client Name..."
+                rowsPerPage={7}
               />
             )}
+          </div>
           </div>
         </Frame>
       </div>

@@ -9,7 +9,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient.js";
-import { Plus } from "lucide-react";
+import { Plus, LoaderCircle } from "lucide-react";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -123,51 +123,49 @@ export default function OfferingsPage() {
 
   // ── UI ────────────────────────────────────────────────────────────────────
   return (
-    <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex min-w-50 overflow-y-auto">
-        <Sidebar />
-      </div>
-
-      <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
-        <Frame>
-          <div className="m-6 md:m-8">
+    <div className="w-full h-full flex flex-col">        
+          <div>
 
             {/* Header */}
-            <div className="flex items-start justify-between mb-8">
+            <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Sessions &amp; Packages</h1>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Click a category to view and edit its packages. All cards are clickable to edit.
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Click on a category to view and edit its session types. <br /> Click on a session card to view/manage any details.
                 </p>
               </div>
               <button
                 onClick={() => navigate("/admin/offerings/new")}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm hover:bg-gray-800 transition"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-black text-white text-sm cursor-pointer hover:bg-gray-700 transition-all"
               >
                 <Plus size={15} />
                 New Category
               </button>
             </div>
 
-            {loading && <p className="text-sm text-neutral-500">Loading...</p>}
-            {error   && <p className="text-sm text-red-600">{error}</p>}
-
-            {!loading && !error && masters.length === 0 && (
-              <div className="text-center py-16 text-neutral-400">
+            <div className="mt-6 grow flex flex-col">
+              {loading ? (
+                <div className="flex flex-col items-center justify-center grow text-gray-500">
+            <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
+            <p className="text-sm">Loading questionnaire templates...</p>
+          </div>
+              ) : error ? (
+                <div className="grow flex flex-col text-center items-center justify-center">
+            <p className="text-sm text-red-600 mb-2">{error}</p>
+          </div>
+              ) : masters.length === 0 ? (
+                <div className="text-center py-16 text-gray-400">
                 <p className="text-lg font-serif">No categories yet.</p>
                 <p className="text-sm mt-2">Create your first category to get started.</p>
               </div>
-            )}
-
-            {!loading && !error && masters.length > 0 && (
+              ) : (
               <div className="space-y-6">
-                
                 {/* ── Step 1: Category Grid (Masters Only) ─────────────── */}
                 <div>
-                  <p className="text-xs uppercase tracking-wider text-neutral-400 mb-4">
+                  <p className="text-sm uppercase tracking-wider text-gray-600 mt-4 mb-2">
                     Select a Category
                   </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 ml-2 mr-2 gap-2 md:grid-cols-3 md:ml-8 md:mr-8 md:gap-4 ">
                     {masters.map((master) => {
                       const isSelected = selectedCategory?.id === master.id;
                       const imageUrl = getImageUrl(master.image_path);
@@ -210,7 +208,7 @@ export default function OfferingsPage() {
                               ${isSelected ? "border-[#7E4C3C]" : "border-black/30"}`}>
                               {isSelected && <span className="h-2 w-2 rounded-full bg-[#7E4C3C]" />}
                             </span>
-                            <span className="font-serif text-sm text-neutral-800">{master.category}</span>
+                            <span className="font-medium text-sm text-neutral-800">{master.category}</span>
                           </div>
                         </div>
                       );
@@ -222,12 +220,12 @@ export default function OfferingsPage() {
                 {selectedCategory && (
                   <div className="mt-6 rounded-xl border border-[#7E4C3C]/20 bg-[#FAF7F2] p-6 space-y-6">
                     <div className="flex items-center justify-between">
-                      <p className="text-[10px] uppercase tracking-widest text-neutral-400">
+                      <p className="text-[12px] uppercase tracking-widest text-gray-500">
                         Available packages in {selectedCategory.category}
                       </p>
                       <button
                         onClick={() => navigate(`/admin/offerings/${encodeURIComponent(selectedCategory.category)}/session-types/new`)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-[#AB8C4B]/30 bg-white text-xs text-[#AB8C4B] hover:border-[#AB8C4B]/50 hover:bg-[#AB8C4B]/5 transition font-medium"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-dashed border-[#AB8C4B]/30 bg-white text-sm font-sans text-[#AB8C4B] hover:border-[#AB8C4B]/50 hover:bg-[#AB8C4B]/5 transition cursor-pointer font-medium"
                       >
                         <Plus size={12} /> Add Package
                       </button>
@@ -262,13 +260,10 @@ export default function OfferingsPage() {
                     </div>
                   </div>
                 )}
-
               </div>
             )}
-
           </div>
-        </Frame>
       </div>
-    </div>
+      </div>
   );
 }

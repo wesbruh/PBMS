@@ -43,6 +43,7 @@ import QuestionnaireEditor from './admin/pages/Forms/Questionnaires/Questionnair
 // Note: PackageEditor removed — Package table replaced by SessionType with category column
 import OfferingsPage     from './admin/pages/Offerings/OfferingsPage.jsx';
 import SessionTypeEditor from './admin/pages/Offerings/SessionTypeEditor.jsx';
+import Offerings from './admin/pages/Offerings/SessionTypesMainPage.jsx'; 
 
 function App() {
   return (
@@ -98,7 +99,7 @@ function AppContent() {
               <Route path="sessions" element={<Sessions />} />
 
               {/* Offerings — categories & session types Bailey White offers */}
-              <Route path="offerings" element={<Outlet />}>
+              <Route path="offerings" element={<Offerings />}>
                 <Route index element={<OfferingsPage />} />
                 {/* Create a brand-new category (is_master=true automatically) */}
                 <Route path="new" element={<SessionTypeEditor mode="create" isMasterDefault={true} />} />

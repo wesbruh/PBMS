@@ -3,10 +3,10 @@ import Frame from "../../components/shared/Frame/Frame";
 
 import { Outlet } from "react-router-dom";
 
-function Forms() {
+function Offerings() {
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex min-w-50 overflow-y-auto">
+      <div className="flex  min-w-50">
         <Sidebar />
       </div>
       <div className="flex h-full w-full shadow-inner bg-[#fcfcfc] rounded-lg overflow-y-auto">
@@ -20,4 +20,4 @@ function Forms() {
   );
 }
 
-export default Forms;
+export default Offerings;

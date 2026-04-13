@@ -36,7 +36,7 @@ function AdminHome() {
               <h1 className="text-3xl font-bold text-gray-900">
                 Welcome back, {username}
               </h1>
-              <p className="text-sm text-gray-500 mt-0.5">
+              <p className="text-sm text-gray-600 mt-0.5">
                 Here's what's happening within Your Roots Photography.
               </p>
             </div>
