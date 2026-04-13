@@ -6,7 +6,7 @@ import { Outlet } from "react-router-dom";
 function Offerings() {
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex  min-w-50">
+      <div className="flex md:min-w-50">
         <Sidebar />
       </div>
       <div className="flex h-full w-full shadow-inner bg-[#fcfcfc] rounded-lg overflow-y-auto">

@@ -442,7 +442,7 @@ function AdminSettings() {
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex min-w-50 overflow-y-auto">
+      <div className="flex md:min-w-50">
         <Sidebar />
       </div>
 
@@ -577,7 +577,7 @@ function AdminSettings() {
                     type="button"
                     onClick={handleEmailToggle}
                     aria-pressed={emailNotifications}
-                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-300 cursor-pointer ${
                       emailNotifications ? "bg-[#7E4C3C]" : "bg-gray-300"
                     }`}
                   >
@@ -603,7 +603,7 @@ function AdminSettings() {
                     type="button"
                     onClick={handleDashboardAlertsToggle}
                     aria-pressed={dashboardAlerts}
-                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${
+                    className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-300 cursor-pointer ${
                       dashboardAlerts ? "bg-[#7E4C3C]" : "bg-gray-300"
                     }`}
                   >

@@ -117,10 +117,10 @@ function SessionCalendar() {
 
       {/* legend  */}
       <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 ">
-        <span className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-amber-500 inline-block " />
+        {/* <span className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-amber-500 inline-block " />
         <span className="text-xs text-gray-400 truncate">
           Confirmed session
-        </span>
+        </span> */}
         <span className="text-xs text-gray-500 text-decoration underline font-bold truncate">Underlined date is Today.</span>
       </div>
 

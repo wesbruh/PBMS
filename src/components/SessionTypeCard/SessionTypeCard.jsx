@@ -202,7 +202,7 @@ export default function SessionTypeCard({
       >
         {/* Admin Controls */}
         {showEditControls && (
-          <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
             <button
               onClick={handleEdit}
               className="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-50 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm "
