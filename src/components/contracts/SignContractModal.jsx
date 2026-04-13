@@ -49,7 +49,7 @@ export default function SignContractModal({ open, onClose, contract, contractTem
       const signedUrl = data.publicUrl;
 
       // 4) Mark contract as signed
-      const contractResponse = await fetch(`http://localhost:5001/api/contract/${contract.id}`, {
+      const contractResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contract.id}`, {
         method: "PATCH",
         headers: { 
           "Authorization": `Bearer ${session?.access_token}`,

@@ -12,7 +12,7 @@ export default function DownloadReceiptButton({ invoiceId }) {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(`http://localhost:5001/api/receipt/${invoiceId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/receipt/${invoiceId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

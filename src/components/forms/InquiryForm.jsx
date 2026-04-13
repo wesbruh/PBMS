@@ -159,7 +159,7 @@ export default function InquiryForm() {
       if (!session) return;
 
       try {
-        const response = await fetch("http://localhost:5001/api/contract/templates", {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/templates`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -212,7 +212,7 @@ export default function InquiryForm() {
 
   const updateContractTemplate = async (templateId) => {
     try {
-      const response = await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contract?.id}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -543,7 +543,7 @@ export default function InquiryForm() {
       const amountDue = selectedSessionType.base_price * DEPOSIT_PERCENTAGE; // calculate amountDue based on base price and DEPOSIT_PERCENTAGE
 
       // create Stripe checkout session
-      const stripeResponse = await fetch("http://localhost:5001/api/checkout/deposit", {
+      const stripeResponse = await fetch("${import.meta.env.VITE_API_URL}/api/checkout/deposit", {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

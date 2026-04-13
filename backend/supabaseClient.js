@@ -4,6 +4,6 @@ import process from "node:process";
 dotenv.config();
 
 export const supabase = createClient(
-  process.env.URL,
-  process.env.SERVICE_ROLE_KEY
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
 );

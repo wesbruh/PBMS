@@ -17,7 +17,7 @@ function Navbar() {
 
   const handleLogout = async () => {
     if (session?.access_token && profile?.id) {
-      const response = await fetch(`http://localhost:5001/api/profile/${profile.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${profile.id}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
