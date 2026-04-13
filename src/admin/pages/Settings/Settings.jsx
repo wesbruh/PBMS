@@ -440,26 +440,6 @@ function AdminSettings() {
   const activePhoto = profilePhotoUrl || savedPhotoUrl;
   const activePhotoName = photoName || savedPhotoName;
 
-  if (isLoadingSettings) {
-    return (
-      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-        <div className="flex min-w-50 overflow-y-auto">
-          <Sidebar />
-        </div>
-        <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
-          <Frame>
-            <div className="relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-y-scroll justify-center">
-              <div className="flex flex-col text-xl text-center items-center text-gray-600">
-                Loading your settings...
-                <LoaderCircle className="text-brown animate-spin" size={32} />
-              </div>
-            </div>
-          </Frame>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
       <div className="flex min-w-50 overflow-y-auto">
@@ -468,14 +448,26 @@ function AdminSettings() {
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-y-scroll">
+          <div className="flex w-full rounded-lg overflow-y-auto">
+          <div className=" flex flex-col bg-[#fcfcfc] p-6 w-full h-full rounded-lg shadow-inner">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Personal Settings</h1>
-              <p className="text-gray-600">
+              <h1 className="text-3xl font-bold text-gray-900">Personal Settings</h1>
+              <p className="text-sm text-gray-600 mt-0.5">
                 Update your profile details and notification preferences.
               </p>
             </div>
-
+            {isLoadingSettings ? (
+              <div className="flex flex-col items-center justify-center grow text-gray-500">
+                <LoaderCircle className="text-brown animate-spin mb-2" size={32}
+                />
+                <p className="text-sm">Loading your settings...</p>
+              </div>
+            ) : formError && !savedSettingsPath ? (
+              <div className="grow flex flex-col text-center items-center justify-center">
+                <p className="text-sm text-red-600 mb-2">{formError}</p>
+              </div>
+            ) : (
+              <>
             {showSavedBanner && (
               <div className="mb-4 rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
                 Personal settings saved successfully.
@@ -540,7 +532,7 @@ function AdminSettings() {
                       <button
                         type="button"
                         onClick={openPhotoPicker}
-                        className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white rounded-md border border-black text-sm transition"
+                        className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] text-white rounded-md border border-black text-sm transition-all cursor-pointer"
                       >
                         Choose Photo
                       </button>
@@ -561,7 +553,7 @@ function AdminSettings() {
                   type="button"
                   onClick={saveProfileChanges}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] disabled:opacity-70 text-white rounded-md border border-black text-sm transition"
+                  className="px-4 py-2 bg-brown hover:bg-[#AB8C4B] disabled:opacity-70 text-white rounded-md border border-black text-sm transition-all cursor-pointer"
                 >
                   {isSaving ? "Saving..." : "Save Changes"}
                 </button>
@@ -585,7 +577,7 @@ function AdminSettings() {
                     type="button"
                     onClick={handleEmailToggle}
                     aria-pressed={emailNotifications}
-                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${
                       emailNotifications ? "bg-[#7E4C3C]" : "bg-gray-300"
                     }`}
                   >
@@ -611,7 +603,7 @@ function AdminSettings() {
                     type="button"
                     onClick={handleDashboardAlertsToggle}
                     aria-pressed={dashboardAlerts}
-                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
+                    className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors cursor-pointer ${
                       dashboardAlerts ? "bg-[#7E4C3C]" : "bg-gray-300"
                     }`}
                   >
@@ -624,6 +616,9 @@ function AdminSettings() {
                 </div>
               </div>
             </section>
+            </>
+            )}
+          </div>
           </div>
         </Frame>
       </div>

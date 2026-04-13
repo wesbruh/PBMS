@@ -1,7 +1,15 @@
-import { useState, useEffect } from 'react';
-import { format, addDays, addMinutes, startOfDay, isBefore, isSameDay } from 'date-fns';
+import { useState, useEffect } from "react";
+import {
+  format,
+  addDays,
+  addMinutes,
+  startOfDay,
+  isBefore,
+  isSameDay,
+} from "date-fns";
+import { LoaderCircle, ArrowRight, ArrowLeft } from "lucide-react";
 
-import { useAuth } from "../../../context/AuthContext"
+import { useAuth } from "../../../context/AuthContext";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -13,6 +21,7 @@ const Availability = () => {
   const [selection, setSelection] = useState(new Set());
   const [loading, setLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [error, setError] = useState("");
 
   const { session } = useAuth();
 
@@ -23,12 +32,12 @@ const Availability = () => {
 
   const fetchAvailability = async () => {
     try {
-      const res = await fetch('http://localhost:5001/api/availability', {
+      const res = await fetch("http://localhost:5001/api/availability", {
         method: "GET",
         headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
-        }
+          Authorization: `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       const data = await res.json();
@@ -36,15 +45,15 @@ const Availability = () => {
       if (data.settings) {
         setWorkDay({
           start: data.settings.work_start_time.slice(0, 5),
-          end: data.settings.work_end_time.slice(0, 5)
+          end: data.settings.work_end_time.slice(0, 5),
         });
       }
       if (data.blocks && data.blocks.length > 0) {
         const loadedSelection = new Set();
-        data.blocks.forEach(block => {
+        data.blocks.forEach((block) => {
           const dateObj = new Date(block.start_time);
-          const dateKey = format(dateObj, 'yyyy-MM-dd');
-          const timeKey = format(dateObj, 'HH:mm');
+          const dateKey = format(dateObj, "yyyy-MM-dd");
+          const timeKey = format(dateObj, "HH:mm");
           loadedSelection.add(`${dateKey}_${timeKey}`);
         });
 
@@ -64,7 +73,7 @@ const Availability = () => {
     const end = new Date(`2000-01-01T${workDay.end}:00`);
     if (current >= end) return [];
     while (current < end) {
-      slots.push(format(current, 'HH:mm'));
+      slots.push(format(current, "HH:mm"));
       current = addMinutes(current, 15);
     }
     return slots;
@@ -106,8 +115,8 @@ const Availability = () => {
   };
 
   const toggleSlot = (day, slot) => {
-    const key = `${format(day, 'yyyy-MM-dd')}_${slot}`;
-    setSelection(prev => {
+    const key = `${format(day, "yyyy-MM-dd")}_${slot}`;
+    setSelection((prev) => {
       const newSet = new Set(prev);
       newSet.has(key) ? newSet.delete(key) : newSet.add(key);
       return newSet;
@@ -119,37 +128,40 @@ const Availability = () => {
   // --- Save Logic ---
   const saveChanges = async () => {
     // 1. Prepare the RED blocks
-    const blocksToSave = Array.from(selection).map(key => {
-      const [date, time] = key.split('_');
+    const blocksToSave = Array.from(selection).map((key) => {
+      const [date, time] = key.split("_");
       const startDateObj = new Date(`${date}T${time}:00`);
-      const endDateObj = new Date(startDateObj.getTime() + (15 * 60 * 1000));  // add 15 minutes to start time
+      const endDateObj = new Date(startDateObj.getTime() + 15 * 60 * 1000); // add 15 minutes to start time
       return {
         start_time: startDateObj,
-        end_time: endDateObj
+        end_time: endDateObj,
       };
     });
 
     // 2. Define the date range we are currently viewing/editing
     // The backend needs this to know which old records to delete.
     // We scan the visible days (e.g. Feb 8 to Feb 22)
-    const rangeStart = format(days[0], 'yyyy-MM-dd');
-    const rangeEnd = format(days[days.length - 1], 'yyyy-MM-dd');
+    const rangeStart = format(days[0], "yyyy-MM-dd");
+    const rangeEnd = format(days[days.length - 1], "yyyy-MM-dd");
 
     try {
-      const response = await fetch('http://localhost:5001/api/availability/blocks', {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
+      const response = await fetch(
+        "http://localhost:5001/api/availability/blocks",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            blocks: blocksToSave,
+            rangeStart: `${rangeStart}T00:00:00`,
+            rangeEnd: `${rangeEnd}T23:59:59`,
+          }),
         },
-        body: JSON.stringify({
-          blocks: blocksToSave,
-          rangeStart: `${rangeStart}T00:00:00`,
-          rangeEnd: `${rangeEnd}T23:59:59`
-        })
-      });
+      );
 
-      if (!response.ok) throw new Error("Error saving schedule")
+      if (!response.ok) throw new Error("Error saving schedule");
 
       alert("Schedule saved successfully!");
     } catch (err) {
@@ -160,19 +172,22 @@ const Availability = () => {
 
   const saveSettings = async () => {
     try {
-      const response = await fetch('http://localhost:5001/api/availability/settings', {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
+      const response = await fetch(
+        "http://localhost:5001/api/availability/settings",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            start: workDay.start,
+            end: workDay.end,
+          }),
         },
-        body: JSON.stringify({
-          start: workDay.start,
-          end: workDay.end
-        })
-      });
+      );
 
-      if (!response.ok) throw new Error("Error saving settings")
+      if (!response.ok) throw new Error("Error saving settings");
 
       window.location.reload();
     } catch (err) {
@@ -181,14 +196,6 @@ const Availability = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="w-full py-16 text-center text-brown font-serif">
-        Loading availability...
-      </div>
-    );
-  }
-
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
       <div className="flex min-w-50 overflow-y-auto">
@@ -196,97 +203,162 @@ const Availability = () => {
       </div>
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="relative w-full font-sans  bg-[#fcfcfc] p-5 md:p-6 rounded-lg shadow-inner overflow-scroll">
-            {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Photographer Availability</h1>
-                <div className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded border">
-                  <span className="font-bold text-gray-600">Hours:</span>
-                  <input type="time" value={workDay.start} onChange={(e) => setWorkDay({ ...workDay, start: e.target.value })} className="border rounded p-1" />
-                  <span>-</span>
-                  <input type="time" value={workDay.end} onChange={(e) => setWorkDay({ ...workDay, end: e.target.value })} className="border rounded p-1" />
-                  <button onClick={saveSettings} className="text-blue-600 hover:underline ml-2">Set Default</button>
+          <div className="h-full w-full font-sans bg-[#fcfcfc] p-5 md:p-6 rounded-lg shadow-inner overflow-y-auto">
+            <div className="mb-2">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Photographer Availability
+            </h1>
+            <p className="text-sm text-gray-600 mt-0.5">Update your availability to let clients know when you're available.</p>
+            </div>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center grow text-gray-500">
+                <LoaderCircle className="text-brown animate-spin mb-2" size={32}
+                />
+                <p className="text-sm">Loading availability...</p>
+              </div>
+            ) : error ? (
+              <div className="grow flex flex-col text-center items-center justify-center">
+                <p className="text-sm text-red-600 mb-2">{error}</p>
+              </div>
+            ) : (
+              <>
+                {/* Header */}
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+                  <div>
+                    <div className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded border">
+                      <span className="font-bold text-gray-600">Hours:</span>
+                      <input
+                        type="time"
+                        value={workDay.start}
+                        onChange={(e) =>
+                          setWorkDay({ ...workDay, start: e.target.value })
+                        }
+                        className="border rounded p-1"
+                      />
+                      <span>-</span>
+                      <input
+                        type="time"
+                        value={workDay.end}
+                        onChange={(e) =>
+                          setWorkDay({ ...workDay, end: e.target.value })
+                        }
+                        className="border rounded p-1"
+                      />
+                      <button
+                        onClick={saveSettings}
+                        className="text-blue-600 hover:underline ml-2"
+                      >
+                        Set Default
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handlePrev}
+                      disabled={isAtStart}
+                      className={`flex items-center gap-1 px-4 py-2 border rounded ${isAtStart ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-200 transition-all cursor-pointer"}`}
+                    >
+                      <ArrowLeft size={18}/> Prev
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      className="flex items-center gap-1 px-4 border rounded hover:bg-gray-200 transition-all cursor-pointer"
+                    >
+                      Next <ArrowRight size={18}/>
+                    </button>
+                    <button
+                      onClick={saveChanges}
+                      className="px-2 rounded shadow bg-green-700 text-white text-sm disabled:opacity-50 hover:bg-green-800 transition-all cursor-pointer"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex gap-2">
-                <button
-                  onClick={handlePrev}
-                  disabled={isAtStart}
-                  className={`px-3 py-2 border rounded ${isAtStart ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-50'}`}
+                {/* Grid */}
+                <div
+                  className="overflow-x-auto shadow-lg rounded-lg border border-gray-200"
+                  onMouseUp={() => setIsDragging(false)}
                 >
-                  ← Prev
-                </button>
-                <button onClick={handleNext} className="px-3 py-2 border rounded hover:bg-gray-50">Next →</button>
-                <button onClick={saveChanges} className="bg-brown text-white px-6 py-2 rounded shadow hover:bg-opacity-90">
-                  Save Changes
-                </button>
-              </div>
-            </div>
-
-            {/* Grid */}
-            <div className="overflow-x-auto shadow-lg rounded-lg border border-gray-200" onMouseUp={() => setIsDragging(false)}>
-              <table className="w-full border-collapse bg-white">
-                <thead>
-                  <tr>
-                    <th className="p-2 border bg-gray-100 sticky left-0 z-20 min-w-25">Date</th>
-                    {timeSlots.map(slot => (
-                      <th key={slot} className="p-2 border text-xs font-medium text-gray-600 bg-gray-50 min-w-10">{slot}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {days.map(day => {
-                    const isPast = isPastDate(day);
-                    return (
-                      <tr key={day.toString()} className={isPast ? "opacity-50 bg-gray-100" : ""}>
-                        <td className="p-2 border font-medium text-sm sticky left-0 bg-white z-10 whitespace-nowrap">
-                          {format(day, 'EEE, MMM d')}
-                        </td>
-                        {timeSlots.map(slot => {
-                          const key = `${format(day, 'yyyy-MM-dd')}_${slot}`;
-                          const isSelected = selection.has(key);
-
-                          return (
-                            <td
-                              key={slot}
-                              onMouseDown={() => handleMouseDown(day, slot)}
-                              onMouseEnter={() => handleMouseEnter(day, slot)}
-                              className={`
-                                                    border border-gray-200 p-0 transition-all duration-75 relative
-                                                    ${isPast ? 'cursor-not-allowed bg-gray-200' : 'cursor-pointer'}
-                                                    ${!isPast && isSelected
-                                  ? 'bg-red-500' // Red for Unavailable
-                                  : (!isPast ? 'bg-emerald-500 hover:bg-emerald-600' : '') // Darker Green for Available
-                                }
-                                                `}
-                              title={isSelected ? "Unavailable" : "Available"}
-                            />
-                          );
-                        })}
+                  <table className="w-full border-collapse bg-white">
+                    <thead>
+                      <tr>
+                        <th className="p-2 border bg-gray-100 sticky left-0 z-20 min-w-25">
+                          Date
+                        </th>
+                        {timeSlots.map((slot) => (
+                          <th
+                            key={slot}
+                            className="p-2 border text-xs font-medium text-gray-600 bg-gray-50 min-w-10"
+                          >
+                            {slot}
+                          </th>
+                        ))}
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody>
+                      {days.map((day) => {
+                        const isPast = isPastDate(day);
+                        return (
+                          <tr
+                            key={day.toString()}
+                            className={isPast ? "opacity-50 bg-gray-100" : ""}
+                          >
+                            <td className="p-2 border font-medium text-sm sticky left-0 bg-white z-10 whitespace-nowrap">
+                              {format(day, "EEE, MMM d")}
+                            </td>
+                            {timeSlots.map((slot) => {
+                              const key = `${format(day, "yyyy-MM-dd")}_${slot}`;
+                              const isSelected = selection.has(key);
 
-            <div className="mt-4 flex gap-4 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-emerald-500 border"></div>
-                <span>Available</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-red-500 border"></div>
-                <span>Unavailable (Drag to select)</span>
-              </div>
-            </div>
+                              return (
+                                <td
+                                  key={slot}
+                                  onMouseDown={() => handleMouseDown(day, slot)}
+                                  onMouseEnter={() =>
+                                    handleMouseEnter(day, slot)
+                                  }
+                                  className={`
+                                                    border border-gray-200 p-0 transition-all duration-75 relative
+                                                    ${isPast ? "cursor-not-allowed bg-gray-200" : "cursor-pointer"}
+                                                    ${
+                                                      !isPast && isSelected
+                                                        ? "bg-red-500" // Red for Unavailable
+                                                        : !isPast
+                                                          ? "bg-emerald-500 hover:bg-emerald-600"
+                                                          : "" // Darker Green for Available
+                                                    }
+                                                `}
+                                  title={
+                                    isSelected ? "Unavailable" : "Available"
+                                  }
+                                />
+                              );
+                            })}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-4 flex gap-4 text-sm text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-emerald-500 border"></div>
+                    <span>Available</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-red-500 border"></div>
+                    <span>Unavailable (Drag to select)</span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </Frame>
       </div>
     </div>
-
   );
 };
 

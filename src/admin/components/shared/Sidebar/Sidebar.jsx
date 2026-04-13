@@ -56,9 +56,6 @@ function Sidebar() {
               <Link to="/admin/sessions" className={`${linkStyles} ${isActive('/sessions') ? activeLinkStyles : ''}`}><Camera size={24} />Sessions</Link>
             </div>
             <div className='flex m-3'>
-              <Link to="/admin/offerings" className={`${linkStyles} ${isActive('/offerings') ? activeLinkStyles : ''}`}><Package size={24} />Session Packages</Link>
-            </div>
-            <div className='flex m-3'>
               <Link to="/admin/availability" className={`${linkStyles} ${isActive('/availability') ? activeLinkStyles : ''}`}><Calendar size={24} />Availability</Link>
             </div>
             <div className='flex m-3'>
@@ -77,13 +74,16 @@ function Sidebar() {
               </Link>
             </div>
             <div className='flex m-3'>
-              <Link to="/admin/payments" className={`${linkStyles} ${isActive('/payments') ? activeLinkStyles : ''}`}><Banknote size={24} />Payments and Invoices</Link>
+              <Link to="/admin/payments" className={`${linkStyles} ${isActive('/payments') ? activeLinkStyles : ''}`}><Banknote size={24} />Payments</Link>
             </div>
             <div className='flex m-3'>
-              <Link to="/admin/forms/questionnaires" className={`${linkStyles} ${isActive('/forms/questionnaires') ? activeLinkStyles : ''}`}><ReceiptText size={24} />Forms and Contracts</Link>
+              <Link to="/admin/offerings" className={`${linkStyles} ${isActive('/offerings') ? activeLinkStyles : ''}`}><Package size={24} />Session Packages</Link>
+            </div>
+            <div className='flex m-3'>
+              <Link to="/admin/forms/questionnaires" className={`${linkStyles} ${isActive('/forms/questionnaires') ? activeLinkStyles : ''}`}><ReceiptText size={24} />Forms</Link>
             </div>
             <div className='flex mt-3 mb-3 ml-3'>
-              <Link to="/admin/settings" className={`${linkStyles} ${isActive('/settings') ? activeLinkStyles : ''}`}><Settings size={24} />Personal Settings</Link>
+              <Link to="/admin/settings" className={`${linkStyles} ${isActive('/settings') ? activeLinkStyles : ''}`}><Settings size={24} />Settings</Link>
             </div>
           </div>
         </nav>

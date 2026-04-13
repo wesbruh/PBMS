@@ -133,12 +133,12 @@ export default function QuestionnairesList() {
   ];
 
   return (
-    <div className="w-full h-full flex flex-col px-">
+    <div className="w-full h-full flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Questionnaire Templates</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-3xl font-bold text-gray-900">Questionnaire Templates and Contracts</h1>
+          <p className="text-sm text-gray-600 mt-0.5">
             One active template per session type. Publishing a new one
             deactivates the previous.
             <br />
@@ -159,7 +159,7 @@ export default function QuestionnairesList() {
         {loading ? (
           <div className="flex flex-col items-center justify-center grow text-gray-500">
             <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
-            <p className="text-sm">Loading templates...</p>
+            <p className="text-sm">Loading questionnaire templates...</p>
           </div>
         ) : error ? (
           <div className="grow flex flex-col text-center items-center justify-center">
@@ -176,7 +176,7 @@ export default function QuestionnairesList() {
             columns={tableQuestionnaireColumns}
             data={questionnaireTableData}
             searchable={false}
-            rowsPerPage={7}
+            rowsPerPage={4}
           />
         )}
       </div>

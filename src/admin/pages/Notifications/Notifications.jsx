@@ -3,7 +3,7 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar";
 import Frame from "../../components/shared/Frame/Frame";
 import Table from "../../components/shared/Table/Table.jsx";
 import { supabase } from "../../../lib/supabaseClient";
-import { Trash2 } from "lucide-react";
+import { Trash2, LoaderCircle } from "lucide-react";
 
 function Notifications() {
   const [notifications, setNotifications] = useState([]);
@@ -196,7 +196,7 @@ function Notifications() {
       render: (_, row) => (
         <button
           onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(row.id); }}
-          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors cursor-pointer"
           title="Delete notification"
         >
           <Trash2 size={16} />
@@ -215,13 +215,13 @@ function Notifications() {
             <div className="flex justify-end gap-3">
               <button
                 onClick={() => setConfirmDeleteId(null)}
-                className="px-4 py-2 text-sm rounded-md border hover:bg-gray-50 transition"
+                className="px-4 py-2 text-sm rounded-md border hover:bg-gray-200 transition-all cursor-pointer"
               >
                 No
               </button>
               <button
                 onClick={() => handleDelete(confirmDeleteId)}
-                className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition"
+                className="px-4 py-2 text-sm rounded-md bg-red-600 text-white hover:bg-red-700 transition-all cursor-pointer"
               >
                 Yes
               </button>
@@ -236,22 +236,27 @@ function Notifications() {
 
         <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
           <Frame>
-            <div className="relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-scroll">
+            <div className="flex w-full rounded-lg overflow-y-scroll"> 
+            <div className="relative flex flex-col bg-[#fcfcfc] p-6 w-full rounded-lg shadow-inner ">
               <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">Notifications</h1>
-                <p className="text-gray-600">
+                <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+                <p className="text-sm text-gray-600 mt-0.5">
                   View and manage all system notifications sent to clients.
                 </p>
               </div>
 
-              {/* Loading state */}
-              {loading && <p className="text-sm text-gray-500 mb-2">Loading notifications…</p>}
-
-              {/* Error state */}
-              {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
-
-              {/* Filter Tabs */}
-              {!loading && !error && (
+              {loading ? (
+                <div className="flex flex-col items-center justify-center grow text-gray-500">
+                  <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
+                  <p className="text-sm">Loading notifications...</p>
+                </div>
+              ) : error ? (
+                <div className="grow flex flex-col text-center items-center justify-center">
+                  <p className="text-sm text-red-600 mb-2">{error}</p>
+                </div>
+              ) : (
+                <>
+              
                 <div className="flex justify-center gap-2 mb-4">
                   {["All", "Sessions", "Payment & Invoice"].map((tab) => (
                     <button
@@ -267,10 +272,7 @@ function Notifications() {
                     </button>
                   ))}
                 </div>
-              )}
-
               {/* Table — always show when not loading/error */}
-              {!loading && !error && (
                 <div>
                   <Table
                     columns={tableNotificationColumns}
@@ -281,7 +283,9 @@ function Notifications() {
                     emptyMessage={emptyMessages[filterTab]}
                   />
                 </div>
+                </>
               )}
+            </div>
             </div>
           </Frame>
         </div>

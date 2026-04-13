@@ -213,13 +213,14 @@ function AdminGalleries() {
       {/* Main Content Area */}
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="relative flex flex-col bg-[#fcfcfc] p-4 w-full rounded-lg shadow-inner overflow-scroll">
-            <div className="mb-6 ">
+          <div className="flex w-full rounded-lg overflow-y-auto">
+          <div className="flex flex-col bg-[#fcfcfc] p-6 w-full h-full rounded-lg shadow-inner">
+            <div className="mb-6">
               {/* Page Header */}
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              <h1 className="text-3xl font-bold text-gray-900">
                 Galleries
               </h1>
-              <p className="text-gray-600">
+              <p className="text-sm text-gray-600 mt-0.5">
                 Upload, organize, and manage galleries from your completed photography sessions.
               </p>
             </div>
@@ -246,6 +247,7 @@ function AdminGalleries() {
                 />
               )}
             </div>
+          </div>
           </div>
         </Frame>
       </div>

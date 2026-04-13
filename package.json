@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dnd-kit/react": "^0.3.2",
     "@fullcalendar/core": "^6.1.20",
     "@fullcalendar/daygrid": "^6.1.20",
     "@fullcalendar/react": "^6.1.20",
@@ -28,13 +29,14 @@
     "jsonwebtoken": "^9.0.2",
     "jszip": "^3.10.1",
     "lucide-react": "^0.563.0",
-    "nodemailer": "^7.0.10",
+    "nodemailer": "^8.0.5",
     "pg": "^8.16.3",
     "prop-types": "^15.8.1",
     "react": "^19.1.1",
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.1.1",
     "react-hook-form": "^7.66.0",
+    "react-is": "^19.2.5",
     "react-router-dom": "^7.9.4",
     "react-signature-canvas": "^1.1.0-alpha.2",
     "recharts": "^3.8.0",

@@ -1,6 +1,7 @@
 // src/components/SessionTypeCard/SessionTypeCard.jsx
 
 import { useState } from "react";
+import { Clock, Image } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = "session-images";
@@ -59,13 +60,13 @@ export default function SessionTypeCard({
   if (variant === "grid") {
     return (
       <div
-        onClick={handleClick}
+        //onClick={handleClick}
         className={`relative group rounded-xl border overflow-hidden bg-white shadow-sm transition-all
           ${isOnlyOption
             ? "border-[#7E4C3C]/30 cursor-default"
             : isSelected
               ? "border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20 shadow-md"
-              : `border-black/10 hover:border-[#7E4C3C]/40 hover:shadow-md ${isClickable || showEditControls ? "cursor-pointer" : "cursor-default"}`
+              : `border-black/10 hover:border-[#7E4C3C]/40 hover:shadow-md ${isClickable || showEditControls}`
           }
           ${disabled ? "pointer-events-none opacity-60" : ""}
         `}
@@ -78,7 +79,7 @@ export default function SessionTypeCard({
                 e.stopPropagation();
                 handleEdit(e);
               }}
-              className="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-50 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm transition-colors"
+              className="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-100 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm cursor-pointer transition-colors"
               type="button"
             >
               Edit
@@ -88,7 +89,7 @@ export default function SessionTypeCard({
                 e.stopPropagation();
                 handleDelete(e);
               }}
-              className="px-2 py-1 rounded-md bg-white/95 hover:bg-red-50 border border-red-200 text-red-600 text-xs font-medium shadow-sm transition-colors"
+              className="px-2 py-1 rounded-md bg-white/95 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-medium shadow-sm cursor-pointer transition-colors"
               type="button"
             >
               Delete
@@ -97,7 +98,7 @@ export default function SessionTypeCard({
         )}
 
         {/* Image Section */}
-        <div className="relative h-48 w-full bg-gradient-to-br from-neutral-50 to-neutral-100 overflow-hidden">
+        <div className="relative h-48 w-full bg-linear-to-br from-neutral-50 to-neutral-100 overflow-hidden">
           {imageUrl && !imageError ? (
             <img
               src={imageUrl}
@@ -108,22 +109,23 @@ export default function SessionTypeCard({
           ) : (
             <div className="h-full w-full flex items-center justify-center">
               <div className="text-center text-neutral-300">
-                <svg className="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <span className="flex flex-col items-center text-md"> <Image size={32} /> No image </span>
+                {/* <svg className="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span className="text-xs">No image</span>
+                </svg> */}
+                {/* <span className="text-sm">No image</span> */}
               </div>
             </div>
           )}
           
           {/* Selected indicator overlay */}
-          {!isOnlyOption && isSelected && (
-            <div className="absolute top-3 right-3 h-7 w-7 rounded-full bg-[#7E4C3C] flex items-center justify-center shadow-lg">
-              <svg className="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          {/* {!isOnlyOption && isSelected && (
+            <div className=" border border-red-500 absolute top-3 right-3 h-7 w-7 rounded-full bg-[#ff0000] flex items-center justify-center shadow-lg">
+              <svg className="border border-red-500 h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Content Section */}
@@ -135,7 +137,7 @@ export default function SessionTypeCard({
                 {st.name}
               </h3>
               {st.is_master && !isOnlyOption && (
-                <span className="px-2 py-0.5 rounded-full bg-[#AB8C4B]/10 text-[9px] text-[#AB8C4B] font-mono uppercase tracking-wide shrink-0">
+                <span className="px-2 py-0.5 rounded-full bg-[#AB8C4B]/10 text-[12px] text-[#AB8C4B] font-mono uppercase tracking-wide shrink-0">
                   Standard
                 </span>
               )}
@@ -175,10 +177,7 @@ export default function SessionTypeCard({
           {/* Duration indicator (if available) */}
           {st.default_duration_minutes && (
             <div className="pt-2 border-t border-neutral-100 flex items-center gap-1.5 text-xs text-neutral-500">
-              <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>{st.default_duration_minutes} minutes</span>
+              <span className="flex gap-1"> <Clock size={16} />{st.default_duration_minutes} minutes</span>
             </div>
           )}
         </div>
@@ -206,7 +205,7 @@ export default function SessionTypeCard({
           <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={handleEdit}
-              className="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-50 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm"
+              className="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-50 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm "
               type="button"
             >
               Edit
