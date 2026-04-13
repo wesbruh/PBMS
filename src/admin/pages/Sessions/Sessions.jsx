@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient.js"
+import { useAuth } from "../../../context/AuthContext.jsx"
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -15,15 +16,22 @@ function Sessions() {
   const [loading, setLoading] = useState(true);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
 
+  // call useAuth for Supabase session
+  const { session } = useAuth();
+
   useEffect(() => {
+    if (!session) return;
     fetchSessions();
-  }, []);
+  }, [session]);
 
   const fetchSessions = async () => {
     try {
       const response = await fetch("http://localhost:5001/api/sessions", {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
       });
 
       const data = await response.json();
@@ -55,7 +63,10 @@ function Sessions() {
     try {
       const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
       });
 
       if (!csResponse.ok)
@@ -77,7 +88,10 @@ function Sessions() {
 
       const response = await fetch(`http://localhost:5001/api/intent/capture`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ payment_intent_id: paymentIntent.id })
       });
 
@@ -109,7 +123,10 @@ function Sessions() {
 
       const response = await fetch(`http://localhost:5001/api/invoice/confirm/${invoiceId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           remaining: remaining, // send remaining balance with tax for invoice generation
           due_date: dueDate
@@ -133,9 +150,13 @@ function Sessions() {
 
       if (invoiceError) throw new Error("Invoice not found.")
 
-      const pdfResponse = await fetch(
-        `http://localhost:5001/api/invoice/${invoiceData.id}/pdf`
-      );
+      const pdfResponse = await fetch(`http://localhost:5001/api/invoice/${invoiceData.id}/pdf`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+      });
 
       const blob = await pdfResponse.blob();
       const url = window.URL.createObjectURL(blob);
@@ -155,7 +176,10 @@ function Sessions() {
     // ensure session exists and map session id to invoice id
     const mapResponse = await fetch(`http://localhost:5001/api/invoice/${sessionId}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" }
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      }
     });
 
     if (!mapResponse.ok) throw new Error("Could not map session id to an invoice id");
@@ -195,7 +219,10 @@ function Sessions() {
 
       const response = await fetch(`http://localhost:5001/api/intent/uncapture`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ payment_intent_id: paymentIntent.id })
       });
 
@@ -224,7 +251,10 @@ function Sessions() {
     // ensure session exists and map session id to invoice id
     const mapResponse = await fetch(`http://localhost:5001/api/invoice/${sessionId}`, {
       method: "GET",
-      headers: { "Content-Type": "application/json" }
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      }
     });
 
     if (!mapResponse.ok) throw new Error("Could not map session id to an invoice id");
@@ -271,7 +301,10 @@ function Sessions() {
     try {
       const response = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify(payload),
       });
 
@@ -385,32 +418,25 @@ function Sessions() {
           <div className="min-w-60 grid grid-cols-2 gap-5">
             <button
               type={"button"}
-              onClick={() => { confirmSession(row.id, row.deposit_cs_id) }}
-              className={`w-full min-w-30 hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded text-sm font-semibold border`}
+              onClick={() => { confirmSession(row.id) }}
+              className={`w-full min-w-min hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-1 py-1 rounded text-sm font-semibold border`}
             >
               Confirm
             </button>
             <button
               type="button"
-              onClick={() => cancelSession(row.id, row.deposit_cs_id)}
-              className="w-full min-w-30 hover:cursor-pointer px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+              onClick={() => cancelSession(row.id)}
+              className="w-full min-w-min hover:cursor-pointer px-1 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
             >
               Cancel
             </button>
           </div>
         ) : row.status === "Confirmed" ? (
-          <div className="min-w-60 grid grid-cols-2 gap-5">
+          <div className="w-full flex items-center justify-center">
             <button
               type="button"
-              onClick={() => { downloadInvoicePdf(row.id) }}
-              className="w-full min-w-30 hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded text-sm font-semibold border"
-            >
-              Download
-            </button>
-            <button
-              type="button"
-              onClick={() => cancelSession(row.id, row.deposit_cs_id)}
-              className="w-full min-w-30 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+              onClick={() => cancelSession(row.id)}
+              className="min-w-30 max-w-1/2 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
             >
               Cancel
             </button>
@@ -462,6 +488,7 @@ function Sessions() {
       {selectedSessionId && (
         <SessionDetailsModal
           sessionId={selectedSessionId}
+          session={session}
           onClose={() => setSelectedSessionId(null)}
         />
       )}

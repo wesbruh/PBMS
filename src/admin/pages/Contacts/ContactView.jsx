@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient.js";
+import { useAuth } from "../../../context/AuthContext.jsx"
 
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
 import { saveAs } from "file-saver";
@@ -15,6 +16,9 @@ function ContactView() {
   const [user, setUser] = useState(null);
   const [fullName, setFullName] = useState("");
 
+  // call useAuth for Supabase session
+  const { session } = useAuth();
+
   const [sessions, setSessions] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [galleries, setGalleries] = useState([]);
@@ -26,12 +30,15 @@ function ContactView() {
 
   // check if user exists
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || session) return;
 
     async function checkUser() {
       const response = await fetch(`http://localhost:5001/api/profile/${userId}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
       });
 
       if (!response.ok) {
@@ -47,7 +54,7 @@ function ContactView() {
     }
 
     checkUser();
-  }, [userId]);
+  }, [userId, session]);
 
   // load all data that belongs to THIS user only
   useEffect(() => {
@@ -152,20 +159,18 @@ function ContactView() {
 
   if (loading) {
     return (
-      <>
-        <div className="flex my-10 md:my-14 min-h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg">
-          <div className="flex w-1/5 min-w-[200px]">
-            <Sidebar />
-          </div>
-          <div className="flex w-full shadow-inner rounded-lg">
-            <Frame>
-              <div className="max-w-5xl mx-auto px-4 py-12 text-center font-serif text-brown">
-                <SharedClientDashboard loading = {true} />
-              </div>
-            </Frame>
-          </div>
+      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+        <div className="flex min-w-50 overflow-y-auto">
+          <Sidebar />
         </div>
-      </>
+        <div className="flex w-full shadow-inner rounded-lg">
+          <Frame>
+            <div className="max-w-5xl mx-auto px-4 py-12 text-center font-serif text-brown">
+              <SharedClientDashboard loading={true} />
+            </div>
+          </Frame>
+        </div>
+      </div>
     );
   }
 
@@ -302,14 +307,14 @@ function ContactView() {
 
   return (
     <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex w-1/5 min-w-50">
+      <div className="flex min-w-50 overflow-y-auto">
         <Sidebar />
       </div>
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
           <div className="w-full flex flex-col gap-5 my-10 mx-2 overflow-scroll">
-             <SharedClientDashboard
+            <SharedClientDashboard
               fullName={fullName}
               notifications={notifications}
               sessions={sessions}

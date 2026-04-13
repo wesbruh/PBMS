@@ -1,21 +1,33 @@
+export const verifyToken = (supabaseClient) => {
+    return async (req, res, next) => {
+        try {
+            const authHeader = req.headers["authorization"];
 
+            if (!authHeader || !authHeader.startsWith("Bearer ")) {
+                return res.status(401).json({ message: "Access denied. No token provided." });
+            }
 
-import jwt from "jsonwebtoken";
+            const token = authHeader.split(" ")[1];
+            const { data, error } = await supabaseClient.auth.getClaims(token)
 
-export const verifyToken = (req, res, next) => {
+            if (error || data?.claims?.role !== "authenticated")
+                throw error ?? new Error("Invalid or expired token.");
 
-    try{
-        const authHeader = req.headers.authorization;
-        if(!authHeader || !authHeader.startsWith("Bearer ")){
-            return res.status(401).json({ message: "Access denied. No token provided."});
+            const userId = data.claims.sub;
+
+            const { data: userData, error: userError } = await supabaseClient
+                .from("User")
+                .select("UserRole(Role(name))")
+                .eq("id", userId)
+                .single()
+
+            if (userError) throw userError;
+
+            req.user = { id: userId, role: userData.UserRole.Role };
+            next();
+        } catch (error) {
+            console.error(error);
+            return res.status(403).json({ message: "Invalid or expired token." });
         }
-
-        const token = authHeader.split(" ")[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        
-        req.user = decoded;
-        next();
-       } catch (err) {
-        return res.status(403).json({ message: "Invalid or expired token." });
-       }
-};
+    }
+}

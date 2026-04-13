@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 function fmt(d) { try { return new Date(d).toLocaleDateString(); } catch { return ""; } }
 
 export default function ContractsPage() {
-  const { profile } = useAuth();
+  const { session, profile } = useAuth();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -13,13 +13,16 @@ export default function ContractsPage() {
   // 1) fetch contracts for this client
   useEffect(() => {
     const fetchContracts = async () => {
-      if (!profile) return;
+      if (!session || !profile) return;
 
       setLoading(true);
 
-      const response = await fetch(`http://localhost:5001/api/contract/${profile.id}`, {
+      const response = await fetch(`http://localhost:5001/api/contract/user/${profile.id}`, {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
       })
 
       if (!response.ok) {
@@ -35,7 +38,7 @@ export default function ContractsPage() {
 
     fetchContracts();
 
-  }, [profile]);
+  }, [session, profile]);
 
   if (loading) {
     return (

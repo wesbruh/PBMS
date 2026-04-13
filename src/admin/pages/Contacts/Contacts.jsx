@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 import { supabase } from "../../../lib/supabaseClient.js";
+import { useAuth } from "../../../context/AuthContext"
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
@@ -11,6 +13,9 @@ function Contacts() {
   const [contacts, setContacts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // call useAuth for Supabase session
+  const { session } = useAuth();
 
   // Controls modal visibility
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -64,13 +69,18 @@ function Contacts() {
   ];
 
   useEffect(() => {
+    if (!session) return;
+
     const fetchContacts = async () => {
       setLoading(true);
       setErrorMsg("");
 
-      const response = await fetch("http://localhost:5001/api/profiles", {
+      const response = await fetch("http://localhost:5001/api/profile", {
         method: "GET",
-        headers: { "Content-Type": "application/json" }
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
       });
 
       if (!response.ok) {
@@ -97,7 +107,7 @@ function Contacts() {
     };
 
     fetchContacts();
-  }, []);
+  }, [session]);
 
   // Deletes a contact from the database and updates the table
   const handleDeleteContact = async () => {
@@ -117,19 +127,16 @@ function Contacts() {
         return;
       }
 
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            targetUserId: selectedContact.userid,
-          }),
-        }
-      );
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          targetUserId: selectedContact.userid,
+        }),
+      });
 
       const result = await response.json();
 
@@ -158,51 +165,56 @@ function Contacts() {
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="relative flex flex-col bg-[#fdfbf7] p-5 md:p-6 w-screen rounded-2xl shadow-inner overflow-scroll">
-            {/* Header */}
-            <div className="mb-6 flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-semibold text-[#7E4C3C] mb-1">
-                  Client Contact Information
-                </h1>
-                <p className="text-gray-600">
-                  View and manage contact information for all clients.
-                </p>
-              </div>
-              {/* Right-side header actions */}
-              <div className="flex items-center gap-3">
-                {/* Count pill */}
-                <span className="inline-flex items-center rounded-full border border-[#E7DFCF] bg-white px-4 py-1.5 text-sm text-[#5a3e2b] shadow-sm">
-                  {contacts?.length ?? 0} Contacts
-                </span>
-              </div>
+          {loading ? (
+            <div className="w-full py-16 text-center text-brown font-serif">
+              Loading your account...
             </div>
-
-            {errorMsg && (
-              <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                {errorMsg}
+          ) : (
+            <div className="relative flex flex-col bg-[#fdfbf7] p-5 md:p-6 w-screen rounded-2xl shadow-inner overflow-scroll">
+              {/* Header */}
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <h1 className="text-3xl font-semibold text-[#7E4C3C] mb-1">
+                    Client Contact Information
+                  </h1>
+                  <p className="text-gray-600">
+                    View and manage contact information for all clients.
+                  </p>
+                </div>
+                {/* Right-side header actions */}
+                <div className="flex items-center gap-3">
+                  {/* Count pill */}
+                  <span className="inline-flex items-center rounded-full border border-[#E7DFCF] bg-white px-4 py-1.5 text-sm text-[#5a3e2b] shadow-sm">
+                    {contacts?.length ?? 0} Contacts
+                  </span>
+                </div>
               </div>
-            )}
 
-            {/* Table Card */}
-            <div className="rounded-xl border border-[#E7DFCF] bg-white shadow-sm">
-              <div className="p-2 md:p-4">
-                {loading ? (
-                  <div className="py-10 text-center text-gray-500">
-                    Loading contacts...
-                  </div>
-                ) : (
-                  <Table
-                    columns={tableContactsColumns}
-                    data={contacts}
-                    searchable={true}
-                    searchPlaceholder={"Search Contacts..."}
-                    rowsPerPage={5}
-                  />
-                )}
+              {errorMsg && (
+                <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  {errorMsg}
+                </div>
+              )}
+
+              {/* Table Card */}
+              <div className="rounded-xl border border-[#E7DFCF] bg-white shadow-sm">
+                <div className="p-2 md:p-4">
+                  {loading ? (
+                    <div className="py-10 text-center text-gray-500">
+                      Loading contacts...
+                    </div>
+                  ) : (
+                    <Table
+                      columns={tableContactsColumns}
+                      data={contacts}
+                      searchable={true}
+                      searchPlaceholder={"Search Contacts..."}
+                      rowsPerPage={5}
+                    />
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
+            </div>)}
         </Frame>
       </div>
 

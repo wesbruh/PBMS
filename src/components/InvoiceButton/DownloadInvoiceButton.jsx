@@ -1,13 +1,25 @@
+import { useEffect, useState } from "react"
+import { useAuth } from "../../context/AuthContext";
+
 export default function DownloadInvoiceButton({ invoiceId }) {
+  const { session } = useAuth();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!session) return;
+    setLoading(false);
+  }, [session])
+
   const handleDownload = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:5001/api/invoice/${invoiceId}/pdf`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`http://localhost:5001/api/invoice/${invoiceId}/pdf`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        credentials: "include"
+      });
 
       if (!response.ok) {
         throw new Error("Failed to download invoice.");
@@ -32,13 +44,14 @@ export default function DownloadInvoiceButton({ invoiceId }) {
 
   const handlePreview = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:5001/api/invoice/${invoiceId}/pdf`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`http://localhost:5001/api/invoice/${invoiceId}/pdf`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        credentials: "include"
+      });
 
       if (!response.ok) throw new Error("Failed to preview invoice.");
 
@@ -52,12 +65,15 @@ export default function DownloadInvoiceButton({ invoiceId }) {
 
   return (
     <div className="flex items-center gap-3">
-      <button onClick={handlePreview} aria-label="Preview Invoice">
-        <i className="fa-solid fa-eye text-base  text-[#7A4A3A] hover:opacity-70"></i>
-      </button>
-      <button onClick={handleDownload} aria-label="Download Invoice">
-        <i className="fa-solid fa-download text-base -translate-y-0.5 text-[#7A4A3A] hover:opacity-70"></i>
-      </button>
+      {loading ? <></> :
+        <button onClick={handlePreview} aria-label="Preview Invoice">
+          <i className="fa-solid fa-eye text-base  text-[#7A4A3A] hover:opacity-70"></i>
+        </button>}
+      {loading ? <></> :
+        <button onClick={handleDownload} aria-label="Download Invoice">
+          <i className="fa-solid fa-download text-base -translate-y-0.5 text-[#7A4A3A] hover:opacity-70"></i>
+        </button>
+      }
     </div>
   );
 }

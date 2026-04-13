@@ -17,7 +17,7 @@ import SessionTypeCard from "../SessionTypeCard/SessionTypeCard";
 const DEPOSIT_PERCENTAGE = 0.05;
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const BUCKET       = "session-images";
+const BUCKET = "session-images";
 
 function getImageUrl(path) {
   if (!path) return null;
@@ -40,42 +40,42 @@ const isPastMinDate = (value) => {
 };
 
 const Schema = z.object({
-  firstName:     z.string(),
-  lastName:      z.string(),
-  email:         z.string(),
-  phone:         z.string().trim(),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.string(),
+  phone: z.string().trim(),
   sessionTypeId: z.string().min(1, "Select a session type"),
   date: z.string().refine(isPastMinDate, {
     message: "Photoshoot must be booked at least seven days in advance",
   }),
   startTime: z.string(),
-  location:  z.string().optional(),
-  message:   z.string().max(1000, "Max 1000 characters").optional(),
+  location: z.string().optional(),
+  message: z.string().max(1000, "Max 1000 characters").optional(),
 });
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export default function InquiryForm() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { session, profile } = useAuth();
 
-  const [searchParams]     = useSearchParams();
-  const [sessionId,          setSessionId]          = useState(null);
-  const [checkoutSessionId,  setCheckoutSessionId]  = useState(null);
-  const [loadingParams,      setLoadingParams]      = useState(true);
+  const [searchParams] = useSearchParams();
+  const [sessionId, setSessionId] = useState(null);
+  const [checkoutSessionId, setCheckoutSessionId] = useState(null);
+  const [loadingParams, setLoadingParams] = useState(true);
 
   const [contractTemplates, setContractTemplates] = useState({});
-  const [contract,          setContract]          = useState(null);
-  const [submitLock,        setSubmitLock]        = useState(true);
-  const [loading,           setLoading]           = useState(true);
+  const [contract, setContract] = useState(null);
+  const [submitLock, setSubmitLock] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // ── All session type rows from DB (masters + children) ────────────────────
   // Masters = category cards; children = specific session types under a category
-  const [allSessionTypes,     setAllSessionTypes]     = useState([]);
+  const [allSessionTypes, setAllSessionTypes] = useState([]);
   const [sessionTypesLoading, setSessionTypesLoading] = useState(true);
 
   // selectedCategory: the master row the user clicked
-  const [selectedCategory,   setSelectedCategory]   = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
   // selectedSessionType: the specific child (or master if standalone) the user picked
   const [selectedSessionType, setSelectedSessionType] = useState(null);
 
@@ -84,9 +84,9 @@ export default function InquiryForm() {
 
   // Questionnaire
   const [activeTemplate, setActiveTemplate] = useState(null);
-  const [qAnswers,        setQAnswers]       = useState({});
-  const [qALoading,       setQALoading]      = useState(false);
-  const [qLoading,        setQLoading]       = useState(false);
+  const [qAnswers, setQAnswers] = useState({});
+  const [qALoading, setQALoading] = useState(false);
+  const [qLoading, setQLoading] = useState(false);
 
   // ── Load params ────────────────────────────────────────────────────
   useEffect(() => {
@@ -107,7 +107,7 @@ export default function InquiryForm() {
         setCheckoutSessionId(csId);
         setSessionId(sessionData.id);
       }
-      
+
       setLoadingParams(false);
     }
 
@@ -124,7 +124,7 @@ export default function InquiryForm() {
           .select("*")
           .eq("active", true)
           .order("display_order", { ascending: true })
-          .order("name",          { ascending: true });
+          .order("name", { ascending: true });
 
         if (error) throw error;
         setAllSessionTypes(data ?? []);
@@ -142,7 +142,7 @@ export default function InquiryForm() {
   // childrenByCategory: all non-master rows grouped by category name
   const { masters, childrenByCategory } = useMemo(() => {
     const mastersList = allSessionTypes.filter((st) => st.is_master);
-    const childMap    = {};
+    const childMap = {};
     allSessionTypes
       .filter((st) => !st.is_master)
       .forEach((st) => {
@@ -156,10 +156,15 @@ export default function InquiryForm() {
   // ── Load contract templates ───────────────────────────────────────────────
   useEffect(() => {
     async function loadContracts() {
+      if (!session) return;
+
       try {
         const response = await fetch("http://localhost:5001/api/contract/templates", {
           method: "GET",
-          headers: { "Content-Type": "application/json" }
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
         });
 
         const data = await response.json();
@@ -172,12 +177,12 @@ export default function InquiryForm() {
     }
 
     loadContracts();
-  }, []);
+  }, [session]);
 
   // ── Load / create default contract ───────────────────────────────────────
   useEffect(() => {
     async function getDefaultContract() {
-      if (!profile || loadingParams) return;
+      if (!session || !profile || loadingParams) return;
 
       try {
         const body = (sessionId && checkoutSessionId)
@@ -186,7 +191,10 @@ export default function InquiryForm() {
 
         const response = await fetch("http://localhost:5001/api/contract", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },
           body: JSON.stringify(body)
         });
 
@@ -200,18 +208,21 @@ export default function InquiryForm() {
       }
     }
     getDefaultContract();
-  }, [profile, loadingParams]);
+  }, [session, profile, loadingParams]);
 
   const updateContractTemplate = async (templateId) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
-        method:  "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body:    JSON.stringify({ template_id: templateId }),
+      const response = await fetch(`http://localhost:5001/api/contract/${contract?.id}`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ template_id: templateId })
       });
-      if (res.ok) setContract({ ...contract, template_id: templateId });
-    } catch (err) {
-      console.error("Failed to update contract:", err);
+      if (response.ok) setContract({ ...contract, template_id: templateId });
+    } catch (error) {
+      console.error("Failed to update contract:", error);
     }
   };
 
@@ -240,7 +251,7 @@ export default function InquiryForm() {
     },
   });
 
-  const watchedDate      = watch("date");
+  const watchedDate = watch("date");
   const watchedStartTime = watch("startTime");
 
   // ── Category card clicked ─────────────────────────────────────────────────
@@ -254,7 +265,7 @@ export default function InquiryForm() {
       setSelectedCategory(null);
       setSelectedSessionType(null);
       setValue("sessionTypeId", "", { shouldValidate: false });
-      setValue("startTime",     "", { shouldValidate: false });
+      setValue("startTime", "", { shouldValidate: false });
       return;
     }
 
@@ -316,11 +327,11 @@ export default function InquiryForm() {
         const questions = (template.schema_json ?? [])
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           .map((q) => ({
-            tempId:   q.id,
-            label:    q.label,
-            type:     q.type,
+            tempId: q.id,
+            label: q.label,
+            type: q.type,
             required: q.required ?? false,
-            options:  q.options  ?? null,
+            options: q.options ?? null,
           }));
 
         setActiveTemplate({ id: template.id, name: template.name, questions });
@@ -338,7 +349,7 @@ export default function InquiryForm() {
   // ── Prefill form (auth + Stripe return) ──────────────────────────────────
   useEffect(() => {
     async function prefillForm() {
-      if (!profile || loadingParams || sessionTypesLoading) return;
+      if (!session || !profile || loadingParams || sessionTypesLoading) return;
 
       if (sessionId && checkoutSessionId) {
         try {
@@ -350,15 +361,18 @@ export default function InquiryForm() {
 
           if (error) throw new Error("Payment entry not found");
 
-          const sessionData = paymentData.Invoice.Session;
+          const sessionData = paymentData?.Invoice?.Session;
 
-          if (!sessionData || sessionData.is_active === true) throw new Error("No inactive session not found");
+          if (!sessionData || sessionData?.is_active === true) throw new Error("No inactive session found");
           else if (sessionData.client_id !== profile.id) throw new Error("Session does not belong to this user");
 
           // work with checkout session and payment intent to check for payment authorization
           const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
             method: "GET",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Authorization": `Bearer ${session?.access_token}`,
+              "Content-Type": "application/json"
+            }
           });
           const csData = await csResponse.json();
           const { status: csStatus, payment_intent: piData } = csData;
@@ -391,7 +405,7 @@ export default function InquiryForm() {
             setDurationMinutes(matchedST.default_duration_minutes ?? 60);
           }
 
-          const dt       = new Date(sessionData.start_at);
+          const dt = new Date(sessionData.start_at);
           const datePart = `${dt.getFullYear()}-${(dt.getMonth() + 1).toString().padStart(2, "0")}-${dt.getDate().toString().padStart(2, "0")}`;
           const timePart = `${dt.getHours().toString().padStart(2, "0")}:${dt.getMinutes().toString().padStart(2, "0")}`;
 
@@ -407,31 +421,31 @@ export default function InquiryForm() {
             setQALoading(true);
           } catch (_) { /* no questionnaire yet */ }
 
-          setValue("firstName",     profile?.first_name?.trim() ?? "");
-          setValue("lastName",      profile?.last_name?.trim()  ?? "");
-          setValue("email",         profile.email ?? "");
-          setValue("phone",         profile.phone ?? "");
-          setValue("date",          datePart, { shouldValidate: true });
-          setValue("startTime",     timePart, { shouldValidate: true });
+          setValue("firstName", profile?.first_name?.trim() ?? "");
+          setValue("lastName", profile?.last_name?.trim() ?? "");
+          setValue("email", profile.email ?? "");
+          setValue("phone", profile.phone ?? "");
+          setValue("date", datePart, { shouldValidate: true });
+          setValue("startTime", timePart, { shouldValidate: true });
           setValue("sessionTypeId", sessionData.session_type_id, { shouldValidate: true });
           if (sessionData.location_text) setValue("location", sessionData.location_text);
-          if (sessionData.notes)         setValue("message",  sessionData.notes);
+          if (sessionData.notes) setValue("message", sessionData.notes);
 
-          await trigger(["firstName","lastName","email","phone","date","startTime","sessionTypeId"]);
+          await trigger(["firstName", "lastName", "email", "phone", "date", "startTime", "sessionTypeId"]);
           setSubmitLock(false);
         } catch (err) {
           console.error("Error pre-filling from session:", err);
         }
       } else {
         if (profile?.first_name) setValue("firstName", profile.first_name.trim());
-        if (profile?.last_name)  setValue("lastName",  profile.last_name.trim());
-        if (profile?.email)      setValue("email",     profile.email);
-        if (profile?.phone)      setValue("phone",     profile.phone);
-        await trigger(["firstName","lastName","email","phone"]);
+        if (profile?.last_name) setValue("lastName", profile.last_name.trim());
+        if (profile?.email) setValue("email", profile.email);
+        if (profile?.phone) setValue("phone", profile.phone);
+        await trigger(["firstName", "lastName", "email", "phone"]);
       }
     }
     prefillForm();
-  }, [profile, loadingParams, sessionTypesLoading]);
+  }, [session, profile, loadingParams, sessionTypesLoading]);
 
   // ── Payment ───────────────────────────────────────────────────────────────
   const handlePayment = async () => {
@@ -443,11 +457,10 @@ export default function InquiryForm() {
         .from("Session")
         .delete()
         .eq("client_id", profile.id)
-        .eq("client_id", profile.id)
         .eq("is_active", false);
 
       const startAt = new Date(`${getValues("date")}T${getValues("startTime")}`).toISOString();
-      const endAt   = new Date(
+      const endAt = new Date(
         new Date(`${getValues("date")}T${getValues("startTime")}`).getTime()
         + (durationMinutes ?? 60) * 60 * 1000
       ).toISOString();
@@ -455,15 +468,15 @@ export default function InquiryForm() {
       const { data: sessionData, error: sessionError } = await supabase
         .from("Session")
         .insert({
-          client_id:       profile.id,
+          client_id: profile.id,
           session_type_id: getValues("sessionTypeId"),
-          start_at:        startAt,
-          end_at:          endAt,
-          location_text:   getValues("location") || "",
-          notes:           getValues("message")  || "",
-          status:          "Pending",
-          created_at:      now,
-          updated_at:      now,
+          start_at: startAt,
+          end_at: endAt,
+          location_text: getValues("location") || "",
+          notes: getValues("message") || "",
+          status: "Pending",
+          created_at: now,
+          updated_at: now,
         })
         .select().single();
 
@@ -495,8 +508,8 @@ export default function InquiryForm() {
           const isCheckbox = (q.type ?? "").toLowerCase() === "checkbox";
           return {
             questionnaire_id: qInstance.id,
-            question_id:      q.tempId,
-            answer:           isCheckbox ? (Array.isArray(raw) ? raw : []) : (raw ?? null),
+            question_id: q.tempId,
+            answer: isCheckbox ? (Array.isArray(raw) ? raw : []) : (raw ?? null),
           };
         }));
 
@@ -509,12 +522,13 @@ export default function InquiryForm() {
         }
       }
 
-      console.log();
-
       // create Invoice related to session
       const invoiceResponse = await fetch(`http://localhost:5001/api/invoice/generate/${sessionData.id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           remaining: selectedSessionType.base_price, // send remaining balance with tax for invoice generation
         })
@@ -530,20 +544,22 @@ export default function InquiryForm() {
 
       // create Stripe checkout session
       const stripeResponse = await fetch("http://localhost:5001/api/checkout/deposit", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from_url: window.location.href,
-            product_data: {
-              name: `${selectedSessionType.name} Deposit`,
-              description: selectedSessionType.description,
-            },
-            price: amountDue,
-            apply_tax: true,
-            tax_rate: 7.25,
-          }),
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
         },
-      );
+        body: JSON.stringify({
+          from_url: window.location.href,
+          product_data: {
+            name: `${selectedSessionType.name} Deposit`,
+            description: selectedSessionType.description,
+          },
+          price: amountDue,
+          apply_tax: true,
+          tax_rate: 7.25,
+        })
+      });
 
       if (!stripeResponse.ok) {
         supabase.from("Session").delete().eq("id", sessionData.id);
@@ -594,7 +610,7 @@ export default function InquiryForm() {
 
       const { error: sessionError } = await supabase
         .from("Session")
-        .update({ deposit_cs_id: checkoutSessionId, is_active: true })
+        .update({ is_active: true })
         .eq("id", sessionId);
 
       if (sessionError) throw sessionError;
@@ -626,8 +642,8 @@ export default function InquiryForm() {
   // Children of the selected category (excluding the master itself)
   const categoryChildren = selectedCategory
     ? (childrenByCategory[selectedCategory.category] ?? [])
-        .slice()
-        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+      .slice()
+      .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
     : [];
 
   return (
@@ -693,14 +709,14 @@ export default function InquiryForm() {
                       ${!submitLock ? "pointer-events-none opacity-60" : ""}
                     `}
                   >
-                    <input 
-                      type="radio" 
-                      name="categoryRadio" 
+                    <input
+                      type="radio"
+                      name="categoryRadio"
                       value={master.id}
-                      checked={isSelected} 
+                      checked={isSelected}
                       onChange={() => handleSelectCategory(master)}
-                      disabled={!submitLock} 
-                      className="sr-only" 
+                      disabled={!submitLock}
+                      className="sr-only"
                     />
 
                     {/* Picture */}
@@ -728,7 +744,7 @@ export default function InquiryForm() {
                   </label>
                 );
               })}
-            </div>          
+            </div>
 
             {/* ── Step 2: Expanded detail with grid cards ────────────────── */}
             {selectedCategory && (
@@ -818,6 +834,7 @@ export default function InquiryForm() {
           <div className="rounded-xl border border-[#E7DFCF] bg-white/60 p-4 shadow-sm">
             <input type="hidden" {...register("startTime")} />
             <TimeSlotGrid
+              key={`${selectedSessionType ?? ""}${watchedDate ?? ""}`}
               selectedDate={watchedDate}
               durationMinutes={durationMinutes ?? 60}
               startTime={watchedStartTime || ""}

@@ -72,7 +72,9 @@ export default function SignUp() {
 
     const response = await fetch("http://localhost:5001/api/signup", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+          "Content-Type": "application/json"
+      },
       body: JSON.stringify({
         signup_payload: signupPayload,
         profile_payload: profilePayload,
@@ -81,7 +83,7 @@ export default function SignUp() {
 
     if (!response.ok) {
       const errorData = await response.json();
-      setSubmitError(errorData.error.message);
+      setSubmitError(errorData.error?.message ?? errorData.error);
       setInfoMsg("");
     } else {
       const data = await response.json();
@@ -89,7 +91,7 @@ export default function SignUp() {
       setInfoMsg(data.info.message);
     }
   };
-
+  
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#FFFDF4]">
       <div className="mx-4 md:mx-6 lg:mx-10 py-10 md:py-14 flex justify-center">

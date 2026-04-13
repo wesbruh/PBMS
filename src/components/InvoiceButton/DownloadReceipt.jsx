@@ -1,13 +1,25 @@
+import { useEffect, useState } from "react"
+import { useAuth } from "../../context/AuthContext";
+
 export default function DownloadReceiptButton({ invoiceId }) {
+  const { session } = useAuth();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!session) return;
+    setLoading(false);
+  }, [session])
+
   const handleDownload = async () => {
     try {
-      const response = await fetch(
-        `http://localhost:5001/api/receipt/invoice/${invoiceId}`,
-        {
-          method: "GET",
-          credentials: "include",
-        }
-      );
+      const response = await fetch(`http://localhost:5001/api/receipt/${invoiceId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        credentials: "include"
+      });
 
       if (!response.ok) {
         throw new Error("Failed to download receipt.");
@@ -31,13 +43,19 @@ export default function DownloadReceiptButton({ invoiceId }) {
     }
   };
 
+  if (!session) return;
+
   return (
-    <button
-      onClick={handleDownload}
-      className="text-[#7A4A3A] hover:opacity-70 flex items-center"
-      aria-label="Download Receipt"
-    >
-      <i className="fa-solid fa-file-invoice text-sm"></i>
-    </button>
+    <div>
+      {
+        loading ? <></> : <button
+        onClick={handleDownload}
+        className="text-[#7A4A3A] hover:opacity-70 flex items-center"
+        aria-label="Download Receipt"
+      >
+        <i className="fa-solid fa-file-invoice text-sm"></i>
+      </button>
+      }
+    </div>
   );
 }

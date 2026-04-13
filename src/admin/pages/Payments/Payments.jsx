@@ -1,10 +1,12 @@
+import { useState, useEffect } from "react";
+
+import { triggerAdminToast } from "../../../components/AdminNotificationToast.jsx";
+import { useAuth } from "../../../context/AuthContext"
+
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import SubtractBalanceModal from "./SubtractBalanceModal.jsx";
-import { supabase } from "../../../lib/supabaseClient";
-import { triggerAdminToast } from "../../../components/AdminNotificationToast.jsx";
-import { useState, useEffect } from "react";
 
 
 function AdminPayments() {
@@ -15,17 +17,25 @@ function AdminPayments() {
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [doPageRefresh, setDoPageRefresh] = useState(false);
 
+  const { session } = useAuth();
 
   useEffect(() => {
     const fetchInvoices = async () => {
+      if (!session) return;
       try {
-        const res = await fetch('http://localhost:5001/api/invoice/getInvoiceTableData');
+        const res = await fetch('http://localhost:5001/api/invoice/getInvoiceTableData', {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
+        });
         console.log("Response status:", res.status);
-        
+
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
-        
+
         const data = await res.json();
         console.log("Fetched invoice data:", data);
         setInvoices(data);
@@ -35,17 +45,22 @@ function AdminPayments() {
         setLoading(false);
       }
     };
-    
-    fetchInvoices();
-  }, []); 
 
-  
+    fetchInvoices();
+  }, [session]);
+
   useEffect(() => {
-    if (doPageRefresh) {
+    if (doPageRefresh && session) {
       const refreshData = async () => {
         setLoading(true);
         try {
-          const res = await fetch('http://localhost:5001/api/invoice/getInvoiceTableData');
+          const res = await fetch('http://localhost:5001/api/invoice/getInvoiceTableData', {
+            method: "GET",
+            headers: {
+              "Authorization": `Bearer ${session?.access_token}`,
+              "Content-Type": "application/json"
+            }
+          });
           const data = await res.json();
           setInvoices(data);
         } catch (err) {
@@ -57,13 +72,17 @@ function AdminPayments() {
       };
       refreshData();
     }
-  }, [doPageRefresh]);
+  }, [doPageRefresh, session]);
 
   const downloadInvoicePdf = async (invoice_id) => {
     try {
-      const pdfResponse = await fetch(
-        `http://localhost:5001/api/invoice/${invoice_id}/pdf`
-      );
+      const pdfResponse = await fetch(`http://localhost:5001/api/invoice/${invoice_id}/pdf`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
+      });
 
       if (!pdfResponse.ok) throw new Error("Failed to generate PDF");
 
@@ -84,7 +103,13 @@ function AdminPayments() {
 
   const managePayment = async (invoice_id) => {
     try {
-      const res = await fetch(`http://localhost:5001/api/invoice/getInvoiceByID?term=${invoice_id}`);
+      const res = await fetch(`http://localhost:5001/api/invoice/getInvoiceByID?term=${invoice_id}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
+      });
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message || "Failed to fetch invoice details");
@@ -101,11 +126,14 @@ function AdminPayments() {
       console.error("No invoice selected");
       return;
     }
-    
+
     try {
       const response = await fetch(`http://localhost:5001/api/invoice/${selectedInvoice.id}/reduceRemainingInvoiceBalance`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({ amount: reductionAmount, payment_method: paymentMethod }),
       });
 
@@ -197,7 +225,7 @@ function AdminPayments() {
       render: (_, row) => {
         return (
           <button
-            onClick={() => { 
+            onClick={() => {
               console.log("Here is the id being passed for invoice_id:", row.id);
               downloadInvoicePdf(row.id);
             }}
@@ -214,16 +242,16 @@ function AdminPayments() {
       render: (_, row) => {
         return (
           (row.remaining > 0) ?
-          <button
-            onClick={() => { 
-              console.log("Here is the id being passed for invoice_id:", row.id);
-              managePayment(row.id);
-            }}
-            className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
-          >
-            Manage
-          </button> :
-          <></>
+            <button
+              onClick={() => {
+                console.log("Here is the id being passed for invoice_id:", row.id);
+                managePayment(row.id);
+              }}
+              className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
+            >
+              Manage
+            </button> :
+            <></>
         );
       }
     },
@@ -270,7 +298,7 @@ function AdminPayments() {
           </div>
         </Frame>
       </div>
-      <SubtractBalanceModal 
+      <SubtractBalanceModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         currentBalance={selectedInvoice?.remaining || 0}

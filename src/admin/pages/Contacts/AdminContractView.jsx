@@ -1,11 +1,16 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+
+import { useAuth } from "../../../context/AuthContext"
+
 import ContractDetail from "../../../pages/Dashboard/ContractDetail.jsx";
 
 export default function AdminContractView() {
-  const {contractId } = useParams();
+  const { contractId } = useParams();
   const navigate = useNavigate();
+
+  const { session } = useAuth();
 
   const [contract, setContract] = useState(null);
   const [contractTemplate, setContractTemplate] = useState(null);
@@ -14,13 +19,16 @@ export default function AdminContractView() {
   useEffect(() => {
     setLoading(true);
 
-    if (!contractId) return;
+    if (!contractId || !session) return;
 
     async function fetchContract() {
       try {
-        const response = await fetch(`http://localhost:5001/api/contract/admin/contracts/${contractId}`, {
+        const response = await fetch(`http://localhost:5001/api/contract/${contractId}`, {
           method: "GET",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
         });
 
         if (!response.ok) {
@@ -38,20 +46,20 @@ export default function AdminContractView() {
     }
 
     fetchContract();
-  }, [contractId]);
+  }, [contractId, session]);
 
   useEffect(() => {
     if (!contract?.template_id) return;
 
     async function fetchContractTemplate() {
       try {
-        const response = await fetch(
-          `http://localhost:5001/api/contract/templates/${contract.template_id}`,
-          {
-            method: "GET",
-            headers: { "Content-Type": "application/json" },
+        const response = await fetch(`http://localhost:5001/api/contract/templates/${contract.template_id}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
           }
-        );
+        });
 
         if (!response.ok) {
           console.error("Contract template does not exist.");

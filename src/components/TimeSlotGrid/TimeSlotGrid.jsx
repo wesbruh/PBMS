@@ -92,7 +92,7 @@ export default function TimeSlotGrid({
   durationMinutes = 60,
   startTime,
   onSelectStart,
-  readOnly=false
+  readOnly = false
 }) {
   // Work hours fetched from AvailabilitySettings
   const [workStart, setWorkStart] = useState("09:00");
@@ -151,34 +151,32 @@ export default function TimeSlotGrid({
         // should add valid_from_time / valid_to_time columns. Until then we block
         // all slots on a day that has an Availability row.
         //
-        // ✅ If your team stores times as timestamptz in valid_from/valid_to,
+        // ✅ If your team stores times as timestamptz in start_time/end_time,
         //    this code already handles that via tsToLocalTime() below.
+        const startDateTime = new Date(`${selectedDate}T00:00:00.000`);
+        const dayStart = startDateTime.toISOString();
+
+        const endDateTime = new Date(`${selectedDate}T23:59:59.999`);
+        const dayEnd = endDateTime.toISOString();
 
         const { data: adminBlocks, error: abErr } = await supabase
-          .from("Availability")
-          .select("valid_from, valid_to")
-          .lte("valid_from", selectedDate)
-          .gte("valid_to", selectedDate);
+          .from("AvailabilityBlocks")
+          .select("start_time, end_time")
+          .gte("start_time", dayStart)
+          .lte("end_time", dayEnd);
 
         if (abErr) console.error("TimeSlotGrid: Availability fetch error", abErr);
-
-        const workStartMin = toMin(workStart);
-        const workEndMin = toMin(workEnd);
 
         const intervals = [];
 
         (adminBlocks ?? []).forEach((block) => {
-          // If valid_from/valid_to include a time component (timestamptz), use it.
-          // Otherwise treat as full-day block.
-          const fromHasTime = block.valid_from?.includes("T") || block.valid_from?.includes(" ");
-          const toHasTime = block.valid_to?.includes("T") || block.valid_to?.includes(" ");
+          const blockStartObj = new Date(block.start_time);
+          const blockEndObj = new Date(block.end_time);
 
-          const blockStart = fromHasTime
-            ? toMin(tsToLocalTime(block.valid_from))
-            : workStartMin;
-          const blockEnd = toHasTime
-            ? toMin(tsToLocalTime(block.valid_to))
-            : workEndMin;
+          const blockStart = (blockStartObj.getHours().toString().padStart(2, '0')) + ":" +
+            (blockStartObj.getMinutes().toString().padStart(2, '0'));
+          const blockEnd = (blockEndObj.getHours().toString().padStart(2, '0')) + ":" +
+            (blockEndObj.getMinutes().toString().padStart(2, '0'));
 
           intervals.push({ startMin: blockStart, endMin: blockEnd });
         });
@@ -186,11 +184,6 @@ export default function TimeSlotGrid({
         // ── 2) Active booked sessions on selectedDate ───────────────────────
         // selectedDate is local date, but timestampz are fetched
         // compare table entries against UTC-calculated dayStart and dayEnd times 
-        const startDateTime = new Date(`${selectedDate}T00:00:00.000`);
-        const dayStart = startDateTime.toISOString();
-
-        const endDateTime = new Date(`${selectedDate}T23:59:59.999`);
-        const dayEnd = endDateTime.toISOString();
 
         const { data: bookedSessions, error: bsErr } = await supabase
           .from("Session")
@@ -203,9 +196,17 @@ export default function TimeSlotGrid({
 
         (bookedSessions ?? []).forEach((s) => {
           if (!s.start_at || !s.end_at) return;
+          const sessionStartObj = new Date(s.start_at);
+          const sessionEndObj = new Date(s.end_at);
+
+          const sessionStart = (sessionStartObj.getHours().toString().padStart(2, '0')) + ":" +
+            (sessionStartObj.getMinutes().toString().padStart(2, '0'));
+          const sessionEnd = (sessionEndObj.getHours().toString().padStart(2, '0')) + ":" +
+            (sessionEndObj.getMinutes().toString().padStart(2, '0'));
+
           intervals.push({
-            startMin: toMin(tsToLocalTime(s.start_at)),
-            endMin: toMin(tsToLocalTime(s.end_at)),
+            startMin: sessionStart,
+            endMin: sessionEnd,
           });
         });
 
@@ -233,8 +234,18 @@ export default function TimeSlotGrid({
   //   B) The *session* starting at T (T → T+durationMinutes) overlaps any blocked interval.
   //   C) T + durationMinutes > workEndMin (session would run past end of day).
   //
-  const disabledSet = useMemo(() => {
-    const disabled = new Set();
+  const blockedSet = useMemo(() => {
+    const blocked = new Set();
+
+    blockedIntervals.forEach((block) => {
+      blocked.add(block.startMin);
+    })
+
+    return blocked;
+  }, [blockedIntervals]);
+
+  const overlapSet = useMemo(() => {
+    const over = new Set();
     const workEndMin = toMin(workEnd);
 
     allSlots.forEach((slot) => {
@@ -242,25 +253,23 @@ export default function TimeSlotGrid({
 
       // C) Runs past end of work day
       if (sessionEnd > workEndMin) {
-        disabled.add(slot.value);
+        over.add(slot.value);
         return;
       }
 
-      // A & B) Overlaps any blocked interval
       for (const block of blockedIntervals) {
         if (
-          overlaps(slot.totalMin, slot.totalMin + 15, block.startMin, block.endMin) || // A
-          overlaps(slot.totalMin, sessionEnd, block.startMin, block.endMin)             // B
+          overlaps(slot.totalMin, slot.totalMin + 15, toMin(block.startMin), toMin(block.endMin)) || // A
+          overlaps(slot.totalMin, sessionEnd, toMin(block.startMin), toMin(block.endMin))            // B
         ) {
-          disabled.add(slot.value);
+          over.add(slot.value);
           break;
         }
       }
     });
 
-    return disabled;
+    return over;
   }, [allSlots, blockedIntervals, durationMinutes, workEnd]);
-
   // ── Auto-computed end time from startTime + duration ─────────────────────
   const computedEndTime = useMemo(() => {
     if (!startTime) return null;
@@ -269,7 +278,7 @@ export default function TimeSlotGrid({
 
   // ── Handle slot click ─────────────────────────────────────────────────────
   function handleSlotClick(slot) {
-    if (disabledSet.has(slot.value)) return;
+    if (blockedSet.has(slot.value) || overlapSet.has(slot.value)) return;
     const end = fromMin(slot.totalMin + durationMinutes);
     onSelectStart(slot.value, end);
   }
@@ -314,9 +323,10 @@ export default function TimeSlotGrid({
 
       <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
         {allSlots.map((slot) => {
-          const isDisabled = disabledSet.has(slot.value);
+          const isBlocked = blockedSet.has(slot.value);
+          const isOverlap = overlapSet.has(slot.value);
           const isStart = slot.value === startTime;
-          const isInRange = !isDisabled &&
+          const isInRange = !isBlocked &&
             startTime &&
             computedEndTime &&
             slot.value > startTime &&
@@ -326,18 +336,20 @@ export default function TimeSlotGrid({
             <button
               key={slot.value}
               type="button"
-              disabled={isDisabled || readOnly}
+              disabled={isBlocked || isOverlap || readOnly}
               onClick={() => handleSlotClick(slot)}
-              title={isDisabled ? "Not available" : slot.label}
+              title={(isBlocked || isOverlap) ? "Not available" : slot.label}
               className={`
                 py-3 text-[11px] font-bold rounded-md border transition-all
                 ${isStart
                   ? "bg-brown text-white border-brown shadow-md scale-105 z-10"
                   : isInRange
                     ? "bg-[#F4EFE6] text-brown border-[#E7DFCF]"
-                    : isDisabled
+                    : isBlocked
                       ? "bg-neutral-100 text-neutral-300 border-neutral-200 cursor-not-allowed line-through"
-                      : `bg-white text-neutral-600 border-neutral-200 ${readOnly ? "" : "hover:border-brown hover:bg-neutral-50"}`
+                      : isOverlap
+                        ? "bg-neutral-100 text-neutral-300 border-neutral-200 cursor-not-allowed"
+                        : `bg-white text-neutral-600 border-neutral-200 ${readOnly ? "" : "hover:border-brown hover:bg-neutral-50"}`
                 }
               `}
             >
