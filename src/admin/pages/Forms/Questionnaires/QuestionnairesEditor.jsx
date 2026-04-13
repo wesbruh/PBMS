@@ -146,7 +146,7 @@ export default function QuestionnaireEditor({ mode }) {
       setLoading(true);
 
       try {
-        const response = await fetch(`http://localhost:5001/api/sessions/types`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/types`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -180,7 +180,7 @@ export default function QuestionnaireEditor({ mode }) {
     async function load() {
       setError("");
       try {
-        const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${id}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -198,7 +198,7 @@ export default function QuestionnaireEditor({ mode }) {
 
         // Resolve session_type_id → string value for the dropdown
         if (qTemplate.session_type_id) {
-          const response = await fetch(`http://localhost:5001/api/sessions/type`, {
+          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/type`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${session?.access_token}`,
@@ -274,7 +274,7 @@ export default function QuestionnaireEditor({ mode }) {
 
   // ------ Resolve SessionType UUID ------
   async function resolveSessionTypeId(value) {
-    const response = await fetch(`http://localhost:5001/api/sessions/type`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/type`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -310,7 +310,7 @@ export default function QuestionnaireEditor({ mode }) {
       };
 
       if (isEdit) {
-        const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${id}`, {
           method: "PATCH",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -324,7 +324,7 @@ export default function QuestionnaireEditor({ mode }) {
           throw errorData.error;
         }
       } else {
-        const response = await fetch(`http://localhost:5001/api/questionnaire/templates`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -375,7 +375,7 @@ export default function QuestionnaireEditor({ mode }) {
       let templateId = id;
 
       if (isEdit) {
-        const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${id}`, {
           method: "PATCH",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -389,7 +389,7 @@ export default function QuestionnaireEditor({ mode }) {
           throw errorData.error;
         }
       } else {
-        const response = await fetch(`http://localhost:5001/api/questionnaire/templates`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -408,7 +408,7 @@ export default function QuestionnaireEditor({ mode }) {
       }
 
       // set only one questionnaire template active for this session type
-      const response = await fetch(`http://localhost:5001/api/questionnaire/templates/${templateId}/set`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${templateId}/set`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

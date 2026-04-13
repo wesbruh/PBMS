@@ -29,7 +29,7 @@ export default function SignContractModal({ open, onClose, contract, contractTem
 
       // 2) Upload to Supabase Storage
       const filePath = `signatures/${contract.id}.png`;
-      const signResponse = await fetch(`http://localhost:5001/api/contract/${contract.id}/sign`, {
+      const signResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contract.id}/sign`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

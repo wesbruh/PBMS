@@ -41,7 +41,7 @@ export default function checkoutRoutes(stripeClient) {
                     payment_intent_data: {
                         capture_method: 'manual',
                     },
-                    success_url: `http://localhost:5173/dashboard/inquiry?checkout_session_id={CHECKOUT_SESSION_ID}`,
+                    success_url: `${import.meta.env.VITE_API_URL}/dashboard/inquiry?checkout_session_id={CHECKOUT_SESSION_ID}`,
                     cancel_url: from_url
                 });
 
@@ -71,9 +71,9 @@ export default function checkoutRoutes(stripeClient) {
                         },
                     ],
                     mode: 'payment',
-                    success_url: 'http://localhost:5173/dashboard?checkout_session_id={CHECKOUT_SESSION_ID}',
+                    success_url: `${import.meta.env.VITE_API_URL}/dashboard?checkout_session_id=${CHECKOUT_SESSION_ID}`,
                     cancel_url: from_url ||
-                        'http://localhost:5173/dashboard'
+                        `${import.meta.env.VITE_API_URL}/dashboard`
                 });
 
                 res.status(200).json({

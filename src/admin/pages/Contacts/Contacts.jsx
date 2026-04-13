@@ -75,7 +75,7 @@ function Contacts() {
       setLoading(true);
       setErrorMsg("");
 
-      const response = await fetch("http://localhost:5001/api/profile", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

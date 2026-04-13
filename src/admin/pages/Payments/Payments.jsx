@@ -25,7 +25,7 @@ function AdminPayments() {
       if (!session) return;
       try {
         const res = await fetch(
-          "http://localhost:5001/api/invoice/getInvoiceTableData",
+          `${import.meta.env.VITE_API_URL}/api/invoice/getInvoiceTableData`,
           {
             method: "GET",
             headers: {
@@ -59,7 +59,7 @@ function AdminPayments() {
         setLoading(true);
         try {
           const res = await fetch(
-            "http://localhost:5001/api/invoice/getInvoiceTableData",
+            `${import.meta.env.VITE_API_URL}/api/invoice/getInvoiceTableData`,
             {
               method: "GET",
               headers: {
@@ -84,7 +84,7 @@ function AdminPayments() {
   const downloadInvoicePdf = async (invoice_id) => {
     try {
       const pdfResponse = await fetch(
-        `http://localhost:5001/api/invoice/${invoice_id}/pdf`,
+        `${import.meta.env.VITE_API_URL}/api/invoice/${invoice_id}/pdf`,
         {
           method: "GET",
           headers: {
@@ -114,7 +114,7 @@ function AdminPayments() {
   const managePayment = async (invoice_id) => {
     try {
       const res = await fetch(
-        `http://localhost:5001/api/invoice/getInvoiceByID?term=${invoice_id}`,
+        `${import.meta.env.VITE_API_URL}/api/invoice/getInvoiceByID?term=${invoice_id}`,
         {
           method: "GET",
           headers: {
@@ -146,7 +146,7 @@ function AdminPayments() {
 
     try {
       const response = await fetch(
-        `http://localhost:5001/api/invoice/${selectedInvoice.id}/reduceRemainingInvoiceBalance`,
+        `${import.meta.env.VITE_API_URL}/api/invoice/${selectedInvoice.id}/reduceRemainingInvoiceBalance`,
         {
           method: "POST",
           headers: {

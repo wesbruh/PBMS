@@ -23,7 +23,7 @@ export default function AdminContractView() {
 
     async function fetchContract() {
       try {
-        const response = await fetch(`http://localhost:5001/api/contract/${contractId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contractId}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -53,7 +53,7 @@ export default function AdminContractView() {
 
     async function fetchContractTemplate() {
       try {
-        const response = await fetch(`http://localhost:5001/api/contract/templates/${contract.template_id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/templates/${contract.template_id}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,

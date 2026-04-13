@@ -33,7 +33,7 @@ function ContactView() {
     if (!userId || session) return;
 
     async function checkUser() {
-      const response = await fetch(`http://localhost:5001/api/profile/${userId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${userId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

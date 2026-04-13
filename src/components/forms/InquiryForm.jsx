@@ -189,7 +189,7 @@ export default function InquiryForm() {
           ? { user_id: profile.id, session_id: sessionId }
           : { user_id: profile.id };
 
-        const response = await fetch("http://localhost:5001/api/contract", {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -367,7 +367,7 @@ export default function InquiryForm() {
           else if (sessionData.client_id !== profile.id) throw new Error("Session does not belong to this user");
 
           // work with checkout session and payment intent to check for payment authorization
-          const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+          const csResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
             method: "GET",
             headers: {
               "Authorization": `Bearer ${session?.access_token}`,
@@ -523,7 +523,7 @@ export default function InquiryForm() {
       }
 
       // create Invoice related to session
-      const invoiceResponse = await fetch(`http://localhost:5001/api/invoice/generate/${sessionData.id}`, {
+      const invoiceResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/generate/${sessionData.id}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

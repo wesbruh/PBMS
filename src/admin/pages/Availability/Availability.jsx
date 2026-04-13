@@ -32,7 +32,7 @@ const Availability = () => {
 
   const fetchAvailability = async () => {
     try {
-      const res = await fetch("http://localhost:5001/api/availability", {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/availability`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
@@ -146,7 +146,7 @@ const Availability = () => {
 
     try {
       const response = await fetch(
-        "http://localhost:5001/api/availability/blocks",
+        `${import.meta.env.VITE_API_URL}/api/availability/blocks`,
         {
           method: "POST",
           headers: {
@@ -173,7 +173,7 @@ const Availability = () => {
   const saveSettings = async () => {
     try {
       const response = await fetch(
-        "http://localhost:5001/api/availability/settings",
+        `${import.meta.env.VITE_API_URL}/api/availability/settings`,
         {
           method: "POST",
           headers: {

@@ -26,7 +26,7 @@ function Sessions() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch("http://localhost:5001/api/sessions", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -61,7 +61,7 @@ function Sessions() {
   const getPaymentIntent = async (checkoutSessionId) => {
     if (!checkoutSessionId) return { status: null, paymentIntent: null }
     try {
-      const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+      const csResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -86,7 +86,7 @@ function Sessions() {
 
       if (!status) throw new Error("Failed to retrieve payment intent");
 
-      const response = await fetch(`http://localhost:5001/api/intent/capture`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/capture`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -121,7 +121,7 @@ function Sessions() {
         `${(date.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
         `${date.getDate().toString().padStart(2, '0')}`;
 
-      const response = await fetch(`http://localhost:5001/api/invoice/confirm/${invoiceId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/confirm/${invoiceId}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -150,7 +150,7 @@ function Sessions() {
 
       if (invoiceError) throw new Error("Invoice not found.")
 
-      const pdfResponse = await fetch(`http://localhost:5001/api/invoice/${invoiceData.id}/pdf`, {
+      const pdfResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${invoiceData.id}/pdf`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -174,7 +174,7 @@ function Sessions() {
 
   const confirmSession = async (sessionId) => {
     // ensure session exists and map session id to invoice id
-    const mapResponse = await fetch(`http://localhost:5001/api/invoice/${sessionId}`, {
+    const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -217,7 +217,7 @@ function Sessions() {
 
       if (!status) throw new Error("Failed to retrieve payment intent");
 
-      const response = await fetch(`http://localhost:5001/api/intent/uncapture`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/uncapture`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -249,7 +249,7 @@ function Sessions() {
 
   const cancelSession = async (sessionId) => {
     // ensure session exists and map session id to invoice id
-    const mapResponse = await fetch(`http://localhost:5001/api/invoice/${sessionId}`, {
+    const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -299,7 +299,7 @@ function Sessions() {
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

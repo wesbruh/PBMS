@@ -11,5 +11,5 @@ const app = createApp({ supabaseClient: supabase, stripeClient: stripe });
 const PORT = process.env.PORT || 5001;
 
 app.listen(PORT, () => {
-  console.log(`HTTP Server running on http://localhost:${PORT}`);
+  console.log(`HTTP Server running on ${import.meta.env.VITE_API_URL} . PORT:${PORT}.`);
 });

@@ -17,7 +17,7 @@ export default function ContractsPage() {
 
       setLoading(true);
 
-      const response = await fetch(`http://localhost:5001/api/contract/user/${profile.id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/user/${profile.id}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

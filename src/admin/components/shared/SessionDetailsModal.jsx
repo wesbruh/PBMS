@@ -36,7 +36,7 @@ export default function SessionDetailsModal({ sessionId, session, onClose }) {
     setLoading(true);
     setError("");
 
-    fetch(`http://localhost:5001/api/sessions/${sessionId}/details`, {
+    fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}/details`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
