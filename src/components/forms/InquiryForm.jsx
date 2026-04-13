@@ -610,7 +610,7 @@ export default function InquiryForm() {
 
       const { error: sessionError } = await supabase
         .from("Session")
-        .update({ deposit_cs_id: checkoutSessionId, is_active: true })
+        .update({ is_active: true })
         .eq("id", sessionId);
 
       if (sessionError) throw sessionError;

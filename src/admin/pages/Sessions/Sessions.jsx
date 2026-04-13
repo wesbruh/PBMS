@@ -418,32 +418,25 @@ function Sessions() {
           <div className="min-w-60 grid grid-cols-2 gap-5">
             <button
               type={"button"}
-              onClick={() => { confirmSession(row.id, row.deposit_cs_id) }}
-              className={`w-full min-w-30 hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded text-sm font-semibold border`}
+              onClick={() => { confirmSession(row.id) }}
+              className={`w-full min-w-min hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-1 py-1 rounded text-sm font-semibold border`}
             >
               Confirm
             </button>
             <button
               type="button"
-              onClick={() => cancelSession(row.id, row.deposit_cs_id)}
-              className="w-full min-w-30 hover:cursor-pointer px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+              onClick={() => cancelSession(row.id)}
+              className="w-full min-w-min hover:cursor-pointer px-1 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
             >
               Cancel
             </button>
           </div>
         ) : row.status === "Confirmed" ? (
-          <div className="min-w-60 grid grid-cols-2 gap-5">
+          <div className="w-full flex items-center justify-center">
             <button
               type="button"
-              onClick={() => { downloadInvoicePdf(row.id) }}
-              className="w-full min-w-30 hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded text-sm font-semibold border"
-            >
-              Download
-            </button>
-            <button
-              type="button"
-              onClick={() => cancelSession(row.id, row.deposit_cs_id)}
-              className="w-full min-w-30 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+              onClick={() => cancelSession(row.id)}
+              className="min-w-30 max-w-1/2 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
             >
               Cancel
             </button>
