@@ -23,7 +23,7 @@ function formatAnswer(answer) {
   }
 }
 
-export default function SessionDetailsModal({ sessionId, onClose }) {
+export default function SessionDetailsModal({ sessionId, session, onClose }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -36,7 +36,13 @@ export default function SessionDetailsModal({ sessionId, onClose }) {
     setLoading(true);
     setError("");
 
-    fetch(`http://localhost:5001/api/sessions/${sessionId}/details`)
+    fetch(`http://localhost:5001/api/sessions/${sessionId}/details`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      }
+    })
       .then((res) => {
         if (!res.ok) throw new Error(`Request failed (${res.status})`);
         return res.json();

@@ -8,7 +8,6 @@ import express from "express";
 import anonRoutes from "./routes/anonRoutes.js";
 import availabilityRoutes from "./routes/availabilityRoutes.js"
 import checkoutRoutes from "./routes/checkoutRoutes.js"
-import contactRoutes from "./routes/contactRoutes.js";
 import contractRoutes from "./routes/contractRoutes.js";
 import galleryRoutes from "./routes/galleryRoutes.js";
 import intentRoutes from "./routes/intentRoutes.js";
@@ -88,7 +87,6 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
   app.use(verifyToken(supabaseClient));
 
   // add routes that need verification
-  app.use("/api/contact", contactRoutes(supabaseClient));
 
   // --- User Profile Routes ---
   app.use("/api/profile", profileRoutes(supabaseClient));

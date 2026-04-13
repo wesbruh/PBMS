@@ -7,7 +7,7 @@ import { useState } from "react"; // added for menu mangement when on mobile
 function Navbar() {
   // determines location of user based on current page
   const location = useLocation();
-  
+
   const { session, profile } = useAuth();
   const navigate = useNavigate();
 
@@ -19,11 +19,11 @@ function Navbar() {
     if (session?.access_token && profile?.id) {
       const response = await fetch(`http://localhost:5001/api/profile/${profile.id}`, {
         method: "PATCH",
-          headers: {
-            "Authorization": `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({ is_active: false })
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ is_active: false })
       });
 
       if (!response.ok) {

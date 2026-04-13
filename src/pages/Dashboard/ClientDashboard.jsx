@@ -7,20 +7,13 @@ import { useAuth } from "../../context/AuthContext";
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
 import { saveAs } from "file-saver";
 
-import DownloadInvoiceButton from "../../components/InvoiceButton/DownloadInvoiceButton";
-import DownloadReceipt from "../../components/InvoiceButton/DownloadReceipt";
-
-import SectionPager from "../../components/SectionPager";
 import SharedClientDashboard from "../../components/Dashboard/SharedClientDashboard";
 
 export default function ClientDashboard() {
   const [searchParams, _setSearchParams] = useSearchParams();
   const checkoutSessionId = searchParams.get('checkout_session_id') || null;
 
-  // call useAuth for Supabase session
-  const { session } = useAuth();
-
-  const { user, profile, setProfile } = useAuth();
+  const { session, user, profile, setProfile } = useAuth();
   const [sessions, setSessions] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [galleries, setGalleries] = useState([]);
@@ -148,7 +141,7 @@ export default function ClientDashboard() {
 
   // load all data that belongs to THIS user only
   useEffect(() => {
-    if (!user) return;
+    if (!user || !session) return;
 
     async function loadData() {
       setLoading(true);
@@ -169,13 +162,20 @@ export default function ClientDashboard() {
 
           // ensure checkout session belongs to user
           if (user.id === client_id) {
-            const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`);
+            const response = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+              method: "GET",
+              headers: {
+                "Authorization": `Bearer ${session?.access_token}`,
+                "Content-Type": "application/json"
+              }
+            });
+
             const status = await response.json()
               .then((data) => {
                 // console.log("Checkout session: ", data.session); // DEBUGGING
                 return data.session.payment_status
               });
-            
+
             // if session has been fully paid and processed
             if (status === "paid") {
               const now = new Date().toISOString();
@@ -293,7 +293,7 @@ export default function ClientDashboard() {
     }
 
     loadData();
-  }, [user]);
+  }, [user, session]);
 
   // When opening edit profile, load the current profile values into the edit form
   useEffect(() => {
@@ -318,7 +318,7 @@ export default function ClientDashboard() {
       ? `${profile?.first_name ?? ""} ${profile?.last_name ?? ""}`.trim()
       : user?.email;
 
-  
+
 
   // Handle typing into fields, updates the edit form page when something else is typed
   function handleEditChange(e) {
@@ -658,20 +658,20 @@ export default function ClientDashboard() {
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
       <SharedClientDashboard
-      fullName={fullName}
-      notifications={notifications}
-      sessions={sessions}
-      invoices={invoices}
-      galleries={galleries}
-      contracts={contracts}
-      loading={loading}
-      onPayInvoice={handlePayment}
-      onDownloadGallery={handleDownloadGallery}
-      downloadingGalleries={downloadingGalleries}
-      showPayButton={true}
-      showDownloadButton={true}
-      showSettingsButton={true}
-      onOpenSettings={() => setShowSettings(true)}
+        fullName={fullName}
+        notifications={notifications}
+        sessions={sessions}
+        invoices={invoices}
+        galleries={galleries}
+        contracts={contracts}
+        loading={loading}
+        onPayInvoice={handlePayment}
+        onDownloadGallery={handleDownloadGallery}
+        downloadingGalleries={downloadingGalleries}
+        showPayButton={true}
+        showDownloadButton={true}
+        showSettingsButton={true}
+        onOpenSettings={() => setShowSettings(true)}
       />
 
       {/*Settings Modal*/}

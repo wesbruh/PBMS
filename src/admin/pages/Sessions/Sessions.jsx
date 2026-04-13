@@ -495,6 +495,7 @@ function Sessions() {
       {selectedSessionId && (
         <SessionDetailsModal
           sessionId={selectedSessionId}
+          session={session}
           onClose={() => setSelectedSessionId(null)}
         />
       )}
