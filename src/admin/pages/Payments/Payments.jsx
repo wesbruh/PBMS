@@ -298,7 +298,7 @@ function AdminPayments() {
   ];
 
   return (
-    <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+    <div className="flex my-6 md:my-10 h-[70vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
       {/* SideBar */}
       <div className="flex md:min-w-50">
         <Sidebar />
