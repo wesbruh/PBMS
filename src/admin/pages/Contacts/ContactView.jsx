@@ -30,7 +30,7 @@ function ContactView() {
 
   // check if user exists
   useEffect(() => {
-    if (!userId || session) return;
+    if (!userId || !session) return;
 
     async function checkUser() {
       const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${userId}`, {

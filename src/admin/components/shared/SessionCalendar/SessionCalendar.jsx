@@ -152,11 +152,11 @@ function SessionCalendar() {
               root: `${defaultClassNames.root} text-center w-full border border-gray-100 rounded-xl shadow-md overflow-x-auto`,
               today: "",
               selected: "!bg-amber-200 rounded-xl transition-all",
-              months: "text-xs md:text-sm text-center",
-              month: "text-xs md:text-sm text-center",
-              month_grid: "w-full text-xs md:text-sm ",
+              months: "text-xs md:text-base text-center",
+              month: "text-xs md:text-base text-center",
+              month_grid: "w-full text-xs md:text-base",
               chevron: "fill-amber-500 hover:fill-amber-700",
-              day: "text-center text-xs md:text-sm lg:text-lg",
+              day: "text-center text-xs md:text-base",
               weekday: "text-center",
               day_button: "p-2 w-full cursor-pointer"
             }}

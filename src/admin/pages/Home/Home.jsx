@@ -12,7 +12,7 @@ function AdminHome() {
     ? `${profile.first_name} ${profile.last_name}`
     : null;
 
-  if (!username) {
+  if (!username) { 
     return (
       <div className="w-full py-16 text-center text-brown font-serif">
         Loading your account...
@@ -21,7 +21,7 @@ function AdminHome() {
   }
 
   return (
-    <div className="flex my-6 md:my-10 h-[70vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+    <div className="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
       {/* Sidebar */}
       <div className="flex md:min-w-50">
         <Sidebar />
