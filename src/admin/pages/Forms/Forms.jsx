@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { supabase } from "../../../lib/supabaseClient";
-import { Plus, LoaderCircle } from "lucide-react";
+import { Plus, LoaderCircle, PencilLine, Trash2, CopyPlus } from "lucide-react";
 import Table from "../../components/shared/Table/Table.jsx";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar";
@@ -137,7 +137,7 @@ export default function Forms() {
       label: "Actions",
       sortable: false,
       render: (_, row) => (
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-5">
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -146,22 +146,30 @@ export default function Forms() {
               else if (row.type === "Contract")
                 navigate(`/admin/forms/contracts/${row.id}/edit`);
             }}
-            className="underline text-blue-600 cursor-pointer"
+            className=" text-blue-600 cursor-pointer hover:text-blue-900"
+            title="Edit Template"
           >
-            Edit
+            <PencilLine size={18} />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               handleDelete(row.id);
             }}
-            className="underline text-red-500 cursor-pointer"
+            className="text-red-500 cursor-pointer hover:text-red-900"
+            title="Delete Template"
           >
-            Delete
+            <Trash2 size={18} />
+          </button>
+          <button
+            className="text-green-500 cursor-pointer hover:text-green-900"
+            title="Duplicate Template"
+          >
+            <CopyPlus size={18} />
           </button>
         </div>
       ),
-    },
+    }
   ];
 
   return (
