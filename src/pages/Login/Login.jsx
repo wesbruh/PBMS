@@ -150,7 +150,7 @@ export default function Login() {
         {/* Card */}
         <div className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl shadow-md px-5 md:px-8 py-6">
           <form
-            className="flex flex-col gap-5 font-mono "
+            className="flex flex-col gap-5 font-sans"
             noValidate
             onSubmit={onSubmit}
           >

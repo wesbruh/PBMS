@@ -237,7 +237,6 @@ export default function OfferingsPage() {
                       <SessionTypeCard
                         st={selectedCategory}
                         isSelected={false}
-                        onSelect={() => handleEdit(selectedCategory)}
                         showEditControls={true}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
@@ -250,7 +249,6 @@ export default function OfferingsPage() {
                           key={child.id}
                           st={child}
                           isSelected={false}
-                          onSelect={() => handleEdit(child)}
                           showEditControls={true}
                           onEdit={handleEdit}
                           onDelete={handleDelete}

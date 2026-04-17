@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import DownloadInvoiceButton from "../InvoiceButton/DownloadInvoiceButton";
 import DownloadReceipt from "../InvoiceButton/DownloadReceipt";
 import SectionPager from "../SectionPager";
+import { LoaderCircle } from "lucide-react";
 
 function SharedClientDashboard({
   fullName,
@@ -88,14 +89,22 @@ function SharedClientDashboard({
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 py-12 text-center font-serif text-brown">
-        Loading your dashboard...
+    <div className="grow flex flex-col text-center items-center justify-center text-gray-500">
+      <LoaderCircle className="text-brown animate-spin" size={32} />
+      <p className="text-md">Loading your account...</p>
       </div>
-    );
-  }
+      );
+    } 
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-10 space-y-10">
+      {loading ? (
+        <div className="grow flex flex-col text-center items-center justify-center text-gray-500">
+          <LoaderCircle className="text-brown animate-spin" size={32} />
+          <p className="text-md">Loading your account...</p>
+          </div>
+      ) : ( 
+        <> 
       <header className="flex flex-col gap-1">
         <h1 className="text-3xl md:text-4xl font-serif text-brown">
           Welcome back{fullName ? `, ${fullName}` : ""}.
@@ -598,7 +607,6 @@ function SharedClientDashboard({
                         </p>
 
                         <span className={`inline-block mt-2 text-xs px-3 py-1 rounded border font-medium
-                              border
                             ${ (c.status || "Signed").toLowerCase() === "signed"
                             ? "bg-green-100 border-green-300 text-green-700"
                             : "bg-yellow-100 border-yellow-300 text-yellow-700"}`}>
@@ -643,6 +651,8 @@ function SharedClientDashboard({
           </div>
         </section>
       </div>
+      </>
+    )}
     </div>
   );
 }

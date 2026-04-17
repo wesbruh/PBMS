@@ -426,7 +426,7 @@ function Sessions() {
             <button
               type="button"
               onClick={() => cancelSession(row.id)}
-              className="w-full min-w-min hover:cursor-pointer px-1 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+              className="w-full min-w-min hover:cursor-pointer px-1 py-1 rounded text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
             >
               Cancel
             </button>
@@ -436,7 +436,7 @@ function Sessions() {
             <button
               type="button"
               onClick={() => cancelSession(row.id)}
-              className="min-w-30 max-w-1/2 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+              className="min-w-30 max-w-1/2 hover:cursor-pointer text-center px-2 py-1 rounded text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
             >
               Cancel
             </button>
@@ -450,8 +450,8 @@ function Sessions() {
 
   return (
     <>
-      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-        <div className="flex min-w-50 overflow-y-auto">
+      <div className="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+        <div className="flex md:min-w-50">
           <Sidebar />
         </div>
 
@@ -476,7 +476,7 @@ function Sessions() {
                       data={sessions}
                       searchable={true}
                       searchPlaceholder={"Search Sessions by keyword..."}
-                      rowsPerPage={6}
+                      rowsPerPage={5}
                     />
                   )}
                 </div>

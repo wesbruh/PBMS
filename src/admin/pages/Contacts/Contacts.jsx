@@ -7,6 +7,7 @@ import { useAuth } from "../../../context/AuthContext"
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
+import { LoaderCircle } from "lucide-react";
 
 function Contacts() {
   const navigate = useNavigate();
@@ -158,50 +159,34 @@ function Contacts() {
   };
 
   return (
-    <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex min-w-50 overflow-y-auto">
+    <>
+    <div className="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+      <div className="flex md:min-w-50">
         <Sidebar />
       </div>
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          {loading ? (
-            <div className="w-full py-16 text-center text-brown font-serif">
-              Loading your account...
-            </div>
-          ) : (
-            <div className="relative flex flex-col bg-[#fdfbf7] p-5 md:p-6 w-screen rounded-2xl shadow-inner overflow-scroll">
-              {/* Header */}
-              <div className="mb-6 flex items-start justify-between gap-4">
-                <div>
-                  <h1 className="text-3xl font-semibold text-[#7E4C3C] mb-1">
-                    Client Contact Information
+          <div className="flex w-full rounded-lg overflow-y-auto">
+            <div className="flex flex-col bg-[#fcfcfc] p-6 w-full h-full shadow-inner">
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900">
+                    Client Contacts
                   </h1>
-                  <p className="text-gray-600">
+                  <p className="text-sm text-gray-600 mt-0.5">
                     View and manage contact information for all clients.
                   </p>
-                </div>
-                {/* Right-side header actions */}
-                <div className="flex items-center gap-3">
-                  {/* Count pill */}
-                  <span className="inline-flex items-center rounded-full border border-[#E7DFCF] bg-white px-4 py-1.5 text-sm text-[#5a3e2b] shadow-sm">
-                    {contacts?.length ?? 0} Contacts
-                  </span>
-                </div>
               </div>
-
               {errorMsg && (
-                <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-                  {errorMsg}
-                </div>
-              )}
-
-              {/* Table Card */}
-              <div className="rounded-xl border border-[#E7DFCF] bg-white shadow-sm">
-                <div className="p-2 md:p-4">
+                  <div className="mb-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                    {errorMsg}
+                  </div>
+                )}
+                <div className="grow flex flex-col">
                   {loading ? (
-                    <div className="py-10 text-center text-gray-500">
-                      Loading contacts...
+                    <div className="grow flex flex-col justify-center items-center text-gray-500">
+                      <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
+                      <p className="text-md">Loading Sessions...</p>
                     </div>
                   ) : (
                     <Table
@@ -213,9 +198,10 @@ function Contacts() {
                     />
                   )}
                 </div>
-              </div>
-            </div>)}
+            </div>
+          </div>
         </Frame>
+        </div>
       </div>
 
       {/* Delete Contact Modal */}
@@ -251,8 +237,7 @@ function Contacts() {
           </div>
         </div>
       )}
-    </div>
-
+      </>
   );
 }
 
