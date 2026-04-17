@@ -19,62 +19,63 @@ export default function ContractView() {
     if (!session || !profile || !contractId) return;
 
     async function fetchContract() {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contractId}`, {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ user_id: profile.id })
-      });
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contractId}`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ user_id: profile.id })
+        });
 
-      if (!response.ok) {
-        console.error("Contract does not exist or belong to this user.");
-        return;
+
+        if (!response.ok) {
+          console.error("Contract does not exist.");
+          throw new Error("Contract does not exist.")
+        }
+
+        const data = await response.json();
+        setContract(data)
+      } catch (error) {
+        console.error("Error fetching contract:", error);
+        setLoading(false);
       }
-      
-      const data = await response.json();
-      setContract(data)
     };
 
     fetchContract();
   }, [session, profile]);
 
   useEffect(() => {
-    if (!contract) {
-      return;
-    }
+    if (!contract || !session) return;
 
     async function fetchContractTemplate() {
-      const response = await fetch(`http://localhost:5001/api/contract/templates/${contract.template_id}`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
-        }
-      });
+      try {
+        const response = await fetch(`http://localhost:5001/api/contract/templates/${contract.template_id}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
+        });
 
-      if (!response.ok) {
-        console.error("Contract Template does not exist.");
-        return;
+        if (!response.ok) {
+          console.error("Contract Template does not exist.");
+          return;
+        }
+
+        const data = await response.json()
+        setContractTemplate(data)
+      } catch (error) {
+        console.error("Error fetching contract template:", error);
+      } finally {
+        setLoading(false);
       }
-      
-      const data = await response.json()
-      setContractTemplate(data)
-    };
+    }
 
     fetchContractTemplate();
 
-  }, [contract]);
-
-  useEffect(() => {
-    if (!contract || !contractTemplate) {
-      return;
-    }
-
-    setLoading(false);
-
-  }, [contract, contractTemplate]);
+  }, [contract, session]);
 
   if (loading) {
     return (
@@ -83,6 +84,15 @@ export default function ContractView() {
       </div>
     );
   }
+
+  if (!contract || !contractTemplate) {
+    return (
+      <div className="w-full py-16 text-center text-brown font-serif">
+        Failed to load contract.
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-5xl mx-auto p-6 space-y-4">
       <div className="flex justify-between items-center">
@@ -96,7 +106,7 @@ export default function ContractView() {
       <ContractDetail
         contract={contract}
         contractTemplate={contractTemplate}
-        onSigned={(contract)=>{
+        onSigned={(contract) => {
           setContract(contract);
         }}
       />

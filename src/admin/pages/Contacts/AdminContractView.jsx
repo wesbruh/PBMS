@@ -18,7 +18,6 @@ export default function AdminContractView() {
 
   useEffect(() => {
     setLoading(true);
-
     if (!contractId || !session) return;
 
     async function fetchContract() {
@@ -32,7 +31,7 @@ export default function AdminContractView() {
         });
 
         if (!response.ok) {
-          console.error("Admin contract does not exist.");
+          console.error("Contract does not exist.");
           setLoading(false);
           return;
         }
@@ -40,7 +39,7 @@ export default function AdminContractView() {
         const data = await response.json();
         setContract(data);
       } catch (error) {
-        console.error("Error fetching admin contract:", error);
+        console.error("Error fetching contract:", error);
         setLoading(false);
       }
     }
@@ -49,8 +48,8 @@ export default function AdminContractView() {
   }, [contractId, session]);
 
   useEffect(() => {
-    if (!contract?.template_id) return;
-
+    if (!contract || !session) return;
+    
     async function fetchContractTemplate() {
       try {
         const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/templates/${contract.template_id}`, {
@@ -63,7 +62,6 @@ export default function AdminContractView() {
 
         if (!response.ok) {
           console.error("Contract template does not exist.");
-          setLoading(false);
           return;
         }
 
@@ -71,18 +69,13 @@ export default function AdminContractView() {
         setContractTemplate(data);
       } catch (error) {
         console.error("Error fetching contract template:", error);
+      } finally {
         setLoading(false);
       }
     }
 
     fetchContractTemplate();
-  }, [contract]);
-
-  useEffect(() => {
-    if (contract && contractTemplate) {
-      setLoading(false);
-    }
-  }, [contract, contractTemplate]);
+  }, [contract, session]);
 
   if (loading) {
     return (

@@ -53,6 +53,43 @@ export default function OfferingsPage() {
 
   useEffect(() => { loadAll(); }, []);
 
+  // mark active contract template for a session type as deleted if referenced by any contracts
+  async function markActiveDelete(st) {
+
+    // find active contract template
+    const { data: activeTemplate, error: activeTemplateError } = await supabase
+      .from("ContractTemplate")
+      .eq("active", true)
+      .eq("session_type_id", st.id)
+      .select()
+      .maybeSingle();
+
+    if (activeTemplateError) throw activeTemplateError;
+
+    if (activeTemplate) {
+      const templateId = activeTemplate.id;
+
+      // check if id has been referenced by any contracts
+      const { data: contractData, error: contractError } = await supabase
+        .from("Contract")
+        .select()
+        .eq("template_id", templateId);
+
+      if (contractError) throw contractError;
+
+      // mark is_deleted as true if it is being referenced
+      // this will allow previous contracts to still be viewed, even if the contract template itself is "deleted"
+      if (contractData) {
+        const { error: updateErr } = await supabase
+          .from("ContractTemplate")
+          .update({ is_deleted: true })
+          .eq("id", templateId);
+
+        if (updateErr) throw updateErr;
+      }
+    }
+  }
+
   // ── Group by category ─────────────────────────────────────────────────────
   // masters: all is_master=true rows (shown as category cards)
   // childrenByCategory: all non-master rows grouped by category name
@@ -77,6 +114,7 @@ export default function OfferingsPage() {
     if (!window.confirm(msg)) return;
 
     try {
+      await markActiveDelete(st);
       if (st.is_master) {
         // select all related session types
         const { data: sessionTypeData, error: sessionTypeError } = await supabase
@@ -111,20 +149,20 @@ export default function OfferingsPage() {
         }
       } else {
         // make all related forms inactive
-        const { error: contractError } = await supabase
+        const { error: cTemplateError } = await supabase
           .from("ContractTemplate")
           .update({ active: false })
           .eq("session_type_id", st.id);
 
-        if (contractError) throw contractError;
+        if (cTemplateError) throw cTemplateError;
 
-        const { error: questionnaireError } = await supabase
+        const { error: qTemplateError } = await supabase
           .from("QuestionnaireTemplate")
           .update({ active: false })
           .eq("session_type_id", st.id);
 
-        if (questionnaireError) throw questionnaireError;
-        
+        if (qTemplateError) throw qTemplateError;
+
         const { error: e } = await supabase
           .from("SessionType").delete().eq("id", st.id);
         if (e) throw e;
@@ -134,6 +172,7 @@ export default function OfferingsPage() {
       alert(`Failed to delete: ${e.message}`);
     }
   }
+
 
   // ── Category card clicked ─────────────────────────────────────────────────
   function handleSelectCategory(master) {
@@ -267,36 +306,36 @@ export default function OfferingsPage() {
                     </button>
                   </div>
 
-                    {/* Grid of all packages (master + children) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {/* Master card */}
+                  {/* Grid of all packages (master + children) */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {/* Master card */}
+                    <SessionTypeCard
+                      st={selectedCategory}
+                      isSelected={false}
+                      showEditControls={true}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                      variant="grid"
+                    />
+
+                    {/* Child packages */}
+                    {categoryChildren.map((child) => (
                       <SessionTypeCard
-                        st={selectedCategory}
+                        key={child.id}
+                        st={child}
                         isSelected={false}
                         showEditControls={true}
                         onEdit={handleEdit}
                         onDelete={handleDelete}
                         variant="grid"
                       />
-
-                      {/* Child packages */}
-                      {categoryChildren.map((child) => (
-                        <SessionTypeCard
-                          key={child.id}
-                          st={child}
-                          isSelected={false}
-                          showEditControls={true}
-                          onEdit={handleEdit}
-                          onDelete={handleDelete}
-                          variant="grid"
-                        />
-                      ))}
-                    </div>
+                    ))}
                   </div>
-                )}
-              </div>
-            )}
-          </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

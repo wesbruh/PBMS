@@ -36,6 +36,7 @@ export default function Forms() {
       const { data: cTemplates, error: cFetchErr } = await supabase
         .from("ContractTemplate")
         .select("*, SessionType:session_type_id(name)")
+        .eq("is_deleted", false)
         .order("session_type_id", { ascending: true });
 
       if (qFetchErr || cFetchErr) throw qFetchErr ?? cFetchErr;
@@ -83,19 +84,100 @@ export default function Forms() {
         if (delErr) throw delErr;
       } else if (template.type === "Contract") {
         // delete the template safely, give success alert
-        const { error: delErr } = await supabase
-          .from("ContractTemplate")
-          .delete()
-          .eq("id", templateId);
 
-        if (delErr) throw delErr;
+        // check if id has been referenced by any contracts
+        const { data: contractData, error: contractError } = await supabase
+          .from("Contract")
+          .select()
+          .eq("template_id", templateId);
+        
+        if (contractError) throw contractError;
+
+        // if it isn't being referenced, safely delete
+        // simply mark is_deleted as true if it is being referenced
+        // this will allow previous contracts to still be viewed, even if the contract template itself is "deleted"
+        if (!contractData) {
+          const { error: delErr } = await supabase
+            .from("ContractTemplate")
+            .delete()
+            .eq("id", templateId);
+          
+            if (delErr) throw delErr;
+        } else {
+          const { error: updateErr } = await supabase
+            .from("ContractTemplate")
+            .update({ is_deleted: true })
+            .eq("id", templateId);
+          
+          if (updateErr) throw updateErr;
+        }
       }
-      
+
       alert(`${templateName} was successfully deleted.`);
 
       loadTemplates();
     } catch (e) {
       alert(`Failed to delete ${templateName}: ${e.message}`);
+    }
+  }
+
+  async function handleDuplicate(templateId) {
+    const template = items.find((t) => t.id === templateId);
+    const templateName = template?.name ?? "Template";
+
+    const payload = {
+      name: `${templateName} Copy`,
+      session_type_id: template?.session_type_id,
+      active: false,
+    }
+
+    try {
+      if (template.type === "Questionnaire") {
+        // duplicate the template safely and its questions
+        const { data: newTemplateData, error: newTemplateError } = await supabase
+          .from("QuestionnaireTemplate")
+          .insert(payload)
+          .select()
+          .single();
+        
+        if (newTemplateError) throw newTemplateError;
+
+        // insert questions as new entries into Questions table to prevent templates referencing same ids
+        const questionsArr = template.schema_json.map((question) => {
+          const { id, ...rest } = question;
+          rest.questionnaire_id = newTemplateData.id;
+          return rest;
+        });
+
+        const { data: schemaJson, error: upsertError } = await supabase
+          .from("Questions")
+          .upsert(questionsArr)
+          .select();
+
+        if (upsertError) throw upsertError;
+
+        const { error: updateError } = await supabase
+          .from("QuestionnaireTemplate")
+          .update({ schema_json: schemaJson })
+          .eq("id", newTemplateData.id);
+        
+        if (updateError) throw updateError;
+
+      } else if (template.type === "Contract") {
+        // duplicate the template safely
+        payload.body = template.body;
+        const { error: copyError } = await supabase
+          .from("ContractTemplate")
+          .insert(payload);
+
+        if (copyError) throw copyError;
+      }
+
+      alert(`${templateName} was successfully duplicated.`);
+
+      loadTemplates();
+    } catch (e) {
+      alert(`Failed to duplicate ${templateName}: ${e.message}`);
     }
   }
 
@@ -162,6 +244,10 @@ export default function Forms() {
             <Trash2 size={18} />
           </button>
           <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDuplicate(row.id);
+            }}
             className="text-green-500 cursor-pointer hover:text-green-900"
             title="Duplicate Template"
           >

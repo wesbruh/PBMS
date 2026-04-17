@@ -3,9 +3,6 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient.js";
 import { useAuth } from "../../../context/AuthContext.jsx"
 
-import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
-import { saveAs } from "file-saver";
-
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import SharedClientDashboard from "../../../components/Dashboard/SharedClientDashboard";
@@ -148,8 +145,6 @@ function ContactView() {
   const [contracts, setContracts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const [downloadingGalleries, setDownloadingGalleries] = useState({});
 
   // check if user exists
   useEffect(() => {
