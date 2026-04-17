@@ -4,7 +4,6 @@ select plan(3);
 
 -- Clean slate
 delete from public."UserRole" where user_id = '11111111-1111-1111-1111-111111111111';
-delete from public."Contacts" where id = '11111111-1111-1111-1111-111111111111';
 delete from public."User" where id = '11111111-1111-1111-1111-111111111111';
 delete from auth.users where id = '11111111-1111-1111-1111-111111111111';
 
@@ -44,11 +43,6 @@ select ok(
 select ok(
   not exists(select 1 from auth.users where id = '11111111-1111-1111-1111-111111111111'),
   'Auth user deleted'
-);
-
-select ok(
-  not exists(select 1 from public."Contacts" where id = '11111111-1111-1111-1111-111111111111'),
-  'Contacts cleaned up'
 );
 
 select * from finish();

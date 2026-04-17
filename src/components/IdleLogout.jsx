@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
  * Logs the user out after a period of inactivity to protect their account.
  * Listens to common activity events and resets a timeout while the user is active.
  */
-export default function IdleLogout({ timeoutMs = 10 * 60 * 1000 }) { // changed to default: 10 minute timeout
+export default function IdleLogout({ timeoutMs = 30 * 60 * 1000 }) { // changed to default: 30 minute timeout
   const { session, user, loading } = useAuth();
   const timerRef = useRef(null);
 
@@ -40,7 +40,7 @@ export default function IdleLogout({ timeoutMs = 10 * 60 * 1000 }) { // changed 
 
         if (!response.ok) {
           const errorData = await response.json();
-          console.error("Failed to mark user inactive:", errorData.error);
+          console.error("Failed to mark user inactive:", errorData?.message || errorData.error);
         }
 
         await supabase.auth.signOut();

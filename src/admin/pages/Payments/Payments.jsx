@@ -1,19 +1,20 @@
 import { useState, useEffect } from "react";
+import { LoaderCircle } from "lucide-react";
 
 import { triggerAdminToast } from "../../../components/AdminNotificationToast.jsx";
 import { useAuth } from "../../../context/AuthContext";
-import { LoaderCircle } from "lucide-react";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import SubtractBalanceModal from "./SubtractBalanceModal.jsx";
+import PaymentDetailsModal from "../../components/shared/PaymentDetailsModal.jsx";
 
 function AdminPayments() {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("All");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [doPageRefresh, setDoPageRefresh] = useState(false);
   const [error, setError] = useState("");
@@ -25,7 +26,7 @@ function AdminPayments() {
       if (!session) return;
       try {
         const res = await fetch(
-          "http://localhost:5001/api/invoice/getInvoiceTableData",
+          `${import.meta.env.VITE_API_URL}/api/invoice/getInvoiceTableData`,
           {
             method: "GET",
             headers: {
@@ -34,14 +35,12 @@ function AdminPayments() {
             },
           },
         );
-        //console.log("Response status:", res.status);
 
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
         }
 
         const data = await res.json();
-        //console.log("Fetched invoice data:", data);
         setInvoices(data);
       } catch (err) {
         console.error("Fetch error:", err);
@@ -59,7 +58,7 @@ function AdminPayments() {
         setLoading(true);
         try {
           const res = await fetch(
-            "http://localhost:5001/api/invoice/getInvoiceTableData",
+            `${import.meta.env.VITE_API_URL}/api/invoice/getInvoiceTableData`,
             {
               method: "GET",
               headers: {
@@ -84,7 +83,7 @@ function AdminPayments() {
   const downloadInvoicePdf = async (invoice_id) => {
     try {
       const pdfResponse = await fetch(
-        `http://localhost:5001/api/invoice/${invoice_id}/pdf`,
+        `${import.meta.env.VITE_API_URL}/api/invoice/${invoice_id}/pdf`,
         {
           method: "GET",
           headers: {
@@ -114,7 +113,7 @@ function AdminPayments() {
   const managePayment = async (invoice_id) => {
     try {
       const res = await fetch(
-        `http://localhost:5001/api/invoice/getInvoiceByID?term=${invoice_id}`,
+        `${import.meta.env.VITE_API_URL}/api/invoice/getInvoiceByID?term=${invoice_id}`,
         {
           method: "GET",
           headers: {
@@ -146,7 +145,7 @@ function AdminPayments() {
 
     try {
       const response = await fetch(
-        `http://localhost:5001/api/invoice/${selectedInvoice.id}/reduceRemainingInvoiceBalance`,
+        `${import.meta.env.VITE_API_URL}/api/invoice/${selectedInvoice.id}/reduceRemainingInvoiceBalance`,
         {
           method: "POST",
           headers: {
@@ -159,11 +158,9 @@ function AdminPayments() {
           }),
         },
       );
-
+      
       if (response.ok) {
         alert("Balance updated successfully");
-        //console.log("Balance updated successfully");
-        // Trigger refresh to show updated data
         setDoPageRefresh(true);
       } else {
         const errorData = await response.json();
@@ -174,31 +171,49 @@ function AdminPayments() {
     }
   };
 
-  const today = new Date();
+  const tabs = new Set(["Unpaid", "Paid", "Overdue", "Cancelled"]);
+  const tabFilter = {
+    dataType: "invoices",
+    tabs,
+    tabFilterFn: (row, selectedTab) => {
+      const status = (row.status || "");
+      if (selectedTab === "All") return true;
+      if (selectedTab === "Overdue") {
+        const due_date = row?.due_date;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-  const filteredInvoices = invoices.filter((invoice) => {
-    if (activeTab === "All") return true;
+        const isOverdue =
+          status !== "Paid" && status !== "Cancelled" &&
+          row?.due_date &&
+          new Date(due_date) <= today;
 
-    if (activeTab === "Paid") {
-      return invoice.status === "Paid";
+        return isOverdue ?? false;
+      }
+
+      return selectedTab === status;
     }
-
-    if (activeTab === "Pending") {
-      return invoice.status === "Pending";
-    }
-
-    if (activeTab === "Overdue") {
-      return (
-        invoice.status !== "Paid" &&
-        invoice.due_date &&
-        new Date(invoice.due_date) < today
-      );
-    }
-
-    return true;
-  });
+  }
 
   const tablePaymentColumns = [
+    {
+      key: 'details',
+      label: 'Details',
+      render: (_, row) => {
+        return (
+          <button
+            type="button"
+            onClick={() => {
+              setShowDetailsModal(true);
+              setSelectedInvoice(row)
+            }}
+            className="hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded-md text-sm font-semibold border"
+          >
+            View
+          </button>
+        )
+      }
+    },
     { key: "invoice_number", label: "Invoice #", sortable: true },
     {
       key: "issue_date",
@@ -217,10 +232,13 @@ function AdminPayments() {
       label: "Status",
       sortable: true,
       render: (value, row) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
         const isOverdue =
-          value !== "Paid" &&
-          row.due_date &&
-          new Date(row.due_date) < new Date();
+          value !== "Paid" && value !== "Cancelled" &&
+          row?.due_date &&
+          new Date(row.due_date) <= today;
 
         if (isOverdue) {
           return (
@@ -260,10 +278,6 @@ function AdminPayments() {
         return (
           <button
             onClick={() => {
-              // console.log(
-              //   "Here is the id being passed for invoice_id:",
-              //   row.id,
-              // );
               downloadInvoicePdf(row.id);
             }}
             className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
@@ -277,13 +291,9 @@ function AdminPayments() {
       key: "manual_payment",
       label: "Manual Payment",
       render: (_, row) => {
-        return row.remaining > 0 ? (
+        return row.remaining > 0 && row.status !== "Cancelled" ? (
           <button
             onClick={() => {
-              // console.log(
-              //   "Here is the id being passed for invoice_id:",
-              //   row.id,
-              // );
               managePayment(row.id);
             }}
             className="px-3 py-1 rounded-md text-sm font-medium bg-gray-100 text-blue-800 hover:bg-gray-200 transition"
@@ -298,9 +308,9 @@ function AdminPayments() {
   ];
 
   return (
-    <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+    <div className="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
       {/* SideBar */}
-      <div className="flex min-w-50 overflow-y-auto">
+      <div className="flex md:min-w-50">
         <Sidebar />
       </div>
 
@@ -308,41 +318,42 @@ function AdminPayments() {
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
           <div className="flex w-full rounded-lg overflow-y-auto">
-          <div className="relative flex flex-col bg-[#fcfcfc] p-6 w-full rounded-lg shadow-inner">
-            {/*Header*/}
+            <div className="relative flex flex-col bg-[#fcfcfc] p-6 w-full rounded-lg shadow-inner">
+              {/*Header*/}
 
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold text-gray-900">
-                Payments &amp; Invoices
-              </h1>
-              <p className="text-sm text-gray-600 mt-0.5">
-                View and manage all client payments.
-              </p>
-            </div>
+              <div className="mb-6">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Payments &amp; Invoices
+                </h1>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  View and manage all client payments.
+                </p>
+              </div>
 
-            {/* Table */}
-            {loading ? (
-              <div className="flex flex-col items-center justify-center grow text-gray-500">
-                <LoaderCircle
-                  className="text-brown animate-spin mb-2"
-                  size={32}
+              {/* Table */}
+              {loading ? (
+                <div className="flex flex-col items-center justify-center grow text-gray-500">
+                  <LoaderCircle
+                    className="text-brown animate-spin mb-2"
+                    size={32}
+                  />
+                  <p className="text-sm">Loading payments...</p>
+                </div>
+              ) : error ? (
+                <div className="grow flex flex-col text-center items-center justify-center">
+                  <p className="text-sm text-red-600 mb-2">{error}</p>
+                </div>
+              ) : (
+                <Table
+                  columns={tablePaymentColumns}
+                  data={invoices}
+                  searchable={false}
+                  searchPlaceholder="Search Payments by Client Name..."
+                  rowsPerPage={7}
+                  tabFilter={tabFilter}
                 />
-                <p className="text-sm">Loading payments...</p>
-              </div>
-            ) : error ? (
-              <div className="grow flex flex-col text-center items-center justify-center">
-                <p className="text-sm text-red-600 mb-2">{error}</p>
-              </div>
-            ) : (
-              <Table
-                columns={tablePaymentColumns}
-                data={filteredInvoices}
-                searchable={false}
-                searchPlaceholder="Search Payments by Client Name..."
-                rowsPerPage={7}
-              />
-            )}
-          </div>
+              )}
+            </div>
           </div>
         </Frame>
       </div>
@@ -353,6 +364,15 @@ function AdminPayments() {
         onConfirm={handleBalanceReduction}
         onRefresh={() => setDoPageRefresh(true)}
       />
+      {showDetailsModal && selectedInvoice?.id && (
+        <PaymentDetailsModal
+          invoiceId={selectedInvoice?.id}
+          onClose={() => {
+            setShowDetailsModal(false);
+            setSelectedInvoice(null);
+          }}
+        />
+      )}
     </div>
   );
 }

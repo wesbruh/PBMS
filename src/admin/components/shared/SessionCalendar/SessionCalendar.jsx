@@ -93,7 +93,7 @@ function SessionCalendar() {
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex flex-col h-full overflow-hidden ">
+    <div className="bg-white border border-gray-100 rounded-xl p-3 md:mt-3 shadow-sm flex flex-col h-full md:h-[75%] overflow-hidden ">
       {/* card header */}
       <div className="flex flex-wrap items-start justify-between"> 
         <div className="min-w-0">
@@ -117,10 +117,10 @@ function SessionCalendar() {
 
       {/* legend  */}
       <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 ">
-        <span className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-amber-500 inline-block " />
+        {/* <span className="w-1 h-1 md:w-2 md:h-2 rounded-full bg-amber-500 inline-block " />
         <span className="text-xs text-gray-400 truncate">
           Confirmed session
-        </span>
+        </span> */}
         <span className="text-xs text-gray-500 text-decoration underline font-bold truncate">Underlined date is Today.</span>
       </div>
 
@@ -152,11 +152,11 @@ function SessionCalendar() {
               root: `${defaultClassNames.root} text-center w-full border border-gray-100 rounded-xl shadow-md overflow-x-auto`,
               today: "",
               selected: "!bg-amber-200 rounded-xl transition-all",
-              months: "text-xs md:text-sm text-center",
-              month: "text-xs md:text-sm text-center",
-              month_grid: "w-full text-xs md:text-sm ",
+              months: "text-xs md:text-base text-center",
+              month: "text-xs md:text-base text-center",
+              month_grid: "w-full text-xs md:text-base",
               chevron: "fill-amber-500 hover:fill-amber-700",
-              day: "text-center text-xs md:text-sm lg:text-lg",
+              day: "text-center text-xs md:text-base",
               weekday: "text-center",
               day_button: "p-2 w-full cursor-pointer"
             }}

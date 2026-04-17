@@ -72,7 +72,7 @@ export default function AuthCallback() {
       last_login_at: new Date().toISOString(),
     };
 
-    const response = await fetch(`http://localhost:5001/api/profile/${userId}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${userId}`, {
       method: "PATCH",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,

@@ -1,7 +1,7 @@
 // src/components/SessionTypeCard/SessionTypeCard.jsx
 
 import { useState } from "react";
-import { Clock, Image } from "lucide-react";
+import { Clock, Image, PencilLine, Trash2 } from "lucide-react";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = "session-images";
@@ -60,7 +60,7 @@ export default function SessionTypeCard({
   if (variant === "grid") {
     return (
       <div
-        //onClick={handleClick}
+        onClick={handleClick}
         className={`relative group rounded-xl border overflow-hidden bg-white shadow-sm transition-all
           ${isOnlyOption
             ? "border-[#7E4C3C]/30 cursor-default"
@@ -73,7 +73,7 @@ export default function SessionTypeCard({
       >
         {/* Admin Controls (top-right overlay) */}
         {showEditControls && (
-          <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-2 right-2 z-10 flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all">
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -81,8 +81,9 @@ export default function SessionTypeCard({
               }}
               className="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-100 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm cursor-pointer transition-colors"
               type="button"
+              title="Edit Session Type"
             >
-              Edit
+              <PencilLine size={16} />
             </button>
             <button
               onClick={(e) => {
@@ -91,8 +92,9 @@ export default function SessionTypeCard({
               }}
               className="px-2 py-1 rounded-md bg-white/95 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-medium shadow-sm cursor-pointer transition-colors"
               type="button"
+              title="Delete Session Type"
             >
-              Delete
+              <Trash2 size={16} />
             </button>
           </div>
         )}
@@ -109,23 +111,12 @@ export default function SessionTypeCard({
           ) : (
             <div className="h-full w-full flex items-center justify-center">
               <div className="text-center text-neutral-300">
-                <span className="flex flex-col items-center text-md"> <Image size={32} /> No image </span>
-                {/* <svg className="mx-auto h-12 w-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg> */}
-                {/* <span className="text-sm">No image</span> */}
+                <span className="flex flex-col items-center text-md"> 
+                  <Image size={32} /> 
+                  No image </span>
               </div>
             </div>
           )}
-          
-          {/* Selected indicator overlay */}
-          {/* {!isOnlyOption && isSelected && (
-            <div className=" border border-red-500 absolute top-3 right-3 h-7 w-7 rounded-full bg-[#ff0000] flex items-center justify-center shadow-lg">
-              <svg className="border border-red-500 h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-          )} */}
         </div>
 
         {/* Content Section */}
@@ -202,20 +193,22 @@ export default function SessionTypeCard({
       >
         {/* Admin Controls */}
         {showEditControls && (
-          <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-3 right-3 z-10 flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all">
             <button
               onClick={handleEdit}
               className="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-50 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm "
               type="button"
+              title="Edit Session Type"
             >
-              Edit
+              <PencilLine size={16} />
             </button>
             <button
               onClick={handleDelete}
               className="px-2 py-1 rounded-md bg-white/95 hover:bg-red-50 border border-red-200 text-red-600 text-xs font-medium shadow-sm"
               type="button"
+              title="Delete Session Type"
             >
-              Delete
+              <Trash2 size={16} />
             </button>
           </div>
         )}

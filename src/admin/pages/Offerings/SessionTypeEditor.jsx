@@ -93,10 +93,10 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
   // bullet ids, useSortable needs an id to work properly
   const bulletIdCounter = useRef(0);
   const makeBulletId = () => `b-${++bulletIdCounter.current}`;
-  const [bulletPoints, setBulletPoints] = useState([{ id: makeBulletId(), text: "" },]); 
+  const [bulletPoints, setBulletPoints] = useState([{ id: makeBulletId(), text: "" },]);
 
   const [displayOrder, setDisplayOrder] = useState(0);
-  const [active, setActive] = useState(true);
+  const [active, setActive] = useState(false);
   const [isMaster, setIsMaster] = useState(isMasterDefault);
   const [initialState, setInitialState] = useState(null);
 
@@ -157,7 +157,7 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
       durationMinutes !== initialState.durationMinutes ||
       displayOrder !== initialState.displayOrder ||
       JSON.stringify(bulletPoints.map((b) => b.text)) !==
-        JSON.stringify(initialState.bulletPoints.map((b) => b.text)) ||
+      JSON.stringify(initialState.bulletPoints.map((b) => b.text)) ||
       isMaster !== initialState.isMaster ||
       active !== initialState.active ||
       imagePreview !== initialState.imagePreview);
@@ -211,13 +211,13 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
         setBulletPoints(
           Array.isArray(data.bullet_points) && data.bullet_points.length > 0
             ? data.bullet_points.map((text) => ({
-                id: makeBulletId(),
-                text,
-              }))
+              id: makeBulletId(),
+              text,
+            }))
             : [{ id: makeBulletId(), text: "" }],
         );
         setDisplayOrder(data.display_order ?? 0);
-        setActive(data.active ?? true);
+        setActive(data.active ?? false);
         setIsMaster(data.is_master ?? false);
         setExistingImagePath(data.image_path ?? null);
         if (data.image_path) setImagePreview(getPublicUrl(data.image_path));
@@ -272,15 +272,50 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
     return filePath;
   }
 
-  // ── Save ──────────────────────────────────────────────────────────────────
-  async function handleSave() {
-    setError("");
-    if (!name.trim()) {
-      setError("Name is required.");
-      return;
+  async function updateActive(value) {
+    try {
+      // check if session type has an active contract and questionnaire first
+      const { error: contractError } = await supabase
+        .from("ContractTemplate")
+        .select()
+        .eq("session_type_id", id)
+        .eq("active", true)
+        .single();
+
+      if (contractError) throw new Error("No active contract found. Save this and create one for this session type first!")
+
+      const { error: questionnaireError } = await supabase
+        .from("QuestionnaireTemplate")
+        .select()
+        .eq("session_type_id", id)
+        .eq("active", true)
+        .single();
+
+      if (questionnaireError) throw new Error("No active questionnaire found. Save this and create one for this session type first!")
+
+      setActive(value);
+    } catch (e) {
+      setError(e.message);
+      console.error(e.message ?? "Could not set SessionType active.");
     }
-    if (!category.trim()) {
-      setError("Category is required.");
+  }
+
+  function validate() {
+    if (!name.trim()) return "Name is required.";
+    if (!category.trim()) return "Category is required.";
+    if (!basePrice) return "Base Price is required.";
+    if (!durationMinutes) return "Duration (Minutes) is required.";
+    else if ((durationMinutes % 15) !== 0) return "Duration (Minutes) must be a multiple of 15 minutes.";
+    if (!description.trim()) return "Description is required."
+    return "";
+  }
+
+  // ── Save ──────────────────────────────────────────────────────────────────
+  async function handleSave()  {
+    setError("");
+    const msg = validate();
+    if (msg) {
+      setError(msg);
       return;
     }
 
@@ -402,21 +437,22 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
           <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
           <p className="text-sm">Loading session type editor...</p>
         </div>
-      ) : error ? (
-        <div className="grow flex flex-col text-center items-center justify-center">
-          <p className="text-sm text-red-600 mb-2">{error}</p>
-        </div>
       ) : (
-        <div className="grid grid-cols-1 space-y-4 md:grid-cols-2 md:gap-10 max-w-2xl md:max-w-full">
-          <div className="min-h-0">
-            {/* Image upload */}
-            <div>
-              <label className={imgCls}>
-                {isMaster ? "Category Image" : "Session Type Image"}
-              </label>
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className={`relative flex items-center justify-center rounded-lg border-2 border-dashed cursor-pointer transition hover:border-[#AB8C4B]/60 hover:bg-gray-50
+        <div>
+          {error && (
+            <div className="grow flex flex-col text-center items-center justify-center">
+              <p className="text-sm text-red-600 mb-2">{error}</p>
+            </div>)}
+          <div className="grid grid-cols-1 space-y-4 md:grid-cols-2 md:gap-10 max-w-2xl md:max-w-full">
+            <div className="min-h-0">
+              {/* Image upload */}
+              <div>
+                <label className={imgCls}>
+                  {isMaster ? "Category Image" : "Session Type Image"}
+                </label>
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`relative flex items-center justify-center rounded-lg border-2 border-dashed cursor-pointer transition hover:border-[#AB8C4B]/60 hover:bg-gray-50
                     ${imagePreview ? "border-transparent overflow-hidden" : "border-gray-300 h-40"}`}
               >
                 {imagePreview ? (
@@ -433,6 +469,7 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
                         clearImage();
                       }}
                       className="absolute top-2 right-2 bg-white/95 hover:bg-red-100 rounded-full p-1"
+                      title="Remove Image"
                     >
                       <ImageMinus
                         size={18}
@@ -457,240 +494,241 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
               />
             </div>
 
-            {/* Name */}
-            <div>
-              <label className={labelCls}>
-                {isMaster ? "Category Name *" : "Session Type Name *"}
-              </label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className={inputCls}
-                placeholder={isMaster ? "e.g. Weddings" : "e.g. Ivory"}
-              />
-              {isMaster && (
-                <p className="text-xs text-gray-400 mt-1">
-                  This name is shown as the category card on the booking page.
-                </p>
-              )}
-            </div>
-
-            {/* Category — dropdown of existing + free-type for new */}
-            <div>
-              <label className={labelCls}>Category *</label>
-              {isMaster ? (
-                // Master = defines a new or renamed category — free text
+              {/* Name */}
+              <div>
+                <label className={labelCls}>
+                  {isMaster ? "Category Name *" : "Session Type Name *"}
+                </label>
                 <input
                   type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className={inputCls}
-                  placeholder="e.g. Weddings"
+                  placeholder={isMaster ? "e.g. Weddings" : "e.g. Ivory"}
                 />
-              ) : (
-                // Child = must belong to an existing category
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className={inputCls}
-                >
-                  <option value="" disabled>
-                    Select a category
-                  </option>
-                  {existingCategories.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <p className="text-xs text-gray-400 mb-2">
-                {isMaster
-                  ? "The category groups related session types together (e.g. all Wedding packages)."
-                  : "The category this session type belongs to."}
-              </p>
-            </div>
-
-            {/* Description */}
-            <div>
-              <label className={labelCls}>Description</label>
-              <textarea
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className={inputCls}
-                placeholder="Short description shown to clients"
-              />
-            </div>
-          </div>
-          {/* RIGHT COLUMN. on bigger screens */}
-          {/* Price */}
-          <div className="space-y-5 mt-5 md:mt-0 md:overflow-y-auto md:min-h-0 md:pr-2 border border-gray-200 rounded-lg p-3">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Base Price ($)</label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={basePrice}
-                  onChange={(e) => setBasePrice(e.target.value)}
-                  className={inputCls}
-                  placeholder="375.00"
-                />
-              </div>
-              <div>
-                <label className={labelCls}>Price Display Label</label>
-                <input
-                  type="text"
-                  value={priceLabel}
-                  onChange={(e) => setPriceLabel(e.target.value)}
-                  className={inputCls}
-                  placeholder="FROM: $375"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Overrides price number if set
-                </p>
-              </div>
-            </div>
-
-            {/* Duration + Order */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className={labelCls}>Duration (minutes)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={durationMinutes}
-                  onChange={(e) => setDurationMinutes(e.target.value)}
-                  className={inputCls}
-                  placeholder="60"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Used to block the time slot on booking
-                </p>
-              </div>
-              <div>
-                <label className={labelCls}>Display Order</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={displayOrder}
-                  onChange={(e) => setDisplayOrder(e.target.value)}
-                  className={inputCls}
-                  placeholder="0"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  Lower = shown first
-                </p>
-              </div>
-            </div>
-
-            {/* Bullet points */}
-            <div>
-              <label className={labelCls}>What's Included</label>
-              <DragDropProvider
-                onDragEnd={(event) => {
-                  if (event.canceled) return;
-                  const { source, target } = event.operation;
-                  if (!target || source.id === target.id) return;
-
-                  const oldIndex = bulletPoints.findIndex(
-                    (b) => b.id === source.id,
-                  );
-                  const newIndex = bulletPoints.findIndex(
-                    (b) => b.id === target.id,
-                  );
-                  if (oldIndex === -1 || newIndex === -1) return;
-
-                  const reordered = [...bulletPoints];
-                  const [moved] = reordered.splice(oldIndex, 1);
-                  reordered.splice(newIndex, 0, moved);
-                  setBulletPoints(reordered);
-                }}
-              >
-                <div className="space-y-2">
-                  {bulletPoints.map((bullet, i) => (
-                    <SortableBullet
-                      key={bullet.id}
-                      id={bullet.id}
-                      index={i}
-                      value={bullet.text}
-                      onChange={(text) => updateBullet(i, text)}
-                      onRemove={() => removeBullet(i)}
-                      canRemove={bulletPoints.length > 1}
-                      placeholder={`e.g. ${["1 Hour Coverage", "35+ edited photos", "Full Online Gallery"][i % 3]}`}
-                      inputCls={inputCls}
-                    />
-                    // {/* <div key={i} className="flex gap-2 items-center">
-                    //   <span className="text-gray-300">
-                    //     <GripVertical size={14} />
-                    //   </span>
-                    //   <input
-                    //     type="text"
-                    //     value={pt}
-                    //     onChange={(e) => updateBullet(i, e.target.value)}
-                    //     className={`${inputCls} flex-1`}
-                    //     placeholder={`e.g. ${["1 hour", "35+ edited images", "Online gallery", "Location guidance"][i % 4]}`}
-                    //   />
-                    //   <button
-                    //     type="button"
-                    //     onClick={() => removeBullet(i)}
-                    //     disabled={bulletPoints.length === 1}
-                    //     className="p-1 rounded hover:bg-red-50 disabled:opacity-30"
-                    //   >
-                    //     <Trash2 size={13} className="text-red-400" />
-                    //   </button>
-                    // </div> */}
-                  ))}
-                </div>
-              </DragDropProvider>
-              <button
-                type="button"
-                onClick={addBullet}
-                className="mt-2 flex items-center gap-1 text-xs text-[#AB8C4B] hover:text-[#725e32] underline cursor-pointer"
-              >
-                <Plus size={16} /> Add bullet point
-              </button>
-            </div>
-
-            {/* Is master toggle — only relevant when editing (not creating, where it's pre-set) */}
-            {isEdit && (
-              <div className="flex items-start gap-3 rounded-lg border border-[#AB8C4B]/30 bg-[#AB8C4B]/5 p-4">
-                <input
-                  id="is-master"
-                  type="checkbox"
-                  checked={isMaster}
-                  onChange={(e) => setIsMaster(e.target.checked)}
-                  disabled={initialState?.isMaster === true}
-                  className="h-4 w-4 mt-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-                />
-                <label htmlFor="is-master" className="text-sm">
-                  <span className="font-medium">
-                    Category representative (master)
-                  </span>
-                  <p className="text-sm text-gray-500 mt-0.5">
-                    The master is shown as the category card on the booking
-                    page. Its image and name represent the entire category. Only
-                    one session type per category can be the master.
+                {isMaster && (
+                  <p className="text-xs text-gray-400 mt-1">
+                    This name is shown as the category card on the booking page.
                   </p>
+                )}
+              </div>
+
+              {/* Category — dropdown of existing + free-type for new */}
+              <div>
+                <label className={labelCls}>Category *</label>
+                {isMaster ? (
+                  // Master = defines a new or renamed category — free text
+                  <input
+                    type="text"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className={inputCls}
+                    placeholder="e.g. Weddings"
+                  />
+                ) : (
+                  // Child = must belong to an existing category
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="" disabled>
+                      Select a category
+                    </option>
+                    {existingCategories.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <p className="text-xs text-gray-400 mb-2">
+                  {isMaster
+                    ? "The category groups related session types together (e.g. all Wedding packages)."
+                    : "The category this session type belongs to."}
+                </p>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className={labelCls}>Description *</label>
+                <textarea
+                  rows={3}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className={inputCls}
+                  placeholder="Short description shown to clients"
+                />
+              </div>
+            </div>
+            {/* RIGHT COLUMN. on bigger screens */}
+            {/* Price */}
+            <div className="space-y-5 mt-5 md:mt-0 md:overflow-y-auto md:min-h-0 md:pr-2 border border-gray-200 rounded-lg p-3">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Base Price ($) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={basePrice}
+                    onChange={(e) => setBasePrice(e.target.value)}
+                    className={inputCls}
+                    placeholder="375.00"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Price Display Label</label>
+                  <input
+                    type="text"
+                    value={priceLabel}
+                    onChange={(e) => setPriceLabel(e.target.value)}
+                    className={inputCls}
+                    placeholder="FROM: $375"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Overrides price number if set
+                  </p>
+                </div>
+              </div>
+
+              {/* Duration + Order */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className={labelCls}>Duration (minutes) *</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={durationMinutes}
+                    onChange={(e) => setDurationMinutes(e.target.value)}
+                    className={inputCls}
+                    placeholder="60"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Used to block the time slot on booking
+                  </p>
+                </div>
+                <div>
+                  <label className={labelCls}>Display Order</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={displayOrder}
+                    onChange={(e) => setDisplayOrder(e.target.value)}
+                    className={inputCls}
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Lower = shown first
+                  </p>
+                </div>
+              </div>
+
+              {/* Bullet points */}
+              <div>
+                <label className={labelCls}>What's Included</label>
+                <DragDropProvider
+                  onDragEnd={(event) => {
+                    if (event.canceled) return;
+                    const { source, target } = event.operation;
+                    if (!target || source.id === target.id) return;
+
+                    const oldIndex = bulletPoints.findIndex(
+                      (b) => b.id === source.id,
+                    );
+                    const newIndex = bulletPoints.findIndex(
+                      (b) => b.id === target.id,
+                    );
+                    if (oldIndex === -1 || newIndex === -1) return;
+
+                    const reordered = [...bulletPoints];
+                    const [moved] = reordered.splice(oldIndex, 1);
+                    reordered.splice(newIndex, 0, moved);
+                    setBulletPoints(reordered);
+                  }}
+                >
+                  <div className="space-y-2">
+                    {bulletPoints.map((bullet, i) => (
+                      <SortableBullet
+                        key={bullet.id}
+                        id={bullet.id}
+                        index={i}
+                        value={bullet.text}
+                        onChange={(text) => updateBullet(i, text)}
+                        onRemove={() => removeBullet(i)}
+                        canRemove={bulletPoints.length > 1}
+                        placeholder={`e.g. ${["1 Hour Coverage", "35+ edited photos", "Full Online Gallery"][i % 3]}`}
+                        inputCls={inputCls}
+                      />
+                      // {/* <div key={i} className="flex gap-2 items-center">
+                      //   <span className="text-gray-300">
+                      //     <GripVertical size={14} />
+                      //   </span>
+                      //   <input
+                      //     type="text"
+                      //     value={pt}
+                      //     onChange={(e) => updateBullet(i, e.target.value)}
+                      //     className={`${inputCls} flex-1`}
+                      //     placeholder={`e.g. ${["1 hour", "35+ edited images", "Online gallery", "Location guidance"][i % 4]}`}
+                      //   />
+                      //   <button
+                      //     type="button"
+                      //     onClick={() => removeBullet(i)}
+                      //     disabled={bulletPoints.length === 1}
+                      //     className="p-1 rounded hover:bg-red-50 disabled:opacity-30"
+                      //   >
+                      //     <Trash2 size={13} className="text-red-400" />
+                      //   </button>
+                      // </div> */}
+                    ))}
+                  </div>
+                </DragDropProvider>
+                <button
+                  type="button"
+                  onClick={addBullet}
+                  className="mt-2 flex items-center gap-1 text-xs text-[#AB8C4B] hover:text-[#725e32] underline cursor-pointer"
+                >
+                  <Plus size={16} /> Add bullet point
+                </button>
+              </div>
+
+              {/* Is master toggle — only relevant when editing (not creating, where it's pre-set) */}
+              {isEdit && (
+                <div className="flex items-start gap-3 rounded-lg border border-[#AB8C4B]/30 bg-[#AB8C4B]/5 p-4">
+                  <input
+                    id="is-master"
+                    type="checkbox"
+                    checked={isMaster}
+                    onChange={(e) => setIsMaster(e.target.checked)}
+                    disabled={initialState?.isMaster === true}
+                    className="h-4 w-4 mt-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  />
+                  <label htmlFor="is-master" className="text-sm">
+                    <span className="font-medium">
+                      Category representative (master)
+                    </span>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      The master is shown as the category card on the booking
+                      page. Its image and name represent the entire category. Only
+                      one session type per category can be the master.
+                    </p>
+                  </label>
+                </div>
+              )}
+
+              {/* Active toggle */}
+              <div className="flex items-center gap-3 pt-2">
+                <input
+                  id="active-toggle"
+                  type="checkbox"
+                  checked={active}
+                  onChange={(e) => updateActive(e.target.checked)}
+                  className="h-4 w-4"
+                />
+                <label htmlFor="active-toggle" className="text-md">
+                  Visible to clients (active)
                 </label>
               </div>
-            )}
-
-            {/* Active toggle */}
-            <div className="flex items-center gap-3 pt-2">
-              <input
-                id="active-toggle"
-                type="checkbox"
-                checked={active}
-                onChange={(e) => setActive(e.target.checked)}
-                className="h-4 w-4"
-              />
-              <label htmlFor="active-toggle" className="text-md">
-                Visible to clients (active)
-              </label>
             </div>
           </div>
         </div>

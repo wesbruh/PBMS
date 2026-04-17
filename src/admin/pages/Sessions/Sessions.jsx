@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../../../lib/supabaseClient.js"
 import { useAuth } from "../../../context/AuthContext.jsx"
+import { LoaderCircle } from "lucide-react";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import SessionDetailsModal from "../../components/shared/SessionDetailsModal";
-import { X, LoaderCircle } from "lucide-react";
 
 // constants for invoice generation logic
 const DEPOSIT_PERCENTAGE = 0.05;
@@ -15,9 +15,21 @@ function Sessions() {
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSessionId, setSelectedSessionId] = useState(null);
+  const [pendingSessions, setPendingSessions] = useState([]);
 
   // call useAuth for Supabase session
   const { session } = useAuth();
+
+  const tabs = new Set(["Pending", "Confirmed", "Completed", "Cancelled"]);
+  const tabFilter = {
+    dataType: "sessions",
+    tabs,
+    tabFilterFn: (row, selectedTabs) => {
+      const status = (row.status || "");
+      return selectedTabs.includes("All") || selectedTabs.includes(status);
+    },
+    type: "checkbox"
+  };
 
   useEffect(() => {
     if (!session) return;
@@ -26,7 +38,7 @@ function Sessions() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch("http://localhost:5001/api/sessions", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -41,7 +53,20 @@ function Sessions() {
         client_name: `${row.User?.first_name || ''} ${row.User?.last_name || ''}`.trim(),
         session_type: row.SessionType?.name || 'N/A',
       }));
+
+      const now = new Date();
+      flattened.forEach((session) => {
+        if (session.status === "Confirmed" && new Date(session.end_at) < now) {
+          handleUpdate(session.id, "status", "Completed");
+          session.status = "Completed";
+        } else if (session.status === "Pending" && new Date(session.start_at) < now) {
+          cancelSession(session.id);
+          session.status = "Cancelled";
+        }
+      });
+
       setSessions(flattened);
+      setPendingSessions(flattened.filter(s => s.status === "Pending"));
       setLoading(false);
     } catch (error) {
       console.error("Error fetching sessions:", error);
@@ -61,7 +86,7 @@ function Sessions() {
   const getPaymentIntent = async (checkoutSessionId) => {
     if (!checkoutSessionId) return { status: null, paymentIntent: null }
     try {
-      const csResponse = await fetch(`http://localhost:5001/api/checkout/${checkoutSessionId}`, {
+      const csResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -85,8 +110,7 @@ function Sessions() {
       const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
 
       if (!status) throw new Error("Failed to retrieve payment intent");
-
-      const response = await fetch(`http://localhost:5001/api/intent/capture`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/capture`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -121,7 +145,7 @@ function Sessions() {
         `${(date.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
         `${date.getDate().toString().padStart(2, '0')}`;
 
-      const response = await fetch(`http://localhost:5001/api/invoice/confirm/${invoiceId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/confirm/${invoiceId}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -140,41 +164,9 @@ function Sessions() {
     }
   };
 
-  const downloadInvoicePdf = async (session_id) => {
-    try {
-      const { data: invoiceData, error: invoiceError } = await supabase
-        .from("Invoice")
-        .select()
-        .eq("session_id", session_id)
-        .single();
-
-      if (invoiceError) throw new Error("Invoice not found.")
-
-      const pdfResponse = await fetch(`http://localhost:5001/api/invoice/${invoiceData.id}/pdf`, {
-        method: "GET",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
-        },
-      });
-
-      const blob = await pdfResponse.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-
-      a.href = url;
-      a.download = `PBMSInvoice.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-    } catch (error) {
-      console.error("Failed", error);
-    }
-  };
-
   const confirmSession = async (sessionId) => {
     // ensure session exists and map session id to invoice id
-    const mapResponse = await fetch(`http://localhost:5001/api/invoice/${sessionId}`, {
+    const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -199,7 +191,7 @@ function Sessions() {
 
     capturePayment(checkoutSessionId);
     updateInvoice(sessionId, invoiceId);
-    handleUpdate(sessionId, "status", "Confirmed");
+    confirmUpdates(sessionId, "Confirmed");
   };
 
   const uncapturePayment = async (checkoutSessionId) => {
@@ -217,7 +209,7 @@ function Sessions() {
 
       if (!status) throw new Error("Failed to retrieve payment intent");
 
-      const response = await fetch(`http://localhost:5001/api/intent/uncapture`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/uncapture`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -237,9 +229,7 @@ function Sessions() {
       const { error } = await supabase
         .from("Invoice")
         .update({ status: "Cancelled" })
-        .eq("id", invoiceId)
-        .select()
-        .single();
+        .eq("id", invoiceId);
 
       if (error) throw error;
     } catch (error) {
@@ -247,9 +237,9 @@ function Sessions() {
     }
   };
 
-  const cancelSession = async (sessionId) => {
+  const cancelSession = async (sessionId, status) => {
     // ensure session exists and map session id to invoice id
-    const mapResponse = await fetch(`http://localhost:5001/api/invoice/${sessionId}`, {
+    const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -262,22 +252,43 @@ function Sessions() {
     const mapData = await mapResponse.json();
     const { id: invoiceId } = mapData;
 
-    const { data, error } = await supabase.from("Payment")
-      .select("provider_payment_id")
-      .eq("invoice_id", invoiceId)
-      .eq("type", "Deposit")
-      .single()
+    if (status === "Confirmed") {
+      cancelInvoice(invoiceId);
+      confirmUpdates(sessionId, "Cancelled");
+    } else {
+      const { data, error } = await supabase.from("Payment")
+        .select("provider_payment_id")
+        .eq("invoice_id", invoiceId)
+        .eq("type", "Deposit")
+        .single()
 
-    if (error) throw error;
+      if (error) throw error;
 
-    const { provider_payment_id: checkoutSessionId } = data;
+      const { provider_payment_id: checkoutSessionId } = data;
 
-    uncapturePayment(checkoutSessionId);
-    cancelInvoice(invoiceId);
-    handleUpdate(sessionId, "status", "Cancelled");
+      uncapturePayment(checkoutSessionId);
+
+      // delete session from db and remove from local state since it was never confirmed and thus should not be kept as a record
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) throw new Error("Failed to delete session");
+
+        setSessions((prev) => prev.filter(s => s.id !== sessionId));
+        setPendingSessions((prev) => prev.filter(s => s.id !== sessionId));
+      } catch (error) {
+        console.error("Failed to delete session:", error);
+      }
+    }
   };
 
-  const handleUpdate = async (sessionId, field, value) => {
+  async function handleUpdate(sessionId, field, value) {
     let payload = {}
 
     // FIX: Convert time strings to proper ISO format for Supabase
@@ -294,12 +305,15 @@ function Sessions() {
       const newEnd = new Date(new Date(session.end_at).getTime() + timeOffset).toISOString();
 
       payload = { 'start_at': newStart, 'end_at': newEnd };
+    } else if (field === 'end_at') {
+      const newEnd = new Date(value).toISOString();
+      payload = { 'end_at': newEnd };
     } else {
       payload = { [field]: value };
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/api/sessions/${sessionId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -318,8 +332,76 @@ function Sessions() {
       );
     } catch (error) {
       alert("Failed to update session");
-      console.error("Failed to update session:", error);
+      console.error("Failed to update session:", error?.message || error);
     }
+  };
+
+  async function confirmUpdates(sessionId, statusChange) {
+    let payload = {};
+
+    if (statusChange === "Confirmed") {
+      const pendingSession = pendingSessions.find(s => s.id === sessionId);
+      const { location_text, start_at, end_at } = pendingSession;
+      payload = { location_text, start_at, end_at };
+    } else if (statusChange !== "Cancelled")
+      return;
+
+    payload.status = statusChange; // add status update to payload
+
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+        method: "PATCH",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData.error;
+      }
+
+      setSessions((prev) =>
+        prev.map((s) => (s.id === sessionId ? { ...s, ...payload } : s))
+      );
+    } catch (error) {
+      alert("Failed to update session");
+      console.error("Failed to update session:", error?.message || error);
+    }
+  };
+
+  const handleLocalUpdate = async (sessionId, field, value) => {
+    let payload = {}
+
+    // FIX: Convert time strings to proper ISO format for Supabase
+    if (field === 'start_at') {
+      const session = sessions.reduce((acc, s) => {
+        if (s.id === sessionId)
+          return s
+        else
+          return acc
+      }, null);
+
+      const newStart = new Date(value).toISOString();
+      const timeOffset = new Date(newStart) - new Date(session.start_at);
+      const newEnd = new Date(new Date(session.end_at).getTime() + timeOffset).toISOString();
+
+      payload = { 'start_at': newStart, 'end_at': newEnd };
+    } else if (field === 'end_at') {
+      const newEnd = new Date(value).toISOString();
+      payload = { 'end_at': newEnd };
+    } else {
+      payload = { [field]: value };
+    }
+
+    setSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, ...payload } : s))
+    );
+    setPendingSessions((prev) =>
+      prev.map((s) => (s.id === sessionId ? { ...s, ...payload } : s))
+    );
   };
 
   // Helper for Status Styling
@@ -369,7 +451,8 @@ function Sessions() {
         <input
           className="border rounded px-2 py-1 w-full text-sm"
           defaultValue={val ?? ""}
-          onBlur={(e) => handleUpdate(row.id, 'location_text', e.target.value)}
+          disabled={row.status !== "Pending"}
+          onBlur={(e) => handleLocalUpdate(row.id, 'location_text', e.target.value)}
         />
       )
     },
@@ -382,7 +465,8 @@ function Sessions() {
           type="datetime-local"
           className="border rounded px-2 py-1 w-full text-sm"
           value={val ? getLocalFormattedDate(val) : ""}
-          onChange={(e) => handleUpdate(row.id, 'start_at', e.target.value)}
+          disabled={row.status !== "Pending"}
+          onChange={(e) => handleLocalUpdate(row.id, 'start_at', e.target.value)}
         />
       )
     },
@@ -390,12 +474,13 @@ function Sessions() {
       key: 'end_at',
       label: 'End Time',
       sortable: false,
-      render: (val) => (
+      render: (val, row) => (
         <input
           type="datetime-local"
           className="border rounded px-2 py-1 w-full text-sm"
           value={val ? getLocalFormattedDate(val) : ""}
-          readOnly={true}
+          disabled={row.status !== "Pending"}
+          onChange={(e) => handleLocalUpdate(row.id, 'end_at', e.target.value)}
         />
       )
     },
@@ -417,16 +502,16 @@ function Sessions() {
         (row.status === "Pending" ? (
           <div className="min-w-60 grid grid-cols-2 gap-5">
             <button
-              type={"button"}
+              type="button"
               onClick={() => { confirmSession(row.id) }}
-              className={`w-full min-w-min hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-1 py-1 rounded text-sm font-semibold border`}
+              className="w-full min-w-min hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-1 py-1 rounded text-sm font-semibold border"
             >
               Confirm
             </button>
             <button
               type="button"
-              onClick={() => cancelSession(row.id)}
-              className="w-full min-w-min hover:cursor-pointer px-1 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+              onClick={() => cancelSession(row.id, row.status)}
+              className="w-full min-w-min hover:cursor-pointer px-1 py-1 rounded text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
             >
               Cancel
             </button>
@@ -435,8 +520,8 @@ function Sessions() {
           <div className="w-full flex items-center justify-center">
             <button
               type="button"
-              onClick={() => cancelSession(row.id)}
-              className="min-w-30 max-w-1/2 hover:cursor-pointer text-center px-2 py-1 rounded-md text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
+              onClick={() => cancelSession(row.id, row.status)}
+              className="min-w-30 max-w-1/2 hover:cursor-pointer text-center px-2 py-1 rounded text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
             >
               Cancel
             </button>
@@ -450,21 +535,21 @@ function Sessions() {
 
   return (
     <>
-      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-        <div className="flex min-w-50 overflow-y-auto">
+      <div className="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+        <div className="flex md:min-w-50">
           <Sidebar />
         </div>
 
         <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
           <Frame>
             <div className="flex w-full rounded-lg overflow-y-auto">
-              <div className="flex flex-col bg-[#fcfcfc] p-6 w-full h-full shadow-inner">
+              <div className="relative flex flex-col bg-[#fcfcfc] p-6 w-full rounded-lg shadow-inner">
                 <div className="mb-6">
                   <h1 className="text-3xl font-bold text-gray-900">Photography Sessions</h1>
                   <p className="text-sm text-gray-600 mt-0.5">Manage client booking requests, view session details, and/or update session information.</p>
                 </div>
-
-                <div className="grow flex flex-col">
+                {/* body */}
+                <div className="mt-6 grow flex flex-col">
                   {loading ? (
                     <div className="grow flex flex-col justify-center items-center text-gray-500">
                       <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
@@ -475,8 +560,9 @@ function Sessions() {
                       columns={tableSessionColumns}
                       data={sessions}
                       searchable={true}
-                      searchPlaceholder={"Search Sessions by keyword..."}
-                      rowsPerPage={6}
+                      searchPlaceholder={"Search Sessions..."}
+                      rowsPerPage={5}
+                      tabFilter={tabFilter}
                     />
                   )}
                 </div>

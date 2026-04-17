@@ -8,7 +8,7 @@ import { triggerAdminToast } from "../../../components/AdminNotificationToast.js
 const MAX_MESSAGE_LENGTH = 1000; // Max character length for personalized messages, includes spaces, punctuation, etc.
 
 const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
-  const { profile: user } = useAuth();
+  const { profile } = useAuth();
   
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -258,11 +258,11 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
 
     try {
       // 1) check user profile
-      if (!user) {
+      if (!profile) {
         throw new Error("You must be logged in to upload galleries.");
       }
 
-      if (user.roleName !== "Admin") {
+      if (profile.roleName !== "Admin") {
         throw new Error("Only admins can upload galleries.");
       }
 
@@ -449,7 +449,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
             session_id: session.id,
             channel: "email",
             subject: "Your Gallery Is Ready!",
-            body: `Hi ${session.clientName}, your ${session.type} photo gallery from ${session.date} is now ready to view. Log in to your client dashboard to access your photos.`,
+            body: `Hi ${session.clientName}, your ${session.type} photo gallery from ${session.date} is now ready to view.`,
             status: "sent",
             sent_at: new Date().toISOString(),
           });

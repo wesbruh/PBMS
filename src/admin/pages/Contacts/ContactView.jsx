@@ -10,6 +10,129 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import SharedClientDashboard from "../../../components/Dashboard/SharedClientDashboard";
 
+async function handleUpdate(session, sessionId, field, value) {
+  if (!session) return;
+
+  const payload = { [field]: value };
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw errorData.error;
+    }
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+async function cancelSession(session, sessionId) {
+  if (!session || !sessionId) return;
+
+  const getPaymentIntent = async (checkoutSessionId) => {
+    if (!checkoutSessionId) return { status: null, paymentIntent: null }
+    try {
+      const csResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!csResponse.ok)
+        throw new Error("Could not get payment intent");
+
+      const csData = await csResponse.json();
+
+      return { status: csResponse.ok, paymentIntent: csData.payment_intent };
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const uncapturePayment = async (checkoutSessionId) => {
+    try {
+      const { error } = await supabase
+        .from("Payment")
+        .update({ status: "Cancelled" })
+        .eq("provider_payment_id", checkoutSessionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
+
+      if (!status) throw new Error("Failed to retrieve payment intent");
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/uncapture`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ payment_intent_id: paymentIntent.id })
+      });
+
+      if (!response.ok) throw Error("Failed to capture payment intent");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const cancelInvoice = async (invoiceId) => {
+    try {
+      const { error } = await supabase
+        .from("Invoice")
+        .update({ status: "Cancelled" })
+        .eq("id", invoiceId)
+        .select()
+        .single();
+
+      if (error) throw error;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // ensure session exists and map session id to invoice id
+  const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${session?.access_token}`,
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (!mapResponse.ok) throw new Error("Could not map session id to an invoice id");
+
+  const mapData = await mapResponse.json();
+  const { id: invoiceId } = mapData;
+
+  const { data, error } = await supabase.from("Payment")
+    .select("provider_payment_id")
+    .eq("invoice_id", invoiceId)
+    .eq("type", "Deposit")
+    .single()
+
+  if (error) throw error;
+
+  const { provider_payment_id: checkoutSessionId } = data;
+
+  uncapturePayment(checkoutSessionId);
+  cancelInvoice(invoiceId);
+  handleUpdate(sessionId, "status", "Cancelled");
+};
 
 function ContactView() {
   const { id: userId } = useParams();
@@ -30,10 +153,10 @@ function ContactView() {
 
   // check if user exists
   useEffect(() => {
-    if (!userId || session) return;
+    if (!userId || !session) return;
 
     async function checkUser() {
-      const response = await fetch(`http://localhost:5001/api/profile/${userId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${userId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -78,6 +201,19 @@ function ContactView() {
       } else {
         setSessions(sessionRows ?? []);
       }
+
+      const now = new Date();
+
+      // filter and update sessions that should be completed/cancelled based on current time
+      sessionRows.forEach((session) => {
+        if (session.status === "Confirmed" && new Date(session.end_at) < now) {
+          handleUpdate(session, session.id, "status", "Completed");
+          session.status = "Completed";
+        } else if (session.status === "Pending" && new Date(session.start_at) < now) {
+          cancelSession(session, session.id);
+          session.status = "Cancelled";
+        }
+      });
 
       const sessionIds =
         sessionRows?.map((s) => s.id).filter(Boolean) ?? [];
@@ -159,11 +295,11 @@ function ContactView() {
 
   if (loading) {
     return (
-      <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-        <div className="flex min-w-50 overflow-y-auto">
-          <Sidebar />
-        </div>
-        <div className="flex w-full shadow-inner rounded-lg">
+      <div className="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+      <div className="flex md:min-w-50">
+        <Sidebar />
+      </div>
+        <div className="flex w-full shadow-inner rounded-lg overflow-hidden">
           <Frame>
             <div className="max-w-5xl mx-auto px-4 py-12 text-center font-serif text-brown">
               <SharedClientDashboard loading={true} />
@@ -174,147 +310,18 @@ function ContactView() {
     );
   }
 
-  // GALLERY DOWNLOAD FUNCTION //
-  // download entire gallery as a ZIP file, ensured its with the authenticate client's own gallery
-  const handleDownloadGallery = async (galleryId, galleryTitle) => {
-    try {
-      // CONSOLE DEBUG 
-      // console.log('Starting download for gallery ID:', galleryId);
-
-      // mark as downloading
-      setDownloadingGalleries(prev => ({ ...prev, [galleryId]: true }));
-
-      // 1) Fetch photos for this gallery
-      const { data: photos, error: photosError } = await supabase
-        .from("Photo")
-        .select("id, storage_path, filename")
-        .eq("gallery_id", galleryId)
-        .order("uploaded_at", { ascending: true });
-
-      // CONSOLE DEBUG 
-      // console.log('fetched photos:', photos);
-      // console.log('Photos Error:', photosError);
-
-      // error in fetching photos
-      if (photosError) {
-        console.error("Error fetching photos:", photosError);
-        alert("Failed to fetch gallery photos. Please try again later.");
-        return;
-      }
-
-      // no photos found in gallery message
-      if (!photos || photos.length === 0) {
-        alert("This gallery has no photos.");
-        return;
-      }
-
-      // 2) Create a new ZIP file
-      const zip = new JSZip();
-      const folder = zip.folder(galleryTitle || "Gallery");
-
-      // 3) Download each photo and add to ZIP
-      let successCount = 0;
-      for (let i = 0; i < photos.length; i++) {
-        const photo = photos[i];
-
-        // CONSOLE DEBUG 
-        // console.log(`Processing photo ${i + 1}:`, photo.filename);
-        // console.log('Path:', photo.storage_path);
-
-        try {
-
-          // get signed URL for secure access from Supabase Storage
-          const { data: urlData, error: urlError } = await supabase.storage
-            .from("photos") // assuming 'photos' is the bucket name
-            .createSignedUrl(photo.storage_path, 3600); // URL valid for 1 hour
-
-          // CONSOLE DEBUG 
-          // console.log( 'URL result:', {urlData, urlError});
-
-          if (urlError) {
-            console.error(`Error getting URL for ${photo.filename}:`, urlError);
-            continue;
-          }
-
-          // CONSOLE DEBUG 
-          // console.log('Signed URL obtained.');
-
-          // fetch the photo as a blob
-          const response = await fetch(urlData.signedUrl);
-
-          // CONSOLE DEBUG 
-          // console.log('Fetch response:', response.status, response.ok);
-
-          if (!response.ok) {
-            console.error(`Error downloading ${photo.filename}`);
-            continue;
-          }
-
-          const blob = await response.blob();
-
-          // CONSOLE DEBUG
-          // console.log('Blob size:', blob.size, 'bytes');
-
-          // add to zip folder
-          folder.file(photo.filename, blob);
-          successCount++;
-
-          // CONSOLE DEBUG
-          // console.log('Added to ZIP');
-
-        } catch (error) {
-          console.error(`Error processing ${photo.filename}:`, error);
-        }
-      }
-
-      // CONSOLE DEBUG
-      // console.log('\n Total successful:', successCount, 'out of', photos.length);
-
-      if (successCount === 0) {
-        alert("Failed to download any photos from this gallery.");
-        return;
-      }
-
-      // 4) generate the ZIP file and trigger download
-
-      // CONSOLE DEBUG (keep)
-      // console.log('Generating ZIP...');
-
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      const zipFilename = `${galleryTitle || "gallery"}_${new Date().getTime()}.zip`;
-
-      // CONSOLE DEBUG (keep)
-      // console.log('Saving as:', zipFilename);
-
-      saveAs(zipBlob, zipFilename);
-
-      if (successCount < photos.length) {
-        alert(`Downloaded ${successCount} out of ${photos.length} photos. Some files failed.`);
-      }
-
-    } catch (error) {
-      console.error("Error downloading gallery:", error);
-      alert("An error occurred while downloading the gallery. Please try again later.");
-    } finally {
-      // remove downloading state
-      setDownloadingGalleries(prev => {
-        const next = { ...prev };
-        delete next[galleryId];
-        return next;
-      });
-    }
-  };
 
   return (
-    <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
-      <div className="flex min-w-50 overflow-y-auto">
+    <div className="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+      <div className="flex md:min-w-50">
         <Sidebar />
       </div>
 
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
-          <div className="w-full flex flex-col gap-5 my-10 mx-2 overflow-scroll">
-            <SharedClientDashboard
+          <div className="flex w-full rounded-lg overflow-scroll">
+            <div className="w-full flex flex-col gap-5 ">
+              <SharedClientDashboard
               fullName={fullName}
               notifications={notifications}
               sessions={sessions}
@@ -322,12 +329,11 @@ function ContactView() {
               galleries={galleries}
               contracts={contracts}
               loading={loading}
-              onDownloadGallery={handleDownloadGallery}
-              downloadingGalleries={downloadingGalleries}
               showPayButton={false}
               showDownloadButton={false}
               isAdminView={true}
             />
+            </div>
           </div>
         </Frame>
       </div>

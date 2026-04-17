@@ -12,7 +12,7 @@ function AdminHome() {
     ? `${profile.first_name} ${profile.last_name}`
     : null;
 
-  if (!username) {
+  if (!username) { 
     return (
       <div className="w-full py-16 text-center text-brown font-serif">
         Loading your account...
@@ -21,9 +21,9 @@ function AdminHome() {
   }
 
   return (
-    <div className="flex my-10 md:my-14 h-[65vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
+    <div className="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip">
       {/* Sidebar */}
-      <div className="flex min-w-50 overflow-y-auto">
+      <div className="flex md:min-w-50">
         <Sidebar />
       </div>
 
@@ -44,9 +44,9 @@ function AdminHome() {
             <MetricsGrid />
 
             {/* Two-column body */}
-            <div className="grid grid-cols-2 gap-4 px-3 md:px-6 flex-1 h-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-3 md:px-6 flex-1 h-full">
               {/* LEFT COLUMN: YTD Chart*/}
-              <div className="h-full" style={{ minWidth: 0 }} >
+              <div className="h-full pb-1.5" style={{ minWidth: 0 }} >
                 <YTDBarChart />
               </div>
 

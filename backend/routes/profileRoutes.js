@@ -50,7 +50,7 @@ export default function profileRoutes(supabaseClient) {
     router.patch("/:user_id", async (req, res) => {
         const { user_id } = req.params;
         const updates = req.body;
-
+        
         try {
             const { error } = await supabaseClient
                 .from("User")
@@ -58,8 +58,7 @@ export default function profileRoutes(supabaseClient) {
                 .eq("id", user_id)
 
             if (error) throw error;
-
-            res.status(200).json(null);
+            res.status(200).json({ success: true });
         } catch (error) {
             console.error("Error updating user:", error);
             res.status(500).json({ error: "Internal Server Error" });

@@ -25,8 +25,8 @@ export function AuthProvider({ children }) {
       }
 
       // if logged in, try to load the row from "User" and user's role name
-      if (session?.access_token && session?.user?.id && !ignore) {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${session.user.id}`, {
+      if (session && !ignore) {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${session?.user?.id}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,

@@ -18,7 +18,7 @@ function MetricCard({ label, value, sub, accent, loading }) {
   // pretty standard styling for desktop and mobile, truncates and uses hidden overflow if screen is reallyyy downsized
   return (
     <div
-      className={`rounded-xl border p-2 md:p-3 flex flex-col min-w-0 overflow-hidden ${accentMap[accent]}`}
+      className={`rounded-xl border p-2 md:p-3 md:mt-4 flex flex-col min-w-0 overflow-hidden ${accentMap[accent]}`}
     >
       <span className="text-xs font-semibold uppercase tracking-wide opacity-70 truncate">
         {label}

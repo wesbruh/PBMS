@@ -1,6 +1,6 @@
 // src/pages/Dashboard/ClientDashboard.jsx 
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useAuth } from "../../context/AuthContext";
 
@@ -8,6 +8,130 @@ import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloa
 import { saveAs } from "file-saver";
 
 import SharedClientDashboard from "../../components/Dashboard/SharedClientDashboard";
+
+async function handleUpdate(session, sessionId, field, value) {
+  if (!session) return;
+
+  const payload = { [field]: value };
+
+  try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw errorData.error;
+    }
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+async function cancelSession(session, sessionId) {
+  if (!session || !sessionId) return;
+
+  const getPaymentIntent = async (checkoutSessionId) => {
+    if (!checkoutSessionId) return { status: null, paymentIntent: null }
+    try {
+      const csResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        }
+      });
+
+      if (!csResponse.ok)
+        throw new Error("Could not get payment intent");
+
+      const csData = await csResponse.json();
+
+      return { status: csResponse.ok, paymentIntent: csData.payment_intent };
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const uncapturePayment = async (checkoutSessionId) => {
+    try {
+      const { error } = await supabase
+        .from("Payment")
+        .update({ status: "Cancelled" })
+        .eq("provider_payment_id", checkoutSessionId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
+
+      if (!status) throw new Error("Failed to retrieve payment intent");
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/uncapture`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ payment_intent_id: paymentIntent.id })
+      });
+
+      if (!response.ok) throw Error("Failed to capture payment intent");
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const cancelInvoice = async (invoiceId) => {
+    try {
+      const { error } = await supabase
+        .from("Invoice")
+        .update({ status: "Cancelled" })
+        .eq("id", invoiceId)
+        .select()
+        .single();
+
+      if (error) throw error;
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  // ensure session exists and map session id to invoice id
+  const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
+    method: "GET",
+    headers: {
+      "Authorization": `Bearer ${session?.access_token}`,
+      "Content-Type": "application/json"
+    }
+  });
+
+  if (!mapResponse.ok) throw new Error("Could not map session id to an invoice id");
+
+  const mapData = await mapResponse.json();
+  const { id: invoiceId } = mapData;
+
+  const { data, error } = await supabase.from("Payment")
+    .select("provider_payment_id")
+    .eq("invoice_id", invoiceId)
+    .eq("type", "Deposit")
+    .single()
+
+  if (error) throw error;
+
+  const { provider_payment_id: checkoutSessionId } = data;
+
+  uncapturePayment(checkoutSessionId);
+  cancelInvoice(invoiceId);
+  handleUpdate(sessionId, "status", "Cancelled");
+};
 
 export default function ClientDashboard() {
   const [searchParams, _setSearchParams] = useSearchParams();
@@ -217,6 +341,19 @@ export default function ClientDashboard() {
       } else {
         setSessions(sessionRows ?? []);
       }
+
+      const now = new Date();
+
+      // filter and update sessions that should be completed/cancelled based on current time
+      sessionRows.forEach((session) => {
+        if (session.status === "Confirmed" && new Date(session.end_at) < now) {
+          handleUpdate(session, session.id, "status", "Completed");
+          session.status = "Completed";
+        } else if (session.status === "Pending" && new Date(session.start_at) < now) {
+          cancelSession(session, session.id);
+          session.status = "Cancelled";
+        }
+      });
 
       const sessionIds = sessionRows?.map((s) => s.id).filter(Boolean) ?? [];
 

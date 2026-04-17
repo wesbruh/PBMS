@@ -3,7 +3,7 @@ import { useAuth } from "../../context/AuthContext";
 import { supabase } from "../../lib/supabaseClient";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react"; // added for menu mangement when on mobile
-
+import { Menu, X, ChevronDown, ChevronUp } from "lucide-react";
 function Navbar() {
   // determines location of user based on current page
   const location = useLocation();
@@ -16,8 +16,8 @@ function Navbar() {
   const [isSpecialServicesOpen, setIsSpecialServicesOpen] = useState(false);
 
   const handleLogout = async () => {
-    if (session?.access_token && profile?.id) {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${profile.id}`, {
+    if (session && profile) {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${profile?.id}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -28,7 +28,7 @@ function Navbar() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Failed to mark user inactive:", errorData.error);
+        console.error("Failed to mark user inactive:", errorData?.message || errorData.error);
       }
     }
     await supabase.auth.signOut();
@@ -195,22 +195,10 @@ function Navbar() {
       {/* Added: Mobile Hamburger Menu button */}
       <button
         onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className={`lg:hidden z-50 ${isHomePage ? "text-white" : "text-[#7E4C3C]"}`}
+        className={`lg:hidden z-50 cursor-pointer hover:text-[#AB8C4B] ${isHomePage ? "text-white" : "text-[#7E4C3C]"}`}
         aria-label="Toggle menu"
       >
-        <svg
-          className="w-8 h-8"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M4 6h16M4 12h16M4 18h16"
-          />
-        </svg>
+        <Menu size={32}/>
       </button>
 
       {/* Mobile Sidebar overlay */}
@@ -229,22 +217,10 @@ function Navbar() {
         {/* Close button */}
         <button
           onClick={() => setIsMenuOpen(false)}
-          className="absolute top-4 right-4 text-[#7E4C3C] hover:text-[#AB8C4B]"
+          className="absolute top-4 right-4 cursor-pointer text-[#7E4C3C] hover:text-[#AB8C4B]"
           aria-label="Close menu"
         >
-          <svg
-            className="w-8 h-8"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X size={32}/>
         </button>
 
         {/* Mobile Menu content */}
@@ -294,25 +270,13 @@ function Navbar() {
           <div className="my-2">
             <button
               onClick={() => setIsSpecialServicesOpen(!isSpecialServicesOpen)}
-              className={`${mobileLinkStyles} w-full text-left flex justify-between items-center ${isSpecialServicesActive ? "bg-[#7E4C3C] text-white" : ""
+              className={`${mobileLinkStyles} w-full text-left flex justify-between items-center cursor-pointer ${isSpecialServicesActive ? "bg-[#7E4C3C] text-white" : ""
                 }`}
             >
               Special Services
-              <svg
-                className={`w-5 h-5 transform transition-transform ${isSpecialServicesOpen ? "rotate-180" : ""
-                  }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+                <ChevronDown size={24} className={`transition-transform duration-300 ease-in-out ${isSpecialServicesOpen ? "rotate-180" : ""}`}/>
             </button>
+
             {isSpecialServicesOpen && (
               <div className="ml-4 mt-2">
                 <Link
@@ -365,7 +329,7 @@ function Navbar() {
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-center px-4 py-1.5 bg-white text-[#7E4C3C] rounded-lg hover:bg-neutral-100 transition border border-black"
+                  className="block w-full text-center px-4 py-1.5 bg-white text-[#7E4C3C] rounded-lg hover:bg-gray-200 cursor-pointer transition border border-black"
                 >
                   Log out
                 </button>

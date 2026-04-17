@@ -1,6 +1,6 @@
 // DynamicQuestionnaire.jsx
 // Renders questions from a QuestionnaireTemplate's schema_json.
-// Each question shape: { tempId, label, type, required, options }
+// Each question shape: { id, label, type, required, options }
 //
 // Supported types: short_text, long_text, text, textarea, date,
 //                  select, radio, checkbox
@@ -13,16 +13,16 @@ const inputBase =
 const labelCaps = "text-[11px] tracking-[0.2em] text-[#7E4C3C]";
 
 export default function DynamicQuestionnaire({ questions = [], answers = {}, onChange, readOnly = false }) {
-  function handleChange(tempId, value) {
-    onChange({ ...answers, [tempId]: value });
+  function handleChange(id, value) {
+    onChange({ ...answers, [id]: value });
   }
 
-  function handleCheckbox(tempId, option, checked) {
-    const current = Array.isArray(answers[tempId]) ? answers[tempId] : [];
+  function handleCheckbox(id, option, checked) {
+    const current = Array.isArray(answers[id]) ? answers[id] : [];
     const updated = checked
       ? [...current, option]
       : current.filter((v) => v !== option);
-    onChange({ ...answers, [tempId]: updated });
+    onChange({ ...answers, [id]: updated });
   }
 
   if (!questions.length) return null;
@@ -39,11 +39,11 @@ export default function DynamicQuestionnaire({ questions = [], answers = {}, onC
 
       {questions.map((q) => (
         <QuestionField
-          key={q.tempId}
+          key={q.id}
           q={q}
-          value={answers[q.tempId]}
-          onChangeValue={(val) => handleChange(q.tempId, val)}
-          onChangeCheckbox={(opt, checked) => handleCheckbox(q.tempId, opt, checked)}
+          value={answers[q.id]}
+          onChangeValue={(val) => handleChange(q.id, val)}
+          onChangeCheckbox={(opt, checked) => handleCheckbox(q.id, opt, checked)}
           readOnly={readOnly}
           inputBase={inputBase}
           labelCaps={labelCaps}
@@ -141,7 +141,7 @@ function QuestionField({ q, value, onChangeValue, onChangeCheckbox, inputBase, l
               <label key={i} className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="radio"
-                  name={q.tempId}
+                  name={q.id}
                   value={o}
                   checked={value === o}
                   onChange={() => onChangeValue(o)}

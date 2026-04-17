@@ -15,10 +15,12 @@ const Table = ({
   searchable = false,
   searchPlaceholder = "Search clients...",
   rowsPerPage = 8, // Default number of rows per table page for pagination can benmodified in the dedicated page's jsx file.
+  tabFilter = { dataType: "data", tabs: null, tabFilterFn: () => true, type: "radio" } // Default filterTabs with no filtering, can be modified in the dedicated page's jsx file.
 }) => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const [searchTerm, setSearchTerm] = useState(""); // Search state
   const [currentPage, setCurrentPage] = useState(1); // Pagination state
+  const [selectedTabs, setSelectedTabs] = useState(["All"]);
 
   // Handle sorting when a column header is clicked
   const handleSort = (columnKey) => {
@@ -33,22 +35,30 @@ const Table = ({
     setCurrentPage(1); // Reset to first page on sort
   };
 
-  // Filter data based on the search term in search functionality
-  const filteredData = data.filter((row) => {
-    if (!searchTerm) return true; // If no search term, include all rows
+  const shownTabs = (tabFilter?.tabs) ? ["All", ...tabFilter.tabs] : [];
 
-    // Search through all columns for the term
-    return columns.some((column) => {
-      const cellValue = row[column.key];
-      if (cellValue === null || cellValue === undefined) return false;
+  // Filter data based on the filter tab and search term in search functionality
+  const filteredData = data
+    .filter((row) => {
+      return (tabFilter.type === "checkbox")
+        ? tabFilter?.tabFilterFn(row, selectedTabs) ?? true
+        : tabFilter?.tabFilterFn(row, selectedTabs[0]) ?? true
+    })
+    .filter((row) => {
+      if (!searchTerm) return true; // If no search term, include all rows
 
-      // Convert to string and check if it includes the search term (case insensitive)
-      return cellValue
-        .toString()
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+      // Search through all columns for the term
+      return columns.some((column) => {
+        const cellValue = row[column.key];
+        if (cellValue === null || cellValue === undefined) return false;
+
+        // Convert to string and check if it includes the search term (case insensitive)
+        return cellValue
+          .toString()
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+      });
     });
-  });
 
   // Sort the data based on current sort config
   const sortedData = [...filteredData].sort((a, b) => {
@@ -78,27 +88,66 @@ const Table = ({
   const goToPage = (pageNumber) => {
     setCurrentPage(Math.max(1, Math.min(pageNumber, totalPages)));
   };
-  
+
   const handleSearchChange = (e) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1); // Reset to first page on search
   };
 
   return (
-    <div className="table-wrapper">
-      {/* Search bar functionality (Will only show if the searchable prop is set to true) */}
-      {searchable && (
-        <div className="table-search">
-          <Search className="table-search-icon" size={20} />
-          <input
-            type="text"
-            className="table-search-input"
-            placeholder={searchPlaceholder}
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
+    <div className="table-wrapper min-w-min">
+      <div className="flex justify-between">
+        {/* Search bar functionality (Will only show if the searchable prop is set to true) */}
+        {searchable
+          ? (<div className="table-search">
+            <Search className="table-search-icon" size={20} />
+            <input
+              type="text"
+              className="table-search-input"
+              placeholder={searchPlaceholder}
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+          </div>)
+          : shownTabs
+            ? (<div></div>)
+            : (<></>)
+        }
+
+        <div className="flex justify-center gap-2">
+          {(shownTabs).map((tab) => (
+            <button
+              key={tab}
+              type={tabFilter?.type === "checkbox" ? "checkbox" : "radio"}
+              onClick={() => {
+                if (tabFilter.type === "checkbox") {
+                  if (tab === "All") {
+                    setSelectedTabs(["All"]);
+                  } else {
+                    const newSelectedTabs = selectedTabs.includes(tab)
+                      ? selectedTabs.filter((t) => t !== tab)
+                      : [...selectedTabs.filter((t) => t !== "All"), tab];
+
+                    // if no specific tabs or if all are selected, default back to "All"
+                    if (newSelectedTabs.length <= 0 || newSelectedTabs.length === Object.keys(tabFilter?.tabs).length)
+                      setSelectedTabs(["All"]);
+                    else
+                      setSelectedTabs(newSelectedTabs);
+                  }
+                } else {
+                  setSelectedTabs([tab]);
+                }
+              }}
+              className={`text-nowrap px-5 py-2 rounded-full text-sm font-medium border transition-colors ${selectedTabs.includes(tab)
+                ? "bg-gray-900 text-white border-gray-900"
+                : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
+                }`}
+            >
+              {tab}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
       <div className="table-container">
         <table className="table">
           {/* Table Header */}
@@ -171,12 +220,17 @@ const Table = ({
             <p>
               {searchTerm
                 ? `No results found for "${searchTerm}".`
-                : "No data available."}
+                : selectedTabs && tabFilter?.tabs && tabFilter?.dataType
+                  ? selectedTabs.includes("All")
+                    ? `No ${tabFilter.dataType} found.`
+                    : `No ${selectedTabs.join("/").toLowerCase()} ${tabFilter.dataType} found.`
+                  : "No data available."
+              }
             </p>
           </div>
         )}
       </div>
-      
+
       {/* Pagination Controls */}
       {sortedData.length > 0 && totalPages > 1 && (
         <div className="table-pagination">

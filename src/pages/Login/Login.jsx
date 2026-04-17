@@ -4,7 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
-  const { session, profile , loading } = useAuth();
+  const { session, profile, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -79,8 +79,8 @@ export default function Login() {
     }
 
     // we are logged in – update the User table
-    if (session?.access_token && profile?.id) {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${profile.id}`, {
+    if (session && profile) {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${profile?.id}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -150,7 +150,7 @@ export default function Login() {
         {/* Card */}
         <div className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl shadow-md px-5 md:px-8 py-6">
           <form
-            className="flex flex-col gap-5 font-mono "
+            className="flex flex-col gap-5 font-sans"
             noValidate
             onSubmit={onSubmit}
           >
