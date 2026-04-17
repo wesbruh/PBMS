@@ -47,13 +47,15 @@ export default function questionnaireRoutes(supabaseClient) {
     const updates = req.body;
 
     try {
-      const { error } = await supabaseClient
+      const { data, error } = await supabaseClient
         .from("QuestionnaireTemplate")
         .update(updates)
-        .eq("id", id);
+        .eq("id", id)
+        .select()
+        .single();
 
       if (error) throw error;
-      res.status(200).json(null);
+      res.status(200).json(data);
     } catch (error) {
       console.error("Error updating questionnaire template:", error.message);
       res.status(500).json({ error: "Internal Server Error" });

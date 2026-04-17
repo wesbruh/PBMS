@@ -4,7 +4,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
-  const { session, profile , loading } = useAuth();
+  const { session, profile, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -79,8 +79,8 @@ export default function Login() {
     }
 
     // we are logged in – update the User table
-    if (session?.access_token && profile?.id) {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${profile.id}`, {
+    if (session && profile) {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${profile?.id}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,

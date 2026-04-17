@@ -45,14 +45,6 @@ function toLabel(timeStr) {
   return `${h12}:${m === 0 ? "00" : m} ${ampm}`;
 }
 
-/** Parse a timestamptz or time string from DB into "HH:MM" for a given date */
-function tsToLocalTime(tsStr) {
-  // For timestamptz values like "2026-02-23T16:15:00+00:00"
-  // We compare in UTC minutes to keep things consistent
-  const d = new Date(tsStr);
-  return fromMin(d.getUTCHours() * 60 + d.getUTCMinutes());
-}
-
 /** Parse a DB `time` column value ("HH:MM:SS") → "HH:MM" */
 function dbTimeToHHMM(dbTime) {
   if (!dbTime) return null;
@@ -151,8 +143,6 @@ export default function TimeSlotGrid({
         // should add valid_from_time / valid_to_time columns. Until then we block
         // all slots on a day that has an Availability row.
         //
-        // ✅ If your team stores times as timestamptz in start_time/end_time,
-        //    this code already handles that via tsToLocalTime() below.
         const startDateTime = new Date(`${selectedDate}T00:00:00.000`);
         const dayStart = startDateTime.toISOString();
 
@@ -222,10 +212,8 @@ export default function TimeSlotGrid({
   }, [selectedDate, workStart, workEnd]);
 
   // ── Generate all slots within work hours ─────────────────────────────────
-  const allSlots = useMemo(
-    () => generateSlots(toMin(workStart), toMin(workEnd)),
-    [workStart, workEnd]
-  );
+  const allSlots = useMemo(() => generateSlots(toMin(workStart), toMin(workEnd)),
+    [workStart, workEnd]);
 
   // ── Compute which slots are disabled ─────────────────────────────────────
   //

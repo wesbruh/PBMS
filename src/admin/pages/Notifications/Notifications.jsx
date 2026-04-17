@@ -10,12 +10,24 @@ function Notifications() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [filterTab, setFilterTab] = useState("All");
 
   // Reset unread count when admin visits this page
   useEffect(() => {
     localStorage.setItem("admin_unread_count", "0");
   }, []);
+
+  const tabs = new Set(["Sessions", "Payment & Invoice"]);
+  const tabFilter = {
+    dataType: "notifications",
+    tabs,
+    tabFilterFn: (row, selectedTab) => {
+      if (selectedTab === "All") return true;
+      const subject = (row.subject || "").toLowerCase();
+      if (selectedTab === "Sessions") return subject.includes("gallery");
+      if (selectedTab === "Payment & Invoice") return subject.includes("invoice") || subject.includes("payment");
+      return true;
+    }
+  };
 
   const fetchNotifications = async () => {
     setLoading(true);
@@ -132,14 +144,6 @@ function Notifications() {
     return () => supabase.removeChannel(channel);
   }, []);
 
-  const filteredNotifications = notifications.filter((n) => {
-    if (filterTab === "All") return true;
-    const subject = (n.subject || "").toLowerCase();
-    if (filterTab === "Sessions") return subject.includes("gallery");
-    if (filterTab === "Payment & Invoice") return subject.includes("invoice") || subject.includes("payment");
-    return true;
-  });
-
   const handleDelete = async (id) => {
     const { error: deleteError } = await supabase
       .from("Notification")
@@ -152,12 +156,6 @@ function Notifications() {
       setNotifications((prev) => prev.filter((n) => n.id !== id));
     }
     setConfirmDeleteId(null);
-  };
-
-  const emptyMessages = {
-    "All": "No notifications yet.",
-    "Sessions": "No session notifications found.",
-    "Payment & Invoice": "No payment & invoice notifications found.",
   };
 
   const tableNotificationColumns = [
@@ -173,17 +171,16 @@ function Notifications() {
       sortable: true,
       render: (value) => (
         <span
-          className={`px-3 py-1 rounded-md text-sm font-medium ${
-            value === "Complete"
-              ? "bg-green-100 text-green-800"
-              : value === "Pending"
+          className={`px-3 py-1 rounded-md text-sm font-medium ${value === "Complete"
+            ? "bg-green-100 text-green-800"
+            : value === "Pending"
               ? "bg-yellow-100 text-yellow-800"
               : value === "Active"
-              ? "bg-blue-100 text-blue-800"
-              : value === "Failed"
-              ? "bg-red-100 text-red-800"
-              : "bg-gray-100 text-gray-800"
-          }`}
+                ? "bg-blue-100 text-blue-800"
+                : value === "Failed"
+                  ? "bg-red-100 text-red-800"
+                  : "bg-gray-100 text-gray-800"
+            }`}
         >
           {value}
         </span>
@@ -236,56 +233,41 @@ function Notifications() {
 
         <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
           <Frame>
-            <div className="flex w-full rounded-lg overflow-y-scroll"> 
-            <div className="relative flex flex-col bg-[#fcfcfc] p-6 w-full rounded-lg shadow-inner ">
-              <div className="mb-6">
-                <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
-                <p className="text-sm text-gray-600 mt-0.5">
-                  View and manage all system notifications sent to clients.
-                </p>
-              </div>
+            <div className="flex w-full rounded-lg overflow-y-scroll">
+              <div className="relative flex flex-col bg-[#fcfcfc] p-6 w-full rounded-lg shadow-inner ">
+                <div className="mb-6">
+                  <h1 className="text-3xl font-bold text-gray-900">Notifications</h1>
+                  <p className="text-sm text-gray-600 mt-0.5">
+                    View and manage all system notifications sent to clients.
+                  </p>
+                </div>
 
-              {loading ? (
-                <div className="flex flex-col items-center justify-center grow text-gray-500">
-                  <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
-                  <p className="text-sm">Loading notifications...</p>
-                </div>
-              ) : error ? (
-                <div className="grow flex flex-col text-center items-center justify-center">
-                  <p className="text-sm text-red-600 mb-2">{error}</p>
-                </div>
-              ) : (
-                <>
-              
-                <div className="flex justify-center gap-2 mb-4">
-                  {["All", "Sessions", "Payment & Invoice"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setFilterTab(tab)}
-                      className={`px-5 py-2 rounded-full text-sm font-medium border transition-colors ${
-                        filterTab === tab
-                          ? "bg-gray-900 text-white border-gray-900"
-                          : "bg-white text-gray-600 border-gray-300 hover:bg-gray-100"
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-              {/* Table — always show when not loading/error */}
-                <div>
-                  <Table
-                    columns={tableNotificationColumns}
-                    data={filteredNotifications}
-                    searchable={true}
-                    searchPlaceholder={"Search notifications by recipient or message..."}
-                    rowsPerPage={5}
-                    emptyMessage={emptyMessages[filterTab]}
-                  />
-                </div>
-                </>
-              )}
-            </div>
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center grow text-gray-500">
+                    <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
+                    <p className="text-sm">Loading notifications...</p>
+                  </div>
+                ) : error ? (
+                  <div className="grow flex flex-col text-center items-center justify-center">
+                    <p className="text-sm text-red-600 mb-2">{error}</p>
+                  </div>
+                ) : (
+                  <>
+
+                    {/* Table — always show when not loading/error */}
+                    <div>
+                      <Table
+                        columns={tableNotificationColumns}
+                        data={notifications}
+                        searchable={true}
+                        searchPlaceholder={"Search notifications by recipient or message..."}
+                        rowsPerPage={5}
+                        tabFilter={tabFilter}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </Frame>
         </div>

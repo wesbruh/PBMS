@@ -42,14 +42,17 @@ export default function invoiceRoutes(supabaseClient) {
       }
   
       const newTotal = invoice.remaining - amount;
-  
+      const payload = { remaining: newTotal }
+
       if (newTotal < 0) {
         return res.status(400).json({ error: "Reduction exceeds current balance" });
+      } else if (newTotal === 0) {
+        payload.status === "Paid";
       }
   
       const { data, error: updateError } = await supabaseClient
         .from('Invoice')
-        .update({ remaining: newTotal })
+        .update(payload)
         .eq('id', id)
         .select();
   
@@ -69,10 +72,10 @@ export default function invoiceRoutes(supabaseClient) {
           currency: 'USD',
           status: 'Paid',
           paid_at: date,
-          receipt_url: null,
           created_at: date,
-          type: 'Deposit',
+          type: 'Other',
         });
+
       if (error) {
         console.error("Error logging payment:", error);
         res.status(500).json({ error: "Balance updated but failed to log payment" });

@@ -242,7 +242,7 @@ function AdminGalleries() {
                   columns={tableGalleryColumns}
                   data={galleries}
                   searchable={true}
-                  searchPlaceholder={"Search Galleries by Client Name..."}
+                  searchPlaceholder={"Search Galleries..."}
                   rowsPerPage={5}
                 />
               )}

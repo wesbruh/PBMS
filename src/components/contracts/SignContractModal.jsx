@@ -68,7 +68,6 @@ export default function SignContractModal({ open, onClose, contract, contractTem
 
       onSigned(contractData);
       onClose();
-      alert("Contract signed!");
     } catch (e) {
       console.error(e);
       alert(`Could not save signature: ${e?.message || e}`);
@@ -83,7 +82,7 @@ export default function SignContractModal({ open, onClose, contract, contractTem
         className="absolute inset-0 bg-black/40"
         onClick={onClose}
       />
-      <div className="absolute z-50 top-[65%] w-full max-w-xl rounded-lg bg-white shadow-lg border">
+      <div className="absolute z-50 bottom-70 w-full max-w-xl rounded-lg bg-white shadow-lg border">
         <div className="p-4 border-b flex items-center justify-between">
           <h3 className="text-lg font-semibold">Sign “{contractTemplate.name ?? "Contract"}”</h3>
           <button type="button" onClick={onClose} className="text-sm px-2 py-1 rounded border hover:bg-neutral-50">Close</button>

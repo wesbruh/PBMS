@@ -36,7 +36,7 @@ import Notifications from './admin/pages/Notifications/Notifications.jsx';
 import Payments from './admin/pages/Payments/Payments.jsx';
 import Forms from './admin/pages/Forms/Forms.jsx';
 import Settings from './admin/pages/Settings/Settings.jsx';
-import QuestionnairesList from './admin/pages/Forms/Questionnaires/QuestionnairesList';
+import ContractEditor from './admin/pages/Forms/Contracts/ContractsEditor';
 import QuestionnaireEditor from './admin/pages/Forms/Questionnaires/QuestionnairesEditor';
 
 // Offerings — categories & session types management
@@ -113,15 +113,16 @@ function AppContent() {
               <Route path="contacts" element={<Contacts />} />
               <Route path="contacts/:id" element={<ContactView />} />
               <Route path ="contracts/:contractId" element={<AdminContractView />} />
-              
+
               <Route path="galleries" element={<Galleries />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="payments" element={<Payments />} />
-              <Route path="forms" element={<Forms />}>
-                <Route index element={<QuestionnairesList />} />
-                <Route path="questionnaires" element={<QuestionnairesList />} />
+              <Route path="forms" element={<Outlet />}>
+                <Route index element={<Forms />} />
                 <Route path="questionnaires/new" element={<QuestionnaireEditor mode="create" />} />
                 <Route path="questionnaires/:id/edit" element={<QuestionnaireEditor mode="edit" />} />
+                <Route path="contracts/new" element={<ContractEditor mode="create" />} />
+                <Route path="contracts/:id/edit" element={<ContractEditor mode="edit" />} />
               </Route>
               <Route path="settings" element={<Settings />} />
             </Route>

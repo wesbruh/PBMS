@@ -89,6 +89,18 @@ export default function InquiryForm() {
   const [qALoading, setQALoading] = useState(false);
   const [qLoading, setQLoading] = useState(false);
 
+  function allRequiredQuestionsAnswered() {
+    if (!activeTemplate) return true;
+    return activeTemplate.questions.every((q) => {
+      if (!q.required) return true;
+      const ans = qAnswers[q.id];
+      if (q.type === "checkbox") {
+        return Array.isArray(ans) && ans.length > 0;
+      }
+      return ans !== undefined && ans !== null && ans !== "";
+    })
+  }
+
   // ── Load params ────────────────────────────────────────────────────
   useEffect(() => {
     const loadingParams = async () => {
@@ -170,7 +182,7 @@ export default function InquiryForm() {
 
         const data = await response.json();
         const map = {};
-        data.forEach((t) => { map[`${t.id}`] = { body: t.body, name: t.name }; });
+        data.forEach((t) => { map[`${t.session_type_id}`] = { id: t.id, body: t.body, name: t.name }; });
         setContractTemplates(map);
       } catch (err) {
         console.error("Failed to load contract templates:", err);
@@ -227,10 +239,11 @@ export default function InquiryForm() {
     }
   };
 
-  // minDate for calendar = 7 days from today
+  // minDate for calendar = only allow 8 days from today
+  // esssentially block inputting within 7 days
   const minDate = useMemo(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 7);
+    d.setDate(d.getDate() + 8);
     return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, "0")}-${d.getDate().toString().padStart(2, "0")}`;
   }, []);
 
@@ -261,14 +274,8 @@ export default function InquiryForm() {
   function handleSelectCategory(masterRow) {
     if (!submitLock) return;
 
-    // If clicking the already-selected category → deselect everything
-    if (selectedCategory?.id === masterRow.id) {
-      setSelectedCategory(null);
-      setSelectedSessionType(null);
-      setValue("sessionTypeId", "", { shouldValidate: false });
-      setValue("startTime", "", { shouldValidate: false });
-      return;
-    }
+    // if clicking already-selected category -- do nothing
+    if (selectedCategory?.id === masterRow.id) return;
 
     setSelectedCategory(masterRow);
 
@@ -286,13 +293,8 @@ export default function InquiryForm() {
   function handleSelectSessionType(st) {
     if (!submitLock) return;
 
-    // Clicking already-selected child → revert to master
+    // clicking already-selected child, do nothing -- prevent changes
     if (selectedSessionType?.id === st.id) {
-      setSelectedSessionType(selectedCategory);
-      setValue("sessionTypeId", selectedCategory.id, { shouldValidate: true });
-      const dur = selectedCategory.default_duration_minutes ?? 60;
-      setDurationMinutes(dur);
-      setValue("startTime", "", { shouldValidate: false });
       return;
     }
 
@@ -321,18 +323,18 @@ export default function InquiryForm() {
           .select("id, name, schema_json")
           .eq("session_type_id", selectedSessionType.id)
           .eq("active", true)
-          .single();
+          .maybeSingle();
 
         if (!template) { setActiveTemplate(null); return; }
 
         const questions = (template.schema_json ?? [])
-          .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
           .map((q) => ({
-            tempId: q.id,
+            id: q.id,
             label: q.label,
             type: q.type,
             required: q.required ?? false,
             options: q.options ?? null,
+            order_idx: q.order_idx ?? null
           }));
 
         setActiveTemplate({ id: template.id, name: template.name, questions });
@@ -507,12 +509,14 @@ export default function InquiryForm() {
 
         // One row per answer (relational, not blob)
         const responseRows = await Promise.all(activeTemplate.questions.map((q) => {
-          const raw = qAnswers[q.tempId];
+          const raw = qAnswers[q.id];
           const isCheckbox = (q.type ?? "").toLowerCase() === "checkbox";
+          const { id, ...question } = q;
           return {
             questionnaire_id: qInstance.id,
-            question_id: q.tempId,
+            question_id: id,
             answer: isCheckbox ? (Array.isArray(raw) ? raw : []) : (raw ?? null),
+            question: question
           };
         }));
 
@@ -601,24 +605,26 @@ export default function InquiryForm() {
 
   // ── Submit (post-Stripe) ──────────────────────────────────────────────────
   const onSubmit = async () => {
-    if (activeTemplate) {
-      for (const q of activeTemplate.questions) {
-        if (q.required && (!qAnswers[q.tempId] || qAnswers[q.tempId].length === 0)) {
-          alert(`Please answer the required question: ${q.label}`);
-          return;
-        }
-      }
-    }
     try {
-      await supabase.from("Contract")
-        .update({ is_active: true }).eq("session_id", sessionId);
+      // mark contract active
+      const { error: contractError } = await supabase.from("Contract")
+        .update({ is_active: true })
+        .eq("session_id", sessionId);
 
+      // mark session active
       const { error: sessionError } = await supabase
         .from("Session")
         .update({ is_active: true })
         .eq("id", sessionId);
 
-      if (sessionError) throw sessionError;
+      // mark questionnaire submitted
+      const { error: questionnaireError } = await supabase
+        .from("QuestionnaireResponse")
+        .update({ status: "Submitted", submitted_at: new Date().toISOString() })
+        .eq("session_id", sessionId);
+
+      if (contractError || sessionError || questionnaireError)
+        throw (contractError ?? sessionError ?? questionnaireError ?? new Error("Unknown error during submission"));
 
       navigate(`/dashboard/inquiry/success?session_id=${sessionId}`, {
         replace: true, state: { sessionId },
@@ -631,7 +637,7 @@ export default function InquiryForm() {
 
   const canPay =
     submitLock && !checkoutSessionId && !!selectedSessionType &&
-    !!watchedDate && !!watchedStartTime && contract?.status === "Signed";
+    !!watchedDate && !!watchedStartTime && contract?.status === "Signed" && allRequiredQuestionsAnswered();
 
   const inputBase = "w-full rounded-md border bg-white/70 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]";
   const labelCaps = "font-sans text-[12px] tracking-wider text-[#7E4C3C] uppercase";
@@ -870,26 +876,19 @@ export default function InquiryForm() {
       </div>
 
       {/* ── Contract ──────────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 gap-6">
-        <div className="flex flex-row">
-          <p className={`${labelCaps} w-full`}>Contract *</p>
-          <select
-            value={contract?.template_id || ""}
-            onChange={(e) => updateContractTemplate(e.target.value)}
-            className="px-2 py-1 rounded-md text-sm font-semibold border"
-            disabled={!submitLock || contract?.status === "Signed"}
-          >
-            <option disabled value="">Select</option>
-            {Object.keys(contractTemplates).map((key) => (
-              <option key={key} value={key}>{contractTemplates[key].name}</option>
-            ))}
-          </select>
-        </div>
-        <ContractDetail
-          contract={contract}
-          contractTemplate={contractTemplates[contract?.template_id] || null}
-          onSigned={(signedContract) => setContract(signedContract)}
-        />
+      <div className="grid grid-cols-1">
+        <p className={`${labelCaps} w-full`}>Contract *</p>
+        {contract && contractTemplates[selectedSessionType?.id] ? (
+          <ContractDetail
+            contract={contract}
+            contractTemplate={contractTemplates[selectedSessionType?.id] || null}
+            onSigned={(signedContract) => setContract(signedContract)}
+          />
+        ) : (
+          <div className="rounded-xl border border-black/10 bg-white/60 p-5 shadow-sm space-y-3">
+          </div>
+        )
+        }
       </div>
 
       {/* ── Payment + Submit ───────────────────────────────────────────────── */}

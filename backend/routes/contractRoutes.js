@@ -18,7 +18,7 @@ export default function contractRoutes(supabaseClient) {
     try {
       const { data, error } = await supabaseClient
         .from("ContractTemplate")
-        .select("id, name, body")
+        .select("id, name, body, session_type_id")
         .eq("active", true);
 
       if (error) throw error;

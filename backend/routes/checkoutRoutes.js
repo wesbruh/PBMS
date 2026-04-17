@@ -1,4 +1,9 @@
 import express from "express";
+import process from "node:process"
+import dotenv from "dotenv"
+dotenv.config("../.env");
+
+const CLIENT_BASE_URL = process.env.CLIENT_BASE_URL;
 
 export default function checkoutRoutes(stripeClient) {
     const router = express.Router();
@@ -41,7 +46,7 @@ export default function checkoutRoutes(stripeClient) {
                     payment_intent_data: {
                         capture_method: 'manual',
                     },
-                    success_url: `${import.meta.env.VITE_API_URL}/dashboard/inquiry?checkout_session_id={CHECKOUT_SESSION_ID}`,
+                    success_url: `${CLIENT_BASE_URL}/dashboard/inquiry?checkout_session_id={CHECKOUT_SESSION_ID}`,
                     cancel_url: from_url
                 });
 
@@ -71,9 +76,8 @@ export default function checkoutRoutes(stripeClient) {
                         },
                     ],
                     mode: 'payment',
-                    success_url: `${import.meta.env.VITE_API_URL}/dashboard?checkout_session_id=${CHECKOUT_SESSION_ID}`,
-                    cancel_url: from_url ||
-                        `${import.meta.env.VITE_API_URL}/dashboard`
+                    success_url: `${CLIENT_BASE_URL}/dashboard?checkout_session_id={CHECKOUT_SESSION_ID}`,
+                    cancel_url: from_url || `${CLIENT_BASE_URL}/dashboard`
                 });
 
                 res.status(200).json({

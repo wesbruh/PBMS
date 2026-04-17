@@ -16,8 +16,8 @@ function Navbar() {
   const [isSpecialServicesOpen, setIsSpecialServicesOpen] = useState(false);
 
   const handleLogout = async () => {
-    if (session?.access_token && profile?.id) {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${profile.id}`, {
+    if (session && profile) {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${profile?.id}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -28,7 +28,7 @@ function Navbar() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.error("Failed to mark user inactive:", errorData.error);
+        console.error("Failed to mark user inactive:", errorData?.message || errorData.error);
       }
     }
     await supabase.auth.signOut();

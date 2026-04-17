@@ -3,7 +3,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 
 export default function ProtectedRoute({ children }) {
-  const { profile: user, loading } = useAuth();
+  const { profile, loading } = useAuth();
   const location = useLocation();
 
   // while we're checking Supabase, don't flash
@@ -15,12 +15,12 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!user) {
+  if (!profile) {
     // save where the user was going so we can redirect back after login
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (user.roleName !== "Admin") {
+  if (profile.roleName !== "Admin") {
     return <Navigate to="/dashboard" replace state={{ from: location }} />;
   }
 

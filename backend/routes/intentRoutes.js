@@ -8,10 +8,8 @@ export default function intentRoutes(stripeClient) {
     const { payment_intent_id } = req.body;
 
     try {
-      const { data, error } = await stripeClient.paymentIntents.capture(payment_intent_id);
-
-      if (error) throw error;
-      res.status(200).json(data);
+      const paymentIntent = await stripeClient.paymentIntents.capture(payment_intent_id);
+      res.status(200).json(paymentIntent);
     } catch (error) {
       console.error('Error capturing payment intent:', error);
       res.status(500).json({ error: "Internal Server Error" });

@@ -143,7 +143,6 @@ export default function SessionDetailsModal({ sessionId, session, onClose }) {
                         </>
                       )}
                     </div>
-
                     <div className="space-y-4">
                       {data.questionnaire.items.map((item) => (
                         <div key={item.question_id}>

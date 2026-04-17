@@ -82,7 +82,7 @@ function Sidebar() {
               <Link to="/admin/offerings" className={`${linkStyles} ${isActive('/offerings') ? activeLinkStyles : ''}`}><Package size={24} /><span className={labelStyles}>Session Packages</span></Link>
             </div>
             <div className='flex md:mx-3 mx-2 my-1'>
-              <Link to="/admin/forms/questionnaires" className={`${linkStyles} ${isActive('/forms/questionnaires') ? activeLinkStyles : ''}`}><ReceiptText size={24} /><span className={labelStyles}>Forms</span></Link>
+              <Link to="/admin/forms" className={`${linkStyles} ${isActive('/forms') ? activeLinkStyles : ''}`}><ReceiptText size={24} /><span className={labelStyles}>Forms</span></Link>
             </div>
             <div className='flex md:mx-3 mx-2 my-1'>
               <Link to="/admin/settings" className={`${linkStyles} ${isActive('/settings') ? activeLinkStyles : ''}`}><Settings size={24} /><span className={labelStyles}>Settings</span></Link>
