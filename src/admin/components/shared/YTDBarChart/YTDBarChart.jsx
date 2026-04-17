@@ -324,7 +324,7 @@ function YTDBarChart({ title = "Year-to-Date Average Sales", subtitle }) {
 
   return (
     <div
-      className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex flex-col overflow-hidden h-full"
+      className="bg-white border border-gray-100 rounded-xl p-3 md:mt-3 shadow-sm flex flex-col overflow-hidden h-full md:h-[75%]"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">

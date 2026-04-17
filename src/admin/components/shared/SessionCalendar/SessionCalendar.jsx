@@ -93,7 +93,7 @@ function SessionCalendar() {
   };
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm flex flex-col h-full overflow-hidden ">
+    <div className="bg-white border border-gray-100 rounded-xl p-3 md:mt-3 shadow-sm flex flex-col h-full md:h-[75%] overflow-hidden ">
       {/* card header */}
       <div className="flex flex-wrap items-start justify-between"> 
         <div className="min-w-0">

@@ -63,6 +63,7 @@ export default function InquiryForm() {
   const [sessionId, setSessionId] = useState(null);
   const [checkoutSessionId, setCheckoutSessionId] = useState(null);
   const [loadingParams, setLoadingParams] = useState(true);
+  const [paying, setPaying] = useState(false);     //added for Ui state to indicate redirect to payment and waiting for redirect.
 
   const [contractTemplates, setContractTemplates] = useState({});
   const [contract, setContract] = useState(null);
@@ -449,6 +450,8 @@ export default function InquiryForm() {
 
   // ── Payment ───────────────────────────────────────────────────────────────
   const handlePayment = async () => {
+    setPaying(true);
+    document.body.style.cursor = "wait"; //indicates something is happening, redirect to stripe
     try {
       const now = new Date().toISOString();
 
@@ -543,7 +546,7 @@ export default function InquiryForm() {
       const amountDue = selectedSessionType.base_price * DEPOSIT_PERCENTAGE; // calculate amountDue based on base price and DEPOSIT_PERCENTAGE
 
       // create Stripe checkout session
-      const stripeResponse = await fetch("${import.meta.env.VITE_API_URL}/api/checkout/deposit", {
+      const stripeResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/deposit`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -589,6 +592,8 @@ export default function InquiryForm() {
 
       window.location.href = checkoutSession.url;
     } catch (error) {
+      setPaying(false);
+      document.body.style.cursor = ""; // reset wait cursor back to normal
       console.error("Payment error:", error);
       alert(`Payment failed: ${error?.message ?? error}`);
     }
@@ -891,14 +896,14 @@ export default function InquiryForm() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="rounded-xl border border-black/10 bg-white/60 p-5 shadow-sm space-y-3">
           <h2 className={labelCaps}>Payment *</h2>
-          <button type="button" onClick={handlePayment} disabled={!canPay}
+          <button type="button" onClick={handlePayment} disabled={!canPay || paying}
             className="w-full h-12 rounded-md bg-brown hover:bg-[#AB8C4B] text-white border border-black transition font-serif disabled:opacity-40 disabled:cursor-not-allowed">
-            Authorize Payment
+            {paying ? "Processing..." : "Authorize Payment"}
           </button>
         </div>
         <div className="rounded-xl border border-black/10 bg-white/60 p-5 shadow-sm space-y-3">
           <button type="submit" disabled={isSubmitting || submitLock}
-            className="w-full h-12 rounded-md bg-brown hover:bg-[#AB8C4B] text-white border border-black transition font-serif disabled:opacity-40 disabled:cursor-not-allowed">
+            className={`w-full h-12 rounded-md bg-brown hover:bg-[#AB8C4B] text-white border border-black transition font-serif disabled:opacity-40 ${isSubmitting ? "cursor-wait" : "disabled:cursor-not-allowed"}`}>
             {isSubmitting ? "Submitting..." : "Submit My Inquiry"}
           </button>
           <div className="mt-4 flex items-center gap-3 text-sm text-neutral-700">

@@ -586,9 +586,9 @@ export default function QuestionnaireEditor({ mode }) {
                           <button
                             type="button"
                             onClick={() => removeQuestion(q.tempId)}
-                            className="text-xs text-red-500 underline cursor-pointer"
+                            className="text-xs text-red-500 underline cursor-pointer hover:text-red-900"
                           >
-                            <Trash2 size={16} />
+                            <Trash2 size={18} />
                           </button>
                         </div>
                       </div>

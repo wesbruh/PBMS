@@ -577,8 +577,9 @@ function AdminSettings() {
                     type="button"
                     onClick={handleEmailToggle}
                     aria-pressed={emailNotifications}
+                    title="Turn on/off Emails"
                     className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-300 cursor-pointer ${
-                      emailNotifications ? "bg-[#7E4C3C]" : "bg-gray-300"
+                      emailNotifications ? "bg-[#7E4C3C]" : "bg-gray-300" 
                     }`}
                   >
                     <span
@@ -603,6 +604,7 @@ function AdminSettings() {
                     type="button"
                     onClick={handleDashboardAlertsToggle}
                     aria-pressed={dashboardAlerts}
+                    title="Turn on/off Dashboard Alerts"
                     className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-300 cursor-pointer ${
                       dashboardAlerts ? "bg-[#7E4C3C]" : "bg-gray-300"
                     }`}

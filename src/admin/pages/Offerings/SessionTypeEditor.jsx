@@ -433,6 +433,7 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
                         clearImage();
                       }}
                       className="absolute top-2 right-2 bg-white/95 hover:bg-red-100 rounded-full p-1"
+                      title="Remove Image"
                     >
                       <ImageMinus
                         size={18}

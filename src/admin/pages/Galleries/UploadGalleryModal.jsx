@@ -449,7 +449,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
             session_id: session.id,
             channel: "email",
             subject: "Your Gallery Is Ready!",
-            body: `Hi ${session.clientName}, your ${session.type} photo gallery from ${session.date} is now ready to view. Log in to your client dashboard to access your photos.`,
+            body: `Hi ${session.clientName}, your ${session.type} photo gallery from ${session.date} is now ready to view.`,
             status: "sent",
             sent_at: new Date().toISOString(),
           });
