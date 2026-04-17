@@ -165,6 +165,7 @@ export default function ContractsEditor({ mode }) {
     return data.id;
   }
 
+
   // ------ Save as draft (active: false) ------
   async function handleSaveDraft() {
     setError("");
@@ -186,12 +187,41 @@ export default function ContractsEditor({ mode }) {
       };
 
       if (isEdit) {
-        const { error: updateError } = await supabase
-          .from("ContractTemplate")
-          .update(payload)
-          .eq("id", id);
+        // ensure contracts cannot be edited in-place if it is already being referenced
 
-        if (updateError) throw updateError;
+        // check if id has been referenced by any contracts
+        const { data: contractData, error: contractError } = await supabase
+          .from("Contract")
+          .select()
+          .eq("template_id", id);
+
+        if (contractError) throw contractError;
+
+        // mark active contract template for a session type as inactive and deleted if referenced by any contracts
+        // this will allow previous contracts to still be viewed at their current state, even if the contract template itself is edited
+        if (contractData) {
+          const { error: updateErr } = await supabase
+            .from("ContractTemplate")
+            .update({ active: false, is_deleted: true })
+            .eq("id", id);
+
+          if (updateErr) throw updateErr;
+
+          // ensure contracts cannot be edited if already being referenced
+          const { error: insertError } = await supabase
+            .from("ContractTemplate")
+            .insert(payload);
+
+          if (insertError) throw insertError;
+        } else {
+          // allow editing as normal, if no references
+          const { error: updateError } = await supabase
+            .from("ContractTemplate")
+            .update(payload)
+            .eq("id", id);
+
+          if (updateError) throw updateError;
+        }
       } else {
         const { error: insertError } = await supabase
           .from("ContractTemplate")
@@ -317,62 +347,62 @@ export default function ContractsEditor({ mode }) {
               </div>
             ) : (
               <div className="mt-6 space-y-3 max-w-7xl mx-auto w-full">
-                  {error && (
+                {error && (
                   <div className="flex items-center justify-center px-3 mx-auto">
                     <p className="text-sm text-red-600 text-center">{error}</p>
                   </div>)
                 }
-                  <div className="max-w-3xl grid grid-cols-1 md:grid-cols-2 mx-auto gap-4">
-                    {/* Template Name */}
-                    <div>
-                      <label className="block text-sm font-medium">Template Name</label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="mt-1 w-full border rounded px-3 py-2 text-sm"
-                        placeholder="e.g. Maternity Session Contract"
-                      />
-                    </div>
-
-                    {/* Session Type */}
-                    <div>
-                      <label className="block text-sm font-medium">Session Type</label>
-                      <select
-                        defaultValue={sessionType ?? ""}
-                        onChange={(e) => setSessionType(e.target.value)}
-                        className="mt-1 w-full border rounded px-3 py-2 text-sm cursor-pointer"
-                      >
-                        <option value="" disabled>Select a session type</option>
-                        {sessionTypeOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                  
-                  {/* Body Type */}
-                  <div className="max-w-3xl mx-auto">
-                    <label className="block text-sm font-medium">Contract Body</label>
-                    <textarea
-                      rows={4}
-                      placeholder="Contract Body"
-                      value={body}
+                <div className="max-w-3xl grid grid-cols-1 md:grid-cols-2 mx-auto gap-4">
+                  {/* Template Name */}
+                  <div>
+                    <label className="block text-sm font-medium">Template Name</label>
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                       className="mt-1 w-full border rounded px-3 py-2 text-sm"
-                      onChange={(e) => {setBody(e.target.value)}}
+                      placeholder="e.g. Maternity Session Contract"
                     />
                   </div>
 
-                  <p className="md:col-span-2 mt-4 text-sm font-bold text-gray-600 text-center">
-                    Publishing this contract will overwrite any other active
-                    template for this specific session type.
-                    <br />
-                    Consider saving as a draft if you want to keep the existing active
-                    template in place while you work on this new one.
-                  </p>
+                  {/* Session Type */}
+                  <div>
+                    <label className="block text-sm font-medium">Session Type</label>
+                    <select
+                      defaultValue={sessionType ?? ""}
+                      onChange={(e) => setSessionType(e.target.value)}
+                      className="mt-1 w-full border rounded px-3 py-2 text-sm cursor-pointer"
+                    >
+                      <option value="" disabled>Select a session type</option>
+                      {sessionTypeOptions.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
+                {/* Body Type */}
+                <div className="max-w-3xl mx-auto">
+                  <label className="block text-sm font-medium">Contract Body</label>
+                  <textarea
+                    rows={4}
+                    placeholder="Contract Body"
+                    value={body}
+                    className="mt-1 w-full border rounded px-3 py-2 text-sm"
+                    onChange={(e) => { setBody(e.target.value) }}
+                  />
+                </div>
+
+                <p className="md:col-span-2 mt-4 text-sm font-bold text-gray-600 text-center">
+                  Publishing this contract will overwrite any other active
+                  template for this specific session type.
+                  <br />
+                  Consider saving as a draft if you want to keep the existing active
+                  template in place while you work on this new one.
+                </p>
+              </div>
             )}
           </div>
         </Frame>
