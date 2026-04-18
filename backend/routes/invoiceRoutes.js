@@ -47,7 +47,7 @@ export default function invoiceRoutes(supabaseClient) {
       if (newTotal < 0) {
         return res.status(400).json({ error: "Reduction exceeds current balance" });
       } else if (newTotal === 0) {
-        payload.status === "Paid";
+        payload.status = "Paid";
       }
   
       const { data, error: updateError } = await supabaseClient

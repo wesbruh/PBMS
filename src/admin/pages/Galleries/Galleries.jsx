@@ -13,6 +13,15 @@ function AdminGalleries() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const tabs = new Set(["Fully Paid"]);
+  const tabFilter = {
+    dataType: "sessions",
+    tabs,
+    tabFilterFn: (row, selectedTab) => {
+      return selectedTab === "All" || row.remainingDue === 0;
+    }
+  };
+
   // Fetch gallery data from Supabase to map to table rows
   const fetchGalleries = async () => {
     setLoading(true);
@@ -23,6 +32,7 @@ function AdminGalleries() {
        * This query returns Sessions plus:
        * - client info from User (first/last/email)
        * - session type info from SessionType (name/label)
+       * - associated Invoice (remaining amount)
        * - associated Gallery if one exists (left join)
        * MAY NEED TO BE ADJUSTED LATER
        */
@@ -43,6 +53,9 @@ function AdminGalleries() {
           SessionType:session_type_id (
             name
           ),
+          Invoice(
+            remaining
+          ),
           Gallery (
             id,
             published_at,
@@ -52,8 +65,8 @@ function AdminGalleries() {
           )
         `,
         )
-        // Pick the status that mean “confirmed” by the admin. later logic will be implemented to where the photo session needs to be 'completed' before the gallery record shows up in the upload gallery table.
-        .in("status", ["Confirmed"])
+        .eq("is_active", true)        // ensure sessions are active
+        .eq("status", "Completed")    // ensure sessions are complete
         .order("start_at", { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -91,6 +104,7 @@ function AdminGalleries() {
           location: s.location_text ?? "-",
           status: hasGallery ? "Gallery Uploaded" : "Awaiting Gallery",
           uploadDate,
+          remainingDue: s?.Invoice?.remaining ?? 0
         };
       });
 
@@ -119,11 +133,11 @@ function AdminGalleries() {
       prev.map((row) =>
         row.id === selectedSession.id
           ? {
-              ...row,
-              status: "Gallery Uploaded",
-              uploadDate: new Date().toISOString(),
-              photoCount: uploadData.photoCount,
-            }
+            ...row,
+            status: "Gallery Uploaded",
+            uploadDate: new Date().toISOString(),
+            photoCount: uploadData.photoCount,
+          }
           : row,
       ),
     );
@@ -149,13 +163,12 @@ function AdminGalleries() {
       sortable: true,
       render: (value) => (
         <span
-          className={`px-3 py-1 rounded-md text-sm font-medium ${
-            value === "Awaiting Gallery"
-              ? "bg-orange-100 text-orange-800"
-              : value === "Gallery Uploaded"
-                ? "bg-green-100 text-green-800"
-                : "bg-gray-100 text-gray-800"
-          }`}
+          className={`px-3 py-1 rounded-md text-sm font-medium ${value === "Awaiting Gallery"
+            ? "bg-orange-100 text-orange-800"
+            : value === "Gallery Uploaded"
+              ? "bg-green-100 text-green-800"
+              : "bg-gray-100 text-gray-800"
+            }`}
         >
           {value}
         </span>
@@ -171,6 +184,13 @@ function AdminGalleries() {
           {row.status === "Awaiting Gallery" ? (
             <button
               onClick={(e) => {
+                if (row.remainingDue !== 0) {
+                  const confirmed = window.confirm(
+                    "The session has not been fully paid for. Continue?",
+                  );
+                  if (!confirmed) return;
+                }
+
                 e.stopPropagation();
                 handleUploadClick(row);
               }}
@@ -214,40 +234,41 @@ function AdminGalleries() {
       <div className="flex h-full w-full shadow-inner rounded-lg overflow-hidden">
         <Frame>
           <div className="flex w-full rounded-lg overflow-y-auto">
-          <div className="flex flex-col bg-[#fcfcfc] p-6 w-full h-full rounded-lg shadow-inner">
-            <div className="mb-6">
-              {/* Page Header */}
-              <h1 className="text-3xl font-bold text-gray-900">
-                Galleries
-              </h1>
-              <p className="text-sm text-gray-600 mt-0.5">
-                Upload, organize, and manage galleries from your completed photography sessions.
-              </p>
-            </div>
+            <div className="flex flex-col bg-[#fcfcfc] p-6 w-full h-full rounded-lg shadow-inner">
+              <div className="mb-6">
+                {/* Page Header */}
+                <h1 className="text-3xl font-bold text-gray-900">
+                  Galleries
+                </h1>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Upload, organize, and manage galleries from your completed photography sessions.
+                </p>
+              </div>
 
-            {/* body: loading/error/table UI */}
-            <div className="grow flex flex-col">
-              {loading ? (
-                <div className="grow flex flex-col text-center items-center justify-center text-gray-500">
-                  <LoaderCircle className="text-brown animate-spin" size={32} />
-                  <p className="text-md">Loading galleries...</p>
-                </div>
-              ) : error ? (
-                <div className="grow flex flex-col text-center items-center justify-cente">
-                  <p className="text-sm text-red-600 mb-2">{error}</p>
-                </div>
-              ) : (
-                // {/* Table Container */}
-                <Table
-                  columns={tableGalleryColumns}
-                  data={galleries}
-                  searchable={true}
-                  searchPlaceholder={"Search Galleries..."}
-                  rowsPerPage={5}
-                />
-              )}
+              {/* body: loading/error/table UI */}
+              <div className="grow flex flex-col">
+                {loading ? (
+                  <div className="grow flex flex-col text-center items-center justify-center text-gray-500">
+                    <LoaderCircle className="text-brown animate-spin" size={32} />
+                    <p className="text-md">Loading galleries...</p>
+                  </div>
+                ) : error ? (
+                  <div className="grow flex flex-col text-center items-center justify-cente">
+                    <p className="text-sm text-red-600 mb-2">{error}</p>
+                  </div>
+                ) : (
+                  // {/* Table Container */}
+                  <Table
+                    columns={tableGalleryColumns}
+                    data={galleries}
+                    searchable={true}
+                    searchPlaceholder={"Search Galleries..."}
+                    rowsPerPage={5}
+                    tabFilter={tabFilter}
+                  />
+                )}
+              </div>
             </div>
-          </div>
           </div>
         </Frame>
       </div>
