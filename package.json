@@ -9,7 +9,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "jest",
-    "test:coverage": "jest --coverage"
+    "test:unit": "jest --config jest.config.js --testPathPatterns=tests/unit",
+    "test:frontend": "jest --config jest.config.js --testPathPatterns=tests/unit/frontend",
+    "test:backend": "jest --config jest.config.js --testPathPatterns=tests/unit/backend",
+    "test:integration": "jest --config jest.config.js --testPathPatterns=tests/integration",
+    "test:e2e": "jest --config jest.config.js --testPathPatterns=tests/e2e"
   },
   "dependencies": {
     "@dnd-kit/react": "^0.3.2",

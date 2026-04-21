@@ -7,12 +7,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+# jest coverage
+coverage
 
 node_modules
 dist
 dist-ssr
 *.local
-.env
 
 # Editor directories and files
 .vscode*
@@ -29,6 +30,6 @@ dist-ssr
 .env
 /backend/.env
 
-#setup files
+# setup files
 /backend/setup.sh
 /backend/setup.bat
