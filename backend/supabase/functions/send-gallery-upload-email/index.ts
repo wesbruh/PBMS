@@ -7,6 +7,25 @@ const supabase = createClient(
   Deno.env.get("SERVICE_ROLE_KEY") ?? ""
 )
 
+
+const TZ = "America/Los_Angeles";
+
+function parseTimestamp(isoString: string): Date {
+  // normalize "+00" to "+00:00" so Date() can parse it
+  const normalized = isoString.replace(/([+-]\d{2})$/, "$1:00");
+  return new Date(normalized);
+}
+function formatDate(isoString: string): string {
+    const date = parseTimestamp(isoString);
+    return date.toLocaleDateString("en-US", {
+        timeZone: TZ,
+        month: "long",
+        day: "2-digit",
+        year: "numeric",
+    });
+}
+
+
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return new Response("Method not allowed", { status: 405 });
@@ -14,7 +33,7 @@ Deno.serve(async (req: Request) => {
 
   try {
 
-    const { email, name, URL, sessionDate, coverPhotoUrl, personalizedMessage } = await req.json();
+    const { email, name, URL, startAt, coverPhotoUrl, personalizedMessage } = await req.json();
 
     if (!email || !URL) {
       return new Response(
@@ -22,6 +41,8 @@ Deno.serve(async (req: Request) => {
         { status: 400, headers: { "Content-Type": "application/json" } });
     }
 
+    const sessionDate = formatDate(startAt);
+    
     const coverPhotoBlock = coverPhotoUrl
       ? `<img
     src="${coverPhotoUrl}"

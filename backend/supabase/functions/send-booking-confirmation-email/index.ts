@@ -7,6 +7,33 @@ const supabase = createClient(
   Deno.env.get("SERVICE_ROLE_KEY") ?? ""
 )
 
+const TZ = "America/Los_Angeles";
+
+function parseTimestamp(isoString: string): Date {
+  // normalize "+00" to "+00:00" so Date() can parse it
+  const normalized = isoString.replace(/([+-]\d{2})$/, "$1:00");
+  return new Date(normalized);
+}
+function formatDate(isoString: string): string {
+    const date = parseTimestamp(isoString);
+    return date.toLocaleDateString("en-US", {
+        timeZone: TZ,
+        month: "long",
+        day: "2-digit",
+        year: "numeric",
+    });
+}
+
+function formatTime(isoString: string): string {
+    const time = parseTimestamp(isoString);
+    return time.toLocaleTimeString("en-US", {
+        timeZone: TZ,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+    });
+}
+
 Deno.serve(async (req: Request) => {
     if(req.method !== "POST") {
         return new Response("method not allowed", {status: 405})
@@ -14,7 +41,8 @@ Deno.serve(async (req: Request) => {
     let email = "";
     try {
         const body = await req.json();
-        const { name, sessionDate, sessionTime, location, sessionType, status, notes} = body;
+        const { name, startAt, endAt, location, sessionType, status, notes} = body;
+        // console.log("RAW VALUES:", JSON.stringify({ startAt, endAt }));
         
         email = body.email ?? "";
 
@@ -26,14 +54,11 @@ Deno.serve(async (req: Request) => {
        if(!name) {
         missingFields.push("name");
        }
-       if(!sessionDate) {
-        missingFields.push("sessionDate");
+       if(!startAt) {
+        missingFields.push("startAt");
        }
-       if(!sessionTime) {
-        missingFields.push("sessionTime");
-       }
-       if(!location) {
-        missingFields.push("location");
+       if(!endAt) {
+        missingFields.push("endAt");
        }
        if(!sessionType) {
         missingFields.push("sessionType");
@@ -45,6 +70,10 @@ Deno.serve(async (req: Request) => {
         );
        }
 
+       // format date and time from raw time stamp values
+       const sessionDate = formatDate(startAt);
+       const sessionTime = `${formatTime(startAt)} - ${formatTime(endAt)}`;
+       
             const html = `
             <!DOCTYPE html>
             <html lang="en">
@@ -128,9 +157,9 @@ Deno.serve(async (req: Request) => {
             <p style="text-align: center; margin-top: 24px; font-size: 14px; color: #446780; text-transform: uppercase; letter-spacing: 2px;">
             What Happens Next
             </p>
-            <p style="margin-bottom: 1px; font-size: 14px; color: #4a4a4a; line-height: 1.8;">
-            Bailey will review your request and reach out within 2-4 business days to confirm your session details.
-            <strong>Reminder:Your deposit will not be charged until Bailey confirms your session details.</strong>
+            <p style="text-align: center; margin-bottom: 1px; font-size: 14px; color: #4a4a4a; line-height: 1.8;">
+            Bailey will review your request and reach out within 2-4 business days to confirm your session details. <br/>
+            <strong>Reminder: Your deposit will not be charged until Bailey confirms your session details.</strong>
             </p>
             </td>
             </tr>

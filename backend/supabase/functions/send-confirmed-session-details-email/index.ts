@@ -7,6 +7,33 @@ const supabase = createClient(
   Deno.env.get("SERVICE_ROLE_KEY") ?? ""
 )
 
+const TZ = "America/Los_Angeles";
+
+function parseTimestamp(isoString: string): Date {
+  // normalize "+00" to "+00:00" so Date() can parse it
+  const normalized = isoString.replace(/([+-]\d{2})$/, "$1:00");
+  return new Date(normalized);
+}
+function formatDate(isoString: string): string {
+    const date = parseTimestamp(isoString);
+    return date.toLocaleDateString("en-US", {
+        timeZone: TZ,
+        month: "long",
+        day: "2-digit",
+        year: "numeric",
+    });
+}
+
+function formatTime(isoString: string): string {
+    const time = parseTimestamp(isoString);
+    return time.toLocaleTimeString("en-US", {
+        timeZone: TZ,
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+    });
+}
+
 Deno.serve(async (req: Request) => {
     if(req.method !== "POST") {
         return new Response("method not allowed", {status: 405})
