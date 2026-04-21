@@ -44,7 +44,7 @@ export function buildBookingPayload(bookingRequest, now = new Date()) {
   };
 }
 
-export function createApp({ supabaseClient, stripeClient } = {}) {
+export function createApp({ supabaseClient, stripeClient, checkToken=true } = {}) {
   if (!supabaseClient) {
     throw new Error("A Supabase client must be provided when creating the PBMS app.");
   }
@@ -54,7 +54,6 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
   }
 
   const app = express();
-
 
   const allowedOrigins = ["http://localhost:5173", "https://www.yourrootsphotography.space"];
   app.use(
@@ -74,17 +73,18 @@ export function createApp({ supabaseClient, stripeClient } = {}) {
   app.use(express.json());
 
   // --- Routes ---
-  
+
   // add anon routes -- no verification needed
   app.use("/api", anonRoutes(supabaseClient));
-  
+
   // server testing
   app.get("/test-server", (_req, res) => {
     res.json({ message: "HTTP server running and is both Supabase- and Stripe-compatible!" });
   });
 
   // ensure all following routes verify Supabase JWT token
-  app.use(verifyToken(supabaseClient));
+  if (checkToken)
+    app.use(verifyToken(supabaseClient));
 
   // add routes that need verification
 

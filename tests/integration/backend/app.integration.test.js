@@ -1,17 +1,20 @@
 import request from "supertest";
 import { createApp } from "../../../backend/app.js";
 import { createSupabaseMock } from "../../utils/backend/createSupabaseMock.js";
+import { createStripeMock } from "../../utils/backend/createStripeMock.js";
 
 describe("backend app integration", () => {
   test("responds to the health endpoint", async () => {
     const app = createApp({
       supabaseClient: createSupabaseMock(),
+      stripeClient: createStripeMock(),
+      checkToken: false
     });
     const response = await request(app).get("/test-server");
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
-      message: "HTTP server running and Supabase-compatible!",
+      message: "HTTP server running and is both Supabase- and Stripe-compatible!",
     });
   });
 
@@ -25,8 +28,10 @@ describe("backend app integration", () => {
         AvailabilityBlocks: {
           data: [{ id: "block-1", start_time: "2026-03-19T09:00:00.000Z" }],
           error: null,
-        },
+        }
       }),
+      stripeClient: createStripeMock(),
+      checkToken: false
     });
 
     const response = await request(app).get("/api/availability");

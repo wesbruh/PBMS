@@ -20,7 +20,7 @@ describe("buildBookingPayload", () => {
     expect(payload.session_type_id).toBe("portrait");
     expect(payload.start_at).toBe(new Date("2026-04-01T09:30:00").toISOString());
     expect(payload.end_at).toBe(new Date("2026-04-01T10:30:00").toISOString());
-    expect(payload.status).toBe("pending");
+    expect(payload.status).toBe("Pending");
     expect(payload.notes).toBeNull();
     expect(payload.created_at).toBe(timestamp.toISOString());
     expect(payload.updated_at).toBe(timestamp.toISOString());

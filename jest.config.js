@@ -21,6 +21,6 @@ export default {
       },
       testPathIgnorePatterns: ["/node_modules/", "<rootDir>/backend/"],
     },
-    "<rootDir>/backend/jest.config.js",
+    "<rootDir>/backend/jest.config.cjs",
   ],
 };
