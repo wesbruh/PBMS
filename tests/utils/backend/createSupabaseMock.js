@@ -17,8 +17,38 @@ function createQueryBuilder(result = {}) {
   return builder;
 }
 
-export function createSupabaseMock(tableResults = {}) {
+function createAuthBuilder({ session = null, claims = null, signup = null, error = null } = {}) {
   return {
-    from: jest.fn((tableName) => createQueryBuilder(tableResults[tableName])),
+    signInWithPassword: jest.fn().mockResolvedValue({
+      data: {
+        user: session?.user ?? null,
+        session: session ?? null,
+      },
+      error: error ?? null
+    }),
+
+    getSession: jest.fn().mockResolvedValue({
+      data: { session },
+      error: error ?? null,
+    }),
+
+    getClaims: jest.fn().mockResolvedValue({
+      data: (claims) ? { claims } : null,
+      error: error ?? null,
+    }),
+
+    signUp: jest.fn().mockResolvedValue({
+      data: (signup) ? { user: signup.User, session: null } : null,
+      error: error ?? null,
+    }),
+  };
+}
+
+export function createSupabaseMock(tableResults = {}, authConfig = {}) {
+  return {
+    from: jest.fn((tableName) =>
+      createQueryBuilder(tableResults[tableName])
+    ),
+    auth: createAuthBuilder(authConfig),
   };
 }
