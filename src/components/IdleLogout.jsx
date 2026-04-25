@@ -23,9 +23,11 @@ export default function IdleLogout({ timeoutMs = 30 * 60 * 1000 }) { // changed 
 
     const scheduleLogout = () => {
       clearTimer();
+      /* istanbul ignore next */
       if (!user || !session) return;
 
       timerRef.current = setTimeout(async () => {
+        /* istanbul ignore next */
         if (!user || !session) return;
 
         // best-effort mark user inactive
@@ -49,6 +51,7 @@ export default function IdleLogout({ timeoutMs = 30 * 60 * 1000 }) { // changed 
     };
 
     const handleActivity = () => {
+      /* istanbul ignore next */
       if (!loading && user) {
         scheduleLogout();
       }

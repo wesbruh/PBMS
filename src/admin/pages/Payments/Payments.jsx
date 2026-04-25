@@ -17,7 +17,6 @@ function AdminPayments() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [doPageRefresh, setDoPageRefresh] = useState(false);
-  const [error, setError] = useState("");
 
   const { session } = useAuth();
 
@@ -134,10 +133,7 @@ function AdminPayments() {
     }
   };
 
-  const handleBalanceReduction = async (
-    reductionAmount,
-    paymentMethod = null,
-  ) => {
+  const handleBalanceReduction = async (reductionAmount, paymentMethod) => {
     if (!selectedInvoice) {
       console.error("No invoice selected");
       return;
@@ -188,7 +184,7 @@ function AdminPayments() {
           row?.due_date &&
           new Date(due_date) <= today;
 
-        return isOverdue ?? false;
+        return Boolean(isOverdue);
       }
 
       return selectedTab === status;
@@ -338,10 +334,6 @@ function AdminPayments() {
                     size={32}
                   />
                   <p className="text-sm">Loading payments...</p>
-                </div>
-              ) : error ? (
-                <div className="grow flex flex-col text-center items-center justify-center">
-                  <p className="text-sm text-red-600 mb-2">{error}</p>
                 </div>
               ) : (
                 <Table

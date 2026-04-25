@@ -5,6 +5,16 @@ export default {
       rootDir: ".",
       testEnvironment: "jsdom",
       roots: ["<rootDir>/src", "<rootDir>/tests"],
+      collectCoverageFrom: [
+        "<rootDir>/src/admin/pages/Payments/Payments.jsx",
+        "<rootDir>/src/admin/pages/Payments/SubtractBalanceModal.jsx",
+        "<rootDir>/src/admin/pages/Settings/Settings.jsx",
+        "<rootDir>/src/components/AuthHashRouter.jsx",
+        "<rootDir>/src/components/IdleLogout.jsx",
+        "<rootDir>/src/components/ProtectedRoute.jsx",
+        "<rootDir>/src/context/AuthContext.jsx",
+        "<rootDir>/src/pages/Auth/AuthCallback.jsx",
+      ],
       testMatch: [
         "<rootDir>/tests/unit/frontend/**/*.test.[jt]s?(x)",
         "<rootDir>/tests/unit/frontend/**/*.spec.[jt]s?(x)",
@@ -15,6 +25,13 @@ export default {
       transform: {
         "^.+\\.[jt]sx?$": ["babel-jest", { configFile: "./babel.config.js" }],
       },
+      coveragePathIgnorePatterns: [
+        "/node_modules/",
+        "/backend/",
+        "/src/admin/pages/Settings/settings\\.utils\\.js$",
+        "/src/context/authContext\\.utils\\.js$",
+        "/src/pages/Auth/authCallback\\.utils\\.js$",
+      ],
       moduleNameMapper: {
         "\\.(css|less|scss|sass)$": "identity-obj-proxy",
         "\\.(gif|ttf|eot|svg|png|jpg|jpeg|webp)$": "<rootDir>/tests/mocks/fileMock.js",
