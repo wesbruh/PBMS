@@ -182,7 +182,7 @@ function Contacts() {
                     {errorMsg}
                   </div>
                 )}
-                <div className="grow flex flex-col">
+                <div className="grow flex flex-col overflow-x-auto">
                   {loading ? (
                     <div className="grow flex flex-col justify-center items-center text-gray-500">
                       <LoaderCircle className="text-brown animate-spin mb-2" size={32} />

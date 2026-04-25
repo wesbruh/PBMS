@@ -329,7 +329,7 @@ function AdminPayments() {
                   View and manage all client payments.
                 </p>
               </div>
-
+              <div className="grow flex flex-col overflow-x-auto">
               {/* Table */}
               {loading ? (
                 <div className="flex flex-col items-center justify-center grow text-gray-500">
@@ -351,8 +351,9 @@ function AdminPayments() {
                   searchPlaceholder="Search Payments by Client Name..."
                   rowsPerPage={7}
                   tabFilter={tabFilter}
-                />
-              )}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </Frame>

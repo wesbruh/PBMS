@@ -553,7 +553,7 @@ function Sessions() {
                   <p className="text-sm text-gray-600 mt-0.5">Manage client booking requests, view session details, and/or update session information.</p>
                 </div>
                 {/* body */}
-                <div className="mt-6 grow flex flex-col">
+                <div className="mt-6 grow flex flex-col overflow-x-auto">
                   {loading ? (
                     <div className="grow flex flex-col justify-center items-center text-gray-500">
                       <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
