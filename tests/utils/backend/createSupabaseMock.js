@@ -12,6 +12,9 @@ function createQueryBuilder(result = {}) {
     lte: jest.fn(() => builder),
     single: jest.fn(() => builder),
     maybeSingle: jest.fn(() => builder),
+    neq: jest.fn(() => builder),
+    gt: jest.fn(() => builder),
+    lt: jest.fn(() => builder),
   };
 
   return builder;

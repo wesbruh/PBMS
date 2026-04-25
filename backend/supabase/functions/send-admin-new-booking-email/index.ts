@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { formatDate, formatTime } from "../_shared/utils.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabase = createClient(
@@ -7,40 +8,12 @@ const supabase = createClient(
     Deno.env.get("SERVICE_ROLE_KEY") ?? ""
 )
 
-const TZ = "America/Los_Angeles";
-
-function parseTimestamp(isoString: string): Date {
-  // normalize "+00" to "+00:00" so Date() can parse it
-  const normalized = isoString.replace(/([+-]\d{2})$/, "$1:00");
-  return new Date(normalized);
-}
-function formatDate(isoString: string): string {
-    const date = parseTimestamp(isoString);
-    return date.toLocaleDateString("en-US", {
-        timeZone: TZ,
-        month: "long",
-        day: "2-digit",
-        year: "numeric",
-    });
-}
-
-function formatTime(isoString: string): string {
-    const time = parseTimestamp(isoString);
-    return time.toLocaleTimeString("en-US", {
-        timeZone: TZ,
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-    });
-}
-
 Deno.serve(async (req: Request) => {
     if (req.method !== "POST") {
         return new Response("method not allowed", { status: 405 })
     }
 
     let adminEmail = "";
-
     try {
         const body = await req.json();
         const { clientName, clientEmail, clientPhone, startAt, endAt, location, sessionType, notes } = body;
@@ -117,7 +90,7 @@ Deno.serve(async (req: Request) => {
             <p style="margin: 0 0 24px 0; font-size: 15px; color: #4a4a4a; line-height: 1.7;">
             You have received a new session booking request. Here are the details below.
             </p>
-            <p style="margin: 0 0 8px 0; font-size: 12px; color: #446780; text-transform: uppercase; letter-spacing: 2px;">
+            <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: bold; color: #446780; text-transform: uppercase; letter-spacing: 2px;">
             Client Information
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #e5e7eb; margin-bottom: 28px;">
@@ -140,7 +113,7 @@ Deno.serve(async (req: Request) => {
             </td>
             </tr>
             </table>
-            <p style="margin: 0 0 8px 0; font-size: 12px; color: #446780; text-transform: uppercase; letter-spacing: 2px;">
+            <p style="margin: 0 0 8px 0; font-size: 15px; font-weight: bold; color: #446780; text-transform: uppercase; letter-spacing: 2px;">
             Session Details
             </p>
             <table width="100%" cellpadding="0" cellspacing="0" style="border-top: 1px solid #e5e7eb; margin-bottom: 28px;">
@@ -262,6 +235,7 @@ Deno.serve(async (req: Request) => {
 
     } catch (err) {
         // now logs unexpected failure if we have an email address to log against
+        console.error("Caught error:", err instanceof Error ? err.message : String(err));
         if(adminEmail) {
             await supabase.from("user_email_log").insert({
                 email_address: adminEmail,

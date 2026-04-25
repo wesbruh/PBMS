@@ -1,7 +1,4 @@
-import {supabase} from "../supabaseClient.js";
-
-
-export const uploadGallery = async (req, res) => {
+export const uploadGallery = (supabase) => async (req, res) => {
     try {
         const {galleryId } = req.params;
         const { expires_at} = req.body;

@@ -1,80 +1,53 @@
 import { Resend } from "resend";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { formatDate, formatTime } from "../_shared/utils.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabase = createClient(
-  Deno.env.get("SUPABASE_URL") ?? "",
-  Deno.env.get("SERVICE_ROLE_KEY") ?? ""
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SERVICE_ROLE_KEY") ?? ""
 )
 
-const TZ = "America/Los_Angeles";
-
-function parseTimestamp(isoString: string): Date {
-  // normalize "+00" to "+00:00" so Date() can parse it
-  const normalized = isoString.replace(/([+-]\d{2})$/, "$1:00");
-  return new Date(normalized);
-}
-function formatDate(isoString: string): string {
-    const date = parseTimestamp(isoString);
-    return date.toLocaleDateString("en-US", {
-        timeZone: TZ,
-        month: "long",
-        day: "2-digit",
-        year: "numeric",
-    });
-}
-
-function formatTime(isoString: string): string {
-    const time = parseTimestamp(isoString);
-    return time.toLocaleTimeString("en-US", {
-        timeZone: TZ,
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-    });
-}
-
 Deno.serve(async (req: Request) => {
-    if(req.method !== "POST") {
-        return new Response("method not allowed", {status: 405})
+    if (req.method !== "POST") {
+        return new Response("method not allowed", { status: 405 })
     }
     let email = "";
     try {
         const body = await req.json();
-        const { name, startAt, endAt, location, sessionType, status, notes} = body;
-        // console.log("RAW VALUES:", JSON.stringify({ startAt, endAt }));
-        
+        const { name, startAt, endAt, location, sessionType, status, notes } = body;
+
         email = body.email ?? "";
 
         // validate required fields
         const missingFields: string[] = [];
-       if(!email) {
-        missingFields.push("email");
-       }
-       if(!name) {
-        missingFields.push("name");
-       }
-       if(!startAt) {
-        missingFields.push("startAt");
-       }
-       if(!endAt) {
-        missingFields.push("endAt");
-       }
-       if(!sessionType) {
-        missingFields.push("sessionType");
-       }
-       if(missingFields.length > 0) {
-        return new Response(
-            JSON.stringify({ error: `Missing required fields: ${missingFields.join(", ")}`}),
-            {status: 400, headers: {"Content-Type": "application/json" }}
-        );
-       }
+        if (!email) {
+            missingFields.push("email");
+        }
+        if (!name) {
+            missingFields.push("name");
+        }
+        if (!startAt) {
+            missingFields.push("startAt");
+        }
+        if (!endAt) {
+            missingFields.push("endAt");
+        }
+        if (!sessionType) {
+            missingFields.push("sessionType");
+        }
+        if (missingFields.length > 0) {
+            return new Response(
+                JSON.stringify({ error: `Missing required fields: ${missingFields.join(", ")}` }),
+                { status: 400, headers: { "Content-Type": "application/json" } }
+            );
+        }
 
-       // format date and time from raw time stamp values
-       const sessionDate = formatDate(startAt);
-       const sessionTime = `${formatTime(startAt)} - ${formatTime(endAt)}`;
-       
-            const html = `
+        // format date and time from raw time stamp values
+        const sessionDate = formatDate(startAt);
+        const sessionTime = `${formatTime(startAt)} - ${formatTime(endAt)}`;
+
+        const html = `
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -180,42 +153,44 @@ Deno.serve(async (req: Request) => {
             </body>
             </html>
             `;
-            const { data, error } = await resend.emails.send({
-                from: "Your Roots Photography <info@yourrootsphotography.space>",
-                to: email,
-                subject: "Booking Request Received! - Your Roots Photography",
-                html,
-            });
 
-            // now logs FAILED emails sent to client in the user_email_log table
-            if (error) {
+        const { data, error } = await resend.emails.send({
+            from: "Your Roots Photography <info@yourrootsphotography.space>",
+            to: email,
+            subject: "Booking Request Received! - Your Roots Photography",
+            html,
+        });
+
+        // now logs FAILED emails sent to client in the user_email_log table
+        if (error) {
             await supabase.from("user_email_log").insert({
                 email_address: email,
-                email_type: "user_booking_request_received_email",
+                email_type: "user_booking_request_received_confirmation_email",
                 status: "Failed",
                 sent_at: new Date().toISOString(),
                 error_message: JSON.stringify(error),
             });
-            return new Response(JSON.stringify({ error }), { status: 500, headers:{ "Content-Type": "application/json" }});
+            return new Response(JSON.stringify({ error }), { status: 500, headers: { "Content-Type": "application/json" } });
         }
 
-            // log SUCCESSFUL email send to the user_email_log table
-            await supabase.from("user_email_log").insert({
-                email_address: email, 
-                email_type: "user_booking_request_received_email",
-                status: "Sent",
-                sent_at: new Date().toISOString(),
-                error_message: null,
-            });
+        // log SUCCESSFUL email send to the user_email_log table
+        await supabase.from("user_email_log").insert({
+            email_address: email,
+            email_type: "user_booking_request_received_confirmation_email",
+            status: "Sent",
+            sent_at: new Date().toISOString(),
+            error_message: null,
+        });
 
-            return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: { "Content-Type": "application/json" } });
+        return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: { "Content-Type": "application/json" } });
 
     } catch (err) {
         // now logs unexpected failure if we have an email address to log against
-        if(email) {
+        console.error("Caught error:", err instanceof Error ? err.message : String(err));
+        if (email) {
             await supabase.from("user_email_log").insert({
                 email_address: email,
-                email_type: "admin_new_booking_request",
+                email_type: "user_booking_request_received_confirmation_email",
                 status: "Failed",
                 sent_at: new Date().toISOString(),
                 error_message: err instanceof Error ? err.message : "Unknown Error",

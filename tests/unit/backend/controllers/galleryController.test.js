@@ -1,14 +1,5 @@
-import { createSupabaseMock } from "../../utils/backend/createSupabaseMock.js";
-
-let mockActive = createSupabaseMock();
-
-jest.mock("../../../backend/supabaseClient.js", () => ({
-    get supabase() {
-        return mockActive;
-    },
-}));
-
-import { uploadGallery } from "../../../backend/controllers/galleryController.js";
+import { createSupabaseMock } from "../../../utils/backend/createSupabaseMock.js";
+import { uploadGallery } from "../../../../backend/controllers/galleryController.js";
 
 // HELPERS 
 const mockReq = (overrides = {}) => ({
@@ -58,14 +49,14 @@ describe("uploadGallery", () => {
 
     // 1. 404: gallery not found
     test("1. returns 404 if gallery is not found", async () => {
-        mockActive = createSupabaseMock({
+        const supabase = createSupabaseMock({
             Gallery: { data: null, error: { message: "No rows found" } },
         });
 
         const req = mockReq();
         const res = mockRes();
 
-        await uploadGallery(req, res);
+        await uploadGallery(supabase)(req, res);
 
         expect(res.status).toHaveBeenCalledWith(404);
         expect(res.json).toHaveBeenCalledWith({ error: "Gallery not found" });
@@ -73,14 +64,14 @@ describe("uploadGallery", () => {
 
     // 2. 404: supabase select returns null data with no error
     test("2. returns 404 when supabase returns null data without an error", async () => {
-        mockActive = createSupabaseMock({
+        const supabase = createSupabaseMock({
             Gallery: { data: null, error: null },
         });
 
         const req = mockReq();
         const res = mockRes();
 
-        await uploadGallery(req, res);
+        await uploadGallery(supabase)(req, res);
 
         expect(res.status).toHaveBeenCalledWith(404);
         expect(res.json).toHaveBeenCalledWith({error: "Gallery not found"});
@@ -88,14 +79,14 @@ describe("uploadGallery", () => {
 
     // 3. 200: gallery publish successfully
     test("3. returns 200 when publishes gallery and with link", async () => {
-        mockActive = createSupabaseMock({
+       const supabase = createSupabaseMock({
             Gallery: { data: GALLERY_ROW, error: null },
         });
 
         const req = mockReq();
         const res = mockRes();
 
-        await uploadGallery(req, res);
+        await uploadGallery(supabase)(req, res);
 
         expect(res.status).toHaveBeenCalledWith(200);
         expect(res.json).toHaveBeenCalledWith({
@@ -107,7 +98,7 @@ describe("uploadGallery", () => {
 
     // 4. 200: gallery published with expires_at
     test("4. passess expires_at through to the update call", async () => {
-        mockActive = createSupabaseMock({
+        const supabase = createSupabaseMock({
             Gallery: {data: GALLERY_ROW, error: null},
         });
         const expiresDate = "2026-05-01T00:00:00Z";
@@ -115,10 +106,10 @@ describe("uploadGallery", () => {
         const res = mockRes();
         
 
-        await uploadGallery(req, res);
+        await uploadGallery(supabase)(req, res);
 
-        const galleryBuilder = mockActive.from.mock.results[1].value;;
-        expect(galleryBuilder.update).toHaveBeenCalledWith(
+        const updateBuilder = supabase.from.mock.results[1].value;;
+        expect(updateBuilder.update).toHaveBeenCalledWith(
             expect.objectContaining({
                 published_link: "http://example.com/dashboard",
                 expires_at: expiresDate,
@@ -129,17 +120,17 @@ describe("uploadGallery", () => {
 
     // 5. verify null expires_at when body omits it
     test("5. sets expires_at to null when not provided in body", async () => {
-        mockActive = createSupabaseMock({
+        const supabase = createSupabaseMock({
             Gallery: {data: GALLERY_ROW, error: null},
         });
 
         const req = mockReq(); // no expires_at in body
         const res = mockRes();
 
-        await uploadGallery(req, res);
+        await uploadGallery(supabase)(req, res);
 
-        const galleryBuilder = mockActive.from.mock.results[1].value;;
-        expect(galleryBuilder.update).toHaveBeenCalledWith(
+        const updateBuilder = supabase.from.mock.results[1].value;
+        expect(updateBuilder.update).toHaveBeenCalledWith(
             expect.objectContaining({ expires_at: null })
         );
     });
@@ -175,14 +166,14 @@ describe("uploadGallery", () => {
             selectBuilder._updating = true;
             return selectBuilder;
         });
-        mockActive = {
+        const supabase = {
             from: jest.fn(() => selectBuilder),
         };
 
         const req = mockReq();
         const res = mockRes();
 
-        await uploadGallery(req, res);
+        await uploadGallery(supabase)(req, res);
         
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith({ error: "Failed to update gallery" });
@@ -197,13 +188,13 @@ describe("uploadGallery", () => {
                 throw new Error("An unexpected error occurred");
             }),
         };
-        mockActive= {from: jest.fn(() => throwBuilder)};
+        const supabase = {from: jest.fn(() => throwBuilder)};
 
         const req = mockReq();
         const res = mockRes();
         const consoleSpy = jest.spyOn(console, "error").mockImplementation(() => {});
 
-        await uploadGallery(req, res);
+        await uploadGallery(supabase)(req, res);
 
         expect(res.status).toHaveBeenCalledWith(500);
         expect(res.json).toHaveBeenCalledWith({error: "An unexpected error occurred"});
@@ -212,18 +203,18 @@ describe("uploadGallery", () => {
 
     // 8. verify correct supabase query structure
     test("8. queries the Gallery table with Session and User joins", async () => {
-        mockActive = createSupabaseMock({
+        const supabase = createSupabaseMock({
             Gallery: { data: null, error: { message: "Not found" } },
         });
 
         const req = mockReq({ params: { galleryId: "test-uuid-123" } });
         const res = mockRes();
 
-        await uploadGallery(req, res);
+        await uploadGallery(supabase)(req, res);
 
-        expect(mockActive.from).toHaveBeenCalledWith("Gallery");
+        expect((supabase).from).toHaveBeenCalledWith("Gallery");
 
-        const builder = mockActive.from.mock.results[0].value;
+        const builder = (supabase).from.mock.results[0].value;
         expect(builder.select).toHaveBeenCalledWith(expect.stringContaining("Session"));
         expect(builder.select).toHaveBeenCalledWith(expect.stringContaining("User"));
         expect(builder.eq).toHaveBeenCalledWith("id", "test-uuid-123");

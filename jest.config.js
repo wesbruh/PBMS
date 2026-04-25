@@ -18,8 +18,10 @@ export default {
       moduleNameMapper: {
         "\\.(css|less|scss|sass)$": "identity-obj-proxy",
         "\\.(gif|ttf|eot|svg|png|jpg|jpeg|webp)$": "<rootDir>/tests/mocks/fileMock.js",
+        // "react-day-picker/dist/style.css": "<rootDir>/tests/mocks/fileMock.js",
       },
       testPathIgnorePatterns: ["/node_modules/", "<rootDir>/backend/"],
+      coverageReporters: ["html", "text"],
     },
     "<rootDir>/backend/jest.config.cjs",
   ],
