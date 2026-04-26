@@ -10,12 +10,14 @@ import {
 import { LoaderCircle, ArrowRight, ArrowLeft } from "lucide-react";
 
 import { useAuth } from "../../../context/AuthContext";
+import { API_URL } from "../../../lib/apiUrl.js";
 
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 
+const SETTINGS_ROW_ID = 1;
+
 const Availability = () => {
-  // Start viewDate at the beginning of today to prevent time mismatches
   const [viewDate, setViewDate] = useState(startOfDay(new Date()));
   const [workDay, setWorkDay] = useState({ start: "09:00", end: "17:00" });
   const [selection, setSelection] = useState(new Set());
@@ -26,19 +28,28 @@ const Availability = () => {
   const { session } = useAuth();
 
   useEffect(() => {
-    if (!session) return;
+    if (!session) {
+      setLoading(false);
+      return;
+    }
     fetchAvailability();
   }, [session]);
 
   const fetchAvailability = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/availability`, {
+      setError("");
+
+      const res = await fetch(`${API_URL}/api/availability`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${session?.access_token}`,
           "Content-Type": "application/json",
         },
       });
+
+      if (!res.ok) {
+        throw new Error("Error loading availability");
+      }
 
       const data = await res.json();
 
@@ -48,8 +59,10 @@ const Availability = () => {
           end: data.settings.work_end_time.slice(0, 5),
         });
       }
+
       if (data.blocks && data.blocks.length > 0) {
         const loadedSelection = new Set();
+
         data.blocks.forEach((block) => {
           const dateObj = new Date(block.start_time);
           const dateKey = format(dateObj, "yyyy-MM-dd");
@@ -58,10 +71,12 @@ const Availability = () => {
         });
 
         setSelection(loadedSelection);
+      } else {
+        setSelection(new Set());
       }
-      setLoading(false);
-    } catch (error) {
-      console.error("Error loading availability:", error);
+    } catch (fetchError) {
+      console.error("Error loading availability:", fetchError);
+      setError("Failed to load availability.");
     } finally {
       setLoading(false);
     }
@@ -71,11 +86,14 @@ const Availability = () => {
     const slots = [];
     let current = new Date(`2000-01-01T${workDay.start}:00`);
     const end = new Date(`2000-01-01T${workDay.end}:00`);
+
     if (current >= end) return [];
+
     while (current < end) {
       slots.push(format(current, "HH:mm"));
       current = addMinutes(current, 15);
     }
+
     return slots;
   };
 
@@ -83,12 +101,10 @@ const Availability = () => {
   const daysToShow = 14;
   const days = [...Array(daysToShow)].map((_, i) => addDays(viewDate, i));
 
-  // --- Navigation Logic ---
   const handlePrev = () => {
     const today = startOfDay(new Date());
     const newDate = addDays(viewDate, -daysToShow);
 
-    // Prevent going back before today
     if (isBefore(newDate, today)) {
       setViewDate(today);
     } else {
@@ -100,10 +116,8 @@ const Availability = () => {
     setViewDate(addDays(viewDate, daysToShow));
   };
 
-  // Disable Prev button if we are already at today
   const isAtStart = isSameDay(viewDate, startOfDay(new Date()));
 
-  // --- Interaction ---
   const handleMouseDown = (day, slot) => {
     if (isPastDate(day)) return;
     setIsDragging(true);
@@ -125,41 +139,34 @@ const Availability = () => {
 
   const isPastDate = (day) => isBefore(day, startOfDay(new Date()));
 
-  // --- Save Logic ---
   const saveChanges = async () => {
-    // 1. Prepare the RED blocks
     const blocksToSave = Array.from(selection).map((key) => {
       const [date, time] = key.split("_");
       const startDateObj = new Date(`${date}T${time}:00`);
-      const endDateObj = new Date(startDateObj.getTime() + 15 * 60 * 1000); // add 15 minutes to start time
+      const endDateObj = new Date(startDateObj.getTime() + 15 * 60 * 1000);
+
       return {
         start_time: startDateObj,
         end_time: endDateObj,
       };
     });
 
-    // 2. Define the date range we are currently viewing/editing
-    // The backend needs this to know which old records to delete.
-    // We scan the visible days (e.g. Feb 8 to Feb 22)
     const rangeStart = format(days[0], "yyyy-MM-dd");
     const rangeEnd = format(days[days.length - 1], "yyyy-MM-dd");
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/availability/blocks`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            blocks: blocksToSave,
-            rangeStart: `${rangeStart}T00:00:00`,
-            rangeEnd: `${rangeEnd}T23:59:59`,
-          }),
+      const response = await fetch(`${API_URL}/api/availability/blocks`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          blocks: blocksToSave,
+          rangeStart: `${rangeStart}T00:00:00`,
+          rangeEnd: `${rangeEnd}T23:59:59`,
+        }),
+      });
 
       if (!response.ok) throw new Error("Error saving schedule");
 
@@ -172,20 +179,18 @@ const Availability = () => {
 
   const saveSettings = async () => {
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/availability/settings`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            start: workDay.start,
-            end: workDay.end,
-          }),
+      const response = await fetch(`${API_URL}/api/availability/settings`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json",
         },
-      );
+        body: JSON.stringify({
+          id: SETTINGS_ROW_ID,
+          start: workDay.start,
+          end: workDay.end,
+        }),
+      });
 
       if (!response.ok) throw new Error("Error saving settings");
 
@@ -205,15 +210,17 @@ const Availability = () => {
         <Frame>
           <div className="h-full w-full font-sans bg-[#fcfcfc] p-5 md:p-6 rounded-lg shadow-inner overflow-y-auto">
             <div className="mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Photographer Availability
-            </h1>
-            <p className="text-sm text-gray-600 mt-0.5">Update your availability to let clients know when you're available.</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Photographer Availability
+              </h1>
+              <p className="text-sm text-gray-600 mt-0.5">
+                Update your availability to let clients know when you're available.
+              </p>
             </div>
+
             {loading ? (
               <div className="flex flex-col items-center justify-center grow text-gray-500">
-                <LoaderCircle className="text-brown animate-spin mb-2" size={32}
-                />
+                <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
                 <p className="text-sm">Loading availability...</p>
               </div>
             ) : error ? (
@@ -222,7 +229,6 @@ const Availability = () => {
               </div>
             ) : (
               <>
-                {/* Header */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                   <div>
                     <div className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded border">
@@ -259,14 +265,16 @@ const Availability = () => {
                       disabled={isAtStart}
                       className={`flex items-center gap-1 px-4 py-2 border rounded ${isAtStart ? "opacity-50 cursor-not-allowed" : "hover:bg-gray-200 transition-all cursor-pointer"}`}
                     >
-                      <ArrowLeft size={18}/> Prev
+                      <ArrowLeft size={18} /> Prev
                     </button>
+
                     <button
                       onClick={handleNext}
                       className="flex items-center gap-1 px-4 border rounded hover:bg-gray-200 transition-all cursor-pointer"
                     >
-                      Next <ArrowRight size={18}/>
+                      Next <ArrowRight size={18} />
                     </button>
+
                     <button
                       onClick={saveChanges}
                       className="px-2 rounded shadow bg-green-700 text-white text-sm disabled:opacity-50 hover:bg-green-800 transition-all cursor-pointer"
@@ -276,7 +284,6 @@ const Availability = () => {
                   </div>
                 </div>
 
-                {/* Grid */}
                 <div
                   className="overflow-x-auto shadow-lg rounded-lg border border-gray-200"
                   onMouseUp={() => setIsDragging(false)}
@@ -300,6 +307,7 @@ const Availability = () => {
                     <tbody>
                       {days.map((day) => {
                         const isPast = isPastDate(day);
+
                         return (
                           <tr
                             key={day.toString()}
@@ -308,6 +316,7 @@ const Availability = () => {
                             <td className="p-2 border font-medium text-sm sticky left-0 bg-white z-10 whitespace-nowrap">
                               {format(day, "EEE, MMM d")}
                             </td>
+
                             {timeSlots.map((slot) => {
                               const key = `${format(day, "yyyy-MM-dd")}_${slot}`;
                               const isSelected = selection.has(key);
@@ -316,23 +325,19 @@ const Availability = () => {
                                 <td
                                   key={slot}
                                   onMouseDown={() => handleMouseDown(day, slot)}
-                                  onMouseEnter={() =>
-                                    handleMouseEnter(day, slot)
-                                  }
+                                  onMouseEnter={() => handleMouseEnter(day, slot)}
                                   className={`
-                                                    border border-gray-200 p-0 transition-all duration-75 relative
-                                                    ${isPast ? "cursor-not-allowed bg-gray-200" : "cursor-pointer"}
-                                                    ${
-                                                      !isPast && isSelected
-                                                        ? "bg-red-500" // Red for Unavailable
-                                                        : !isPast
-                                                          ? "bg-emerald-500 hover:bg-emerald-600"
-                                                          : "" // Darker Green for Available
-                                                    }
-                                                `}
-                                  title={
-                                    isSelected ? "Unavailable" : "Available"
-                                  }
+                                    border border-gray-200 p-0 transition-all duration-75 relative
+                                    ${isPast ? "cursor-not-allowed bg-gray-200" : "cursor-pointer"}
+                                    ${
+                                      !isPast && isSelected
+                                        ? "bg-red-500"
+                                        : !isPast
+                                          ? "bg-emerald-500 hover:bg-emerald-600"
+                                          : ""
+                                    }
+                                  `}
+                                  title={isSelected ? "Unavailable" : "Available"}
                                 />
                               );
                             })}

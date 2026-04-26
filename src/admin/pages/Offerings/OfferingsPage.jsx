@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient.js";
 import { Plus, LoaderCircle } from "lucide-react";
+import { API_URL } from "../../../lib/apiUrl.js";
 
 import SessionTypeCard from "../../../components/SessionTypeCard/SessionTypeCard.jsx";
 

@@ -5,7 +5,7 @@ export default function availabilityRoutes(supabaseClient) {
 
   router.get("", async (_req, res) => {
     try {
-      let { data: settings, error: settingsError } = await supabaseClient
+      const { data: settings, error: settingsError } = await supabaseClient
         .from("AvailabilitySettings")
         .select("*")
         .maybeSingle();
@@ -25,25 +25,43 @@ export default function availabilityRoutes(supabaseClient) {
   });
 
   router.post("/settings", async (req, res) => {
-    if (req?.user?.role?.name !== "Admin") return;
+    if (req?.user?.role?.name !== "Admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
-    const { start, end } = req.body;
-    const { data, error } = await supabaseClient
-      .from("AvailabilitySettings")
-      .upsert({ work_start_time: start, work_end_time: end }, { onConflict: 'id' })
-      .select();
+    try {
+      const { id = 1, start, end } = req.body;
 
-    if (error) return res.status(400).json(error);
-    res.json(data);
+      const { data, error } = await supabaseClient
+        .from("AvailabilitySettings")
+        .upsert(
+          [{ id, work_start_time: start, work_end_time: end }],
+          { onConflict: "id" }
+        )
+        .select()
+        .single();
+
+      if (error) {
+        return res.status(400).json(error);
+      }
+
+      res.json(data);
+    } catch (error) {
+      console.error("Settings Save Error:", error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   router.post("/blocks", async (req, res) => {
-    if (req?.user?.role?.name !== "Admin") return;
+    if (req?.user?.role?.name !== "Admin") {
+      return res.status(403).json({ error: "Forbidden" });
+    }
 
     const { blocks, rangeStart, rangeEnd } = req.body;
+
     try {
       const now = new Date().toISOString();
-      
+
       await supabaseClient
         .from("AvailabilityBlocks")
         .delete()
@@ -54,12 +72,15 @@ export default function availabilityRoutes(supabaseClient) {
         .delete()
         .gte("start_time", rangeStart)
         .lte("start_time", rangeEnd);
-      
+
       if (blocks && blocks.length > 0) {
-        const { error: insertError } = await supabaseClient.from("AvailabilityBlocks").insert(blocks);
+        const { error: insertError } = await supabaseClient
+          .from("AvailabilityBlocks")
+          .insert(blocks);
+
         if (insertError) throw insertError;
       }
-      
+
       res.json({ message: "Schedule synced successfully" });
     } catch (error) {
       console.error("Error syncing schedule:", error.message);
