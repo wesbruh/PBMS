@@ -30,10 +30,9 @@ function mockQueryBuilder(result = {}) {
 }
 
 // sets up mockFrom to return the right builder for each table in order.
-function setupMockQueries({ sessions, pending, invoices, payments }) {
+function setupMockQueries({ sessions, invoices, payments }) {
     supabase
     .mockReturnValueOnce(mockQueryBuilder(sessions))
-    .mockReturnValueOnce(mockQueryBuilder(pending))
     .mockReturnValueOnce(mockQueryBuilder(invoices))
     .mockReturnValueOnce(mockQueryBuilder(payments));
 }

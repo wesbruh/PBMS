@@ -122,9 +122,9 @@ function CustomXTick({ x, y, payload, currentMonth }) {
 // adjust custom bar section for "actual" bar and "projected" bar side by side
 // custom bar, for 'shape' field in <Bar/>.
 function RoundedBar({ x, y, width, height, fill }) {
-  if (!height || height <= 0) {
-    return null;
-  }
+  // if (!height || height <= 0) {
+  //   return null;
+  // }
   const radius = 4;
   // actual bar shape, rounded corners and stuff
   return (

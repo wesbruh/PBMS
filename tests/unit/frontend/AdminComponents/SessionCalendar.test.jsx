@@ -61,6 +61,14 @@ beforeEach(() => {
     jest.clearAllMocks();
 });
 
+beforeAll(() => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date(2026, 3, 1)); // April 1
+});
+afterAll(() => {
+  jest.useRealTimers();
+});
+
 // 11 TESTS //
 describe("SessionCalendar Admin Component Tests", () => {
 

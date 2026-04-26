@@ -1534,4 +1534,183 @@ describe("Sessions Page Tests", () => {
     window.alert.mockRestore();
     console.error.mockRestore();
   });
+
+  test("39. getPaymentIntent handles non-ok response from checkout fetch", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.spyOn(window, "alert").mockImplementation(() => {});
+ 
+    const pendingSession = {
+      id: "session-pi-fail",
+      start_at: "2027-06-10T17:00:00+00:00",
+      end_at: "2027-06-10T18:00:00+00:00",
+      location_text: "Sacramento",
+      status: "Pending",
+      User: { first_name: "Test", last_name: "Man" },
+      SessionType: { name: "Testing Session Type" },
+    };
+ 
+    // get sessions
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [pendingSession],
+    });
+ 
+    // confirmSession: invoice mapping
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: "invoice-1" }),
+    });
+ 
+    // supabase: payment lookup
+    const paymentBuilder = {
+      select: jest.fn(() => paymentBuilder),
+      eq: jest.fn(() => paymentBuilder),
+      single: jest.fn().mockResolvedValue({
+        data: { provider_payment_id: "cs_test_fail" },
+        error: null,
+      }),
+    };
+    supabase.from.mockReturnValue(paymentBuilder);
+ 
+    // getPaymentIntent: checkout session fetch returns not ok (line 99)
+    global.fetch.mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ error: "Not found" }),
+    });
+ 
+    // confirmUpdates PATCH and updateInvoice calls
+    global.fetch.mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: "invoice-1",
+        start_at: "2027-06-10T17:00:00+00:00",
+        SessionType: { base_price: 1000 },
+      }),
+    });
+ 
+    await act(async () => {
+      render(<Sessions />);
+    });
+ 
+    await waitFor(() => {
+      expect(screen.getByText("Confirm")).toBeInTheDocument();
+    });
+ 
+    await act(async () => {
+      fireEvent.click(screen.getByText("Confirm"));
+    });
+ 
+    for (let i = 0; i < 15; i++) {
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
+ 
+    // getPaymentIntent should have logged the error
+    expect(console.error).toHaveBeenCalled();
+ 
+    window.alert.mockRestore();
+    console.error.mockRestore();
+  });
+ 
+  // covers line 162: updateInvoice throws when PATCH response is not ok
+  test("40. updateInvoice handles non-ok PATCH response", async () => {
+    jest.spyOn(console, "error").mockImplementation(() => {});
+    jest.spyOn(window, "alert").mockImplementation(() => {});
+ 
+    const pendingSession = {
+      id: "session-inv-patch-fail",
+      start_at: "2027-06-10T17:00:00+00:00",
+      end_at: "2027-06-10T18:00:00+00:00",
+      location_text: "Sacramento",
+      status: "Pending",
+      User: { first_name: "Test", last_name: "Man" },
+      SessionType: { name: "Testing Session Type" },
+    };
+ 
+    // get sessions
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => [pendingSession],
+    });
+ 
+    // confirmSession: invoice mapping
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ id: "invoice-1" }),
+    });
+ 
+    // supabase: payment lookup for capturePayment AND session data for updateInvoice
+    const builder = {
+      select: jest.fn(() => builder),
+      eq: jest.fn(() => builder),
+      single: jest.fn()
+        .mockResolvedValueOnce({
+          data: { provider_payment_id: "cs_test_123" },
+          error: null,
+        })
+        .mockResolvedValueOnce({
+          data: {
+            start_at: "2027-06-10T17:00:00+00:00",
+            SessionType: { base_price: 1000 },
+          },
+          error: null,
+        }),
+    };
+    supabase.from.mockReturnValue(builder);
+ 
+    global.fetch.mockImplementation((url, options) => {
+      // capturePayment: getPaymentIntent
+      if (url.includes("/api/checkout/")) {
+        return Promise.resolve({
+          ok: true,
+          json: async () => ({ payment_intent: { id: "pi_1" } }),
+        });
+      }
+      // capturePayment: capture intent
+      if (url.includes("/api/intent/capture")) {
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      }
+      // updateInvoice: PATCH invoice confirm - FAIL (line 162)
+      if (url.includes("/api/invoice/confirm/") && options?.method === "PATCH") {
+        return Promise.resolve({
+          ok: false,
+          json: async () => ({ error: "Invoice update failed" }),
+        });
+      }
+      // confirmUpdates: PATCH session
+      if (options?.method === "PATCH") {
+        return Promise.resolve({ ok: true, json: async () => ({}) });
+      }
+      return Promise.resolve({ ok: true, json: async () => ({}) });
+    });
+ 
+    await act(async () => {
+      render(<Sessions />);
+    });
+ 
+    await waitFor(() => {
+      expect(screen.getByText("Confirm")).toBeInTheDocument();
+    });
+ 
+    await act(async () => {
+      fireEvent.click(screen.getByText("Confirm"));
+    });
+ 
+    for (let i = 0; i < 20; i++) {
+      await act(async () => {
+        await Promise.resolve();
+      });
+    }
+ 
+    // updateInvoice should have logged the error
+    expect(console.error).toHaveBeenCalledWith(
+      "Error generating invoice:",
+      expect.anything(),
+    );
+ 
+    window.alert.mockRestore();
+    console.error.mockRestore();
+  });
+  
 });
