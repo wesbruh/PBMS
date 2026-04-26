@@ -1,42 +1,38 @@
-// checkout.sessions.create
-// checkout.sessions.retrieve
-function createCheckoutSessionBuilder(checkoutSession, error) {
+const defaultError = { message: "Method not initialized." }
+
+function createCheckoutSessionBuilder(checkoutSession) {
   return {
-    create: (!error)
+    create: (!checkoutSession?.error)
       ? jest.fn().mockResolvedValue(checkoutSession)
-      : jest.fn().mockRejectedValue(new Error(error.message)),
-    retrieve: (!error)
-      ? jest.fn().mockResolvedValue(checkoutSession)
-      : jest.fn().mockRejectedValue(new Error(error.message))
+      : jest.fn().mockRejectedValue(checkoutSession.error ?? defaultError),
+    retrieve: jest.fn().mockResolvedValue(checkoutSession)
   };
 }
 
-function createPaymentIntentBuilder(paymentIntent, error) {
+function createPaymentIntentBuilder(paymentIntent) {
   return {
-    retrieve: (!error)
-      ? jest.fn().mockResolvedValue(paymentIntent)
-      : jest.fn().mockRejectedValue(new Error(error.message)),
-    capture: (!error)
-      ? jest.fn().mockResolvedValue({...paymentIntent, status: "succeeded"})
-      : jest.fn().mockRejectedValue(new Error(error.message)),
-    cancel: (!error)
-      ? jest.fn().mockResolvedValue(paymentIntent)
-      : jest.fn().mockRejectedValue(new Error(error.message))
+    retrieve: jest.fn().mockResolvedValue(paymentIntent),
+    capture: (!paymentIntent?.error)
+      ? jest.fn().mockResolvedValue({ ...paymentIntent, status: "succeeded" })
+      : jest.fn().mockRejectedValue(paymentIntent.error ?? defaultError.message),
+    cancel: (!paymentIntent?.error)
+      ? jest.fn().mockResolvedValue({ ...paymentIntent, status: "cancelled"})
+      : jest.fn().mockRejectedValue(paymentIntent.error ?? defaultError.message)
   };
 }
 
-function createRefundsBuilder(refund, error) {
+function createRefundsBuilder(refund) {
   return {
-    create: (!error)
+    create: (!refund?.error)
       ? jest.fn().mockResolvedValue(refund)
-      : jest.fn().mockRejectedValue(new Error(error.message))
+      : jest.fn().mockRejectedValue(refund.error ?? defaultError)
   };
 }
 
-export function createStripeMock({ checkoutSession = null, paymentIntent = null, refund = null, error = null } = {}) {
+export function createStripeMock({ checkoutSession = {}, paymentIntent = {}, refund = {}} = {}) {
   return {
-    checkout: createCheckoutSessionBuilder(checkoutSession, error),
-    paymentIntents: createPaymentIntentBuilder(paymentIntent, error),
-    refunds: createRefundsBuilder(refund, error)
+    checkout: { sessions: createCheckoutSessionBuilder(checkoutSession)},
+    paymentIntents: createPaymentIntentBuilder(paymentIntent),
+    refunds: createRefundsBuilder(refund)
   };
 }

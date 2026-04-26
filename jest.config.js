@@ -10,7 +10,7 @@ export default {
         "<rootDir>/tests/unit/frontend/**/*.spec.[jt]s?(x)",
         "<rootDir>/tests/e2e/frontend/**/*.test.[jt]s?(x)",
         "<rootDir>/tests/e2e/frontend/**/*.spec.[jt]s?(x)",
-      ],
+      ],  
       setupFilesAfterEnv: ["<rootDir>/tests/setup/frontend.setup.js"],
       transform: {
         "^.+\\.[jt]sx?$": ["babel-jest", { configFile: "./babel.config.js" }],

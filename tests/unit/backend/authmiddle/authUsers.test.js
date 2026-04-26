@@ -1,6 +1,15 @@
 import { createSupabaseMock } from "../../../utils/backend/createSupabaseMock.js";
 import { verifyToken } from "../../../../backend/authmiddle/authUsers.js";
 
+// silence console.error during each test
+let consoleSpy;
+beforeEach(() => {
+  consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+});
+afterEach(() => {
+  consoleSpy.mockRestore();
+});
+
 const emptyMockSessions = [{ access_token: "" }, null, undefined];
 const invalidMockSessions = [{ access_token: "12312" }, { access_token: "a" }];
 
@@ -95,10 +104,8 @@ describe("verifyToken", () => {
     const mockedRes = mockRes();
     const mockedNext = jest.fn();
 
-    jest.spyOn(console, 'error').mockImplementation(() => { }); // silence console.error
     await verify(mockedReq, mockedRes, mockedNext);
     expect(console.error).toHaveBeenCalled();
-    console.error.mockRestore();
 
     expect(mockedRes.status).toHaveBeenCalledWith(403);
     expect(mockedRes.json).toHaveBeenCalledWith({
@@ -141,10 +148,8 @@ describe("verifyToken", () => {
     const mockedRes = mockRes();
     const mockedNext = jest.fn();
 
-    jest.spyOn(console, 'error').mockImplementation(() => { }); // silence console.error
     await verify(mockedReq, mockedRes, mockedNext);
     expect(console.error).toHaveBeenCalled();
-    console.error.mockRestore();
 
     expect(mockedRes.status).toHaveBeenCalledWith(403);
     expect(mockedRes.json).toHaveBeenCalledWith({

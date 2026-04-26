@@ -3,6 +3,15 @@ import { createApp } from "../../../../backend/app.js";
 import { createSupabaseMock } from "../../../utils/backend/createSupabaseMock.js";
 import { createStripeMock } from "../../../utils/backend/createStripeMock.js";
 
+// silence console.error during each test
+let consoleSpy;
+beforeEach(() => {
+  consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => { });
+});
+afterEach(() => {
+  consoleSpy.mockRestore();
+});
+
 const duplicateErrors = [
   {
     signup_payload: {},
@@ -47,7 +56,7 @@ describe("anonRoutes", () => {
         supabaseClient: createSupabaseMock({
           Role: {
             data: { id: "123defaultroleid" },
-            error: null,
+            error: null
           }
         },
           {
@@ -59,12 +68,10 @@ describe("anonRoutes", () => {
         checkToken: false
       });
 
-    jest.spyOn(console, 'error').mockImplementation(() => { }); // silence console.error
     const response = await request(app)
       .post("/api/signup")
       .send({ signup_payload: body.signup_payload, profile_payload: body.profile_payload }); // request body
     expect(console.error).toHaveBeenCalled();
-    console.error.mockRestore();
 
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ "error": { "message": "That email is already in use. Please log in instead." } });
@@ -76,7 +83,7 @@ describe("anonRoutes", () => {
         supabaseClient: createSupabaseMock({
           Role: {
             data: { id: "123defaultroleid" },
-            error: null,
+            error: null
           }
         },
           {
@@ -88,12 +95,10 @@ describe("anonRoutes", () => {
         checkToken: false
       });
 
-    jest.spyOn(console, 'error').mockImplementation(() => { }); // silence console.error
     const response = await request(app)
       .post("/api/signup")
       .send({ signup_payload: {}, profile_payload: {} }); // request body
     expect(console.error).toHaveBeenCalled();
-    console.error.mockRestore();
 
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ "error": { "message": "Else error" } });
@@ -105,7 +110,7 @@ describe("anonRoutes", () => {
         supabaseClient: createSupabaseMock({
           Role: {
             data: { id: "123defaultroleid" },
-            error: null,
+            error: null
           }
         },
           {
@@ -117,12 +122,10 @@ describe("anonRoutes", () => {
         checkToken: false
       });
 
-    jest.spyOn(console, 'error').mockImplementation(() => { }); // silence console.error
     const response = await request(app)
       .post("/api/signup")
       .send({ signup_payload: {}, profile_payload: {} }); // request body
     expect(console.error).toHaveBeenCalled();
-    console.error.mockRestore();
 
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ "error": { "message": "Could not create account." } });
@@ -134,19 +137,17 @@ describe("anonRoutes", () => {
         supabaseClient: createSupabaseMock({
           Role: {
             data,
-            error,
+            error
           }
         }),
         stripeClient: createStripeMock(),
         checkToken: false
       });
 
-    jest.spyOn(console, 'error').mockImplementation(() => { }); // silence console.error
     const response = await request(app)
       .post("/api/signup")
       .send({ signup_payload: body.signup_payload, profile_payload: body.profile_payload }); // request body
     expect(console.error).toHaveBeenCalled();
-    console.error.mockRestore();
 
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ "error": { "message": "Internal Server Error: Role Fetching Error" } });
@@ -158,15 +159,15 @@ describe("anonRoutes", () => {
         supabaseClient: createSupabaseMock({
           Role: {
             data: { id: "123defaultroleid" },
-            error: null,
+            error: null
           },
           User: {
             data: null,
-            error: "Error",
+            error: "Error"
           },
           UserRole: {
             data: null,
-            error: null,
+            error: null
           }
         },
           {
@@ -178,12 +179,10 @@ describe("anonRoutes", () => {
         checkToken: false
       });
 
-    jest.spyOn(console, 'error').mockImplementation(() => { }); // silence console.error
     const response = await request(app)
       .post("/api/signup")
       .send({ signup_payload: {}, profile_payload: {} }); // request body
     expect(console.error).toHaveBeenCalled();
-    console.error.mockRestore();
 
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ "error": { "message": "Internal Server Error: Data Upsert Error" } });
@@ -195,15 +194,15 @@ describe("anonRoutes", () => {
         supabaseClient: createSupabaseMock({
           Role: {
             data: { id: "123defaultroleid" },
-            error: null,
+            error: null
           },
           User: {
             data: null,
-            error: null,
+            error: null
           },
           UserRole: {
             data: null,
-            error: "Error",
+            error: "Error"
           }
         },
           {
@@ -215,32 +214,30 @@ describe("anonRoutes", () => {
         checkToken: false
       });
 
-    jest.spyOn(console, 'error').mockImplementation(() => { }); // silence console.error
     const response = await request(app)
       .post("/api/signup")
       .send({ signup_payload: {}, profile_payload: {} }); // request body
     expect(console.error).toHaveBeenCalled();
-    console.error.mockRestore();
 
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ "error": { "message": "Internal Server Error: Data Upsert Error" } });
   });
 
-  test("return successful user signup with session", async () => {
+  test("return missing user id error", async () => {
     const app = createApp(
       {
         supabaseClient: createSupabaseMock({
           Role: {
             data: { id: "123defaultroleid" },
-            error: null,
+            error: null
           },
           User: {
             data: null,
-            error: null,
+            error: null
           },
           UserRole: {
             data: null,
-            error: null,
+            error: null
           }
         },
           {
@@ -255,6 +252,7 @@ describe("anonRoutes", () => {
     const response = await request(app)
       .post("/api/signup")
       .send({ signup_payload: {}, profile_payload: {} }); // request body
+    expect(console.error).toHaveBeenCalled();
 
     expect(response.status).toBe(500);
     expect(response.body).toEqual({ "error": { "message": "User ID not found." } });
@@ -266,15 +264,15 @@ describe("anonRoutes", () => {
         supabaseClient: createSupabaseMock({
           Role: {
             data: { id: "123defaultroleid" },
-            error: null,
+            error: null
           },
           User: {
             data: null,
-            error: null,
+            error: null
           },
           UserRole: {
             data: null,
-            error: null,
+            error: null
           }
         },
           {
