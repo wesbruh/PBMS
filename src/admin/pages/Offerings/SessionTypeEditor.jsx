@@ -23,8 +23,8 @@ import {
 } from "lucide-react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
+import { SUPABASE_URL } from "../../../lib/viteApiUrl.js";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = "session-images";
 
 function getPublicUrl(path) {

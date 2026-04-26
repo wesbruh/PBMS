@@ -52,6 +52,10 @@ Object.keys(mockChain).forEach((key) => {
   }
 });
 
+jest.mock("../../../src/lib/viteApiUrl.js", () => ({
+  SUPABASE_URL: "https://test.supabase.co",
+}));
+
 jest.mock("../../../src/lib/supabaseClient.js", () => ({
   supabase: new Proxy(
     {},
@@ -94,8 +98,6 @@ jest.mock("lucide-react", () => ({
   LoaderCircle: () => <span data-testid="icon-loader" />,
 }));
 
-// ── Vite env shim ─────────────────────────────────────────────────────────────
-process.env.VITE_SUPABASE_URL = "https://test.supabase.co";
 
 // ── Component under test (imported AFTER all mocks are registered) ────────────
 import OfferingsPage from "../../../src/admin/pages/Offerings/OfferingsPage.jsx";

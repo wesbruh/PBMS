@@ -10,11 +10,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient.js";
 import { Plus, LoaderCircle } from "lucide-react";
-import { API_URL } from "../../../lib/apiUrl.js";
+import { SUPABASE_URL } from "../../../lib/viteApiUrl.js";
 
 import SessionTypeCard from "../../../components/SessionTypeCard/SessionTypeCard.jsx";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+//const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = "session-images";
 
 function getImageUrl(path) {
