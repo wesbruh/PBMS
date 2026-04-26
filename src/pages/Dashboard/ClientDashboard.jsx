@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthContext";
 
 import JSZip from "jszip";  // imported JSZip and file-saver for gallery downloads
 import { saveAs } from "file-saver";
+import { API_URL, SUPABASE_URL } from "../../lib/apiUrl.js";
 
 import SharedClientDashboard from "../../components/Dashboard/SharedClientDashboard";
 
@@ -15,7 +16,7 @@ async function handleUpdate(session, sessionId, field, value) {
   const payload = { [field]: value };
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+    const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
       method: "PATCH",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -40,7 +41,7 @@ async function cancelSession(session, sessionId) {
   const getPaymentIntent = async (checkoutSessionId) => {
     if (!checkoutSessionId) return { status: null, paymentIntent: null }
     try {
-      const csResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
+      const csResponse = await fetch(`${API_URL}/api/checkout/${checkoutSessionId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -74,7 +75,7 @@ async function cancelSession(session, sessionId) {
 
       if (!status) throw new Error("Failed to retrieve payment intent");
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/uncapture`, {
+      const response = await fetch(`${API_URL}/api/intent/uncapture`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -105,7 +106,7 @@ async function cancelSession(session, sessionId) {
   };
 
   // ensure session exists and map session id to invoice id
-  const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
+  const mapResponse = await fetch(`${API_URL}/api/invoice/${sessionId}`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${session?.access_token}`,
@@ -178,7 +179,7 @@ export default function ClientDashboard() {
 
     try {
       // retrieve session type info for product data
-      const sessionResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+      const sessionResponse = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -218,7 +219,7 @@ export default function ClientDashboard() {
       }
 
       // create checkout session in backend
-      const checkoutSession = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/rest`, {
+      const checkoutSession = await fetch(`${API_URL}/api/checkout/rest`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -286,7 +287,7 @@ export default function ClientDashboard() {
 
           // ensure checkout session belongs to user
           if (user.id === client_id) {
-            const response = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
+            const response = await fetch(`${API_URL}/api/checkout/${checkoutSessionId}`, {
               method: "GET",
               headers: {
                 "Authorization": `Bearer ${session?.access_token}`,
@@ -645,7 +646,7 @@ export default function ClientDashboard() {
     const token = sessionData.session.access_token;
 
     // Constructing the full URL to the supabase edge function for user deletion
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`;
+    const url = `${SUPABASE_URL}/functions/v1/user-delete`;
 
     // Call the edge function using fetch and include the bearer token
     const res = await fetch(url, {

@@ -8,6 +8,8 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import { LoaderCircle } from "lucide-react";
+import { API_URL, SUPABASE_URL } from "../../../lib/apiUrl.js";
+
 
 function Contacts() {
   const navigate = useNavigate();
@@ -76,7 +78,7 @@ function Contacts() {
       setLoading(true);
       setErrorMsg("");
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile`, {
+      const response = await fetch(`${API_URL}/api/profile`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -128,7 +130,7 @@ function Contacts() {
         return;
       }
 
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/user-delete`, {
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/user-delete`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
