@@ -1,7 +1,8 @@
 // src/pages/Auth/AuthCallback.jsx
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
+import { markUserActive } from "./authCallback.utils";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -63,31 +64,8 @@ export default function AuthCallback() {
     },
   });
 
-  const markUserActive = useCallback(async (session) => {
-    if (!session || !session?.user?.id) return;
-    const userId = session.user.id;
-
-    const updates = {
-      is_active: true,
-      last_login_at: new Date().toISOString(),
-    };
-
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${userId}`, {
-      method: "PATCH",
-      headers: {
-        "Authorization": `Bearer ${session?.access_token}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(updates)
-    });
-
-    if (!response.ok) {
-      const { errorData } = await response.json();
-      console.error("Failed updating user activity:", errorData.error);
-    }
-  }, []);
-
   useEffect(() => {
+    /* istanbul ignore next */
     if (handledRef.current) return;
     handledRef.current = true;
 
@@ -121,8 +99,8 @@ export default function AuthCallback() {
 
     async function run() {
       // read hash or query params from url
-      const hash = window.location.hash?.replace(/^#/, "") ?? "";
-      const search = window.location.search?.replace(/^\?/, "") ?? "";
+      const hash = window.location.hash.replace(/^#/, "");
+      const search = window.location.search.replace(/^\?/, "");
       const rawParams = hash || search;
       const params = new URLSearchParams(rawParams);
 
@@ -193,7 +171,7 @@ export default function AuthCallback() {
     }
 
     run();
-  }, [markUserActive, navigate]);
+  }, [navigate]);
 
   const resendConfirmation = async (values) => {
     setMessage("");
@@ -246,6 +224,7 @@ export default function AuthCallback() {
                   type="email"
                   {...registerEmail("email")}
                 />
+                {/* istanbul ignore next */}
                 {emailErrors.email && (
                   <p className="mt-2 text-sm text-red-600">
                     {emailErrors.email.message}

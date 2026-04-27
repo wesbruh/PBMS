@@ -31,6 +31,9 @@ function createQueryBuilder(tableResult = {}, tableName = null) {
     order: jest.fn(() => builder),
     single: jest.fn(() => builder),
     maybeSingle: jest.fn(() => builder),
+    neq: jest.fn(() => builder),
+    gt: jest.fn(() => builder),
+    lt: jest.fn(() => builder),
 
     then: (resolve) => {
       const resolvePayload = { error: result.error ?? null }

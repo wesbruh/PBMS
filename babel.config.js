@@ -3,5 +3,8 @@ export default {
     ["@babel/preset-env", { targets: { node: "current" } }],
     ["@babel/preset-react", { runtime: "automatic" }],
   ],
-  plugins: ['babel-plugin-transform-import-meta']
+  plugins: [
+    "./babel-plugin-jest-import-meta-env.cjs",
+    "babel-plugin-transform-import-meta",
+  ]
 };
