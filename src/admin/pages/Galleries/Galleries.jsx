@@ -246,7 +246,7 @@ function AdminGalleries() {
               </div>
 
               {/* body: loading/error/table UI */}
-              <div className="grow flex flex-col">
+              <div className="grow flex flex-col overflow-x-auto">
                 {loading ? (
                   <div className="grow flex flex-col text-center items-center justify-center text-gray-500">
                     <LoaderCircle className="text-brown animate-spin" size={32} />

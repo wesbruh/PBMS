@@ -1,16 +1,27 @@
-import { supabase } from "backend/supabaseClient.js";
-
-async function signInUser() {
-  const { error } = await supabase.auth.signInWithPassword({
+export async function signInUser(supabaseClient) {
+  const { error } = await supabaseClient.auth.signInWithPassword({
     email: process.env.TEST_USER_EMAIL,
     password: process.env.TEST_USER_PASSWORD
   });
 
-  if (error)
+  if (error) throw error;
+
+  return;
 }
 
-async function getSession() {
-  const { data: { session } } = await supabase.auth.getSession();
+export async function signInAdmin(supabaseClient) {
+  const { error } = await supabaseClient.auth.signInWithPassword({
+    email: process.env.TEST_ADMIN_EMAIL,
+    password: process.env.TEST_ADMIN_PASSWORD
+  });
 
-  if (!session) 
+  if (error) throw error;
+
+  return;
+}
+
+export async function getSession(supabaseClient) {
+  const { data: { session } }= await supabaseClient.auth.getSession();
+  
+  return { "access_token": (session) ? session?.access_token : "" };
 }

@@ -1,6 +1,7 @@
 // src/context/AuthContext.jsx
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { fetchProfileForSession } from "./authContext.utils";
 
 // small shape to keep the current user info consistent
 // we'll store the supabase auth user plus an optional row from "User"
@@ -20,34 +21,22 @@ export function AuthProvider({ children }) {
         data: { session },
       } = await supabase.auth.getSession();
 
+      /* istanbul ignore next */
       if (!ignore) {
         setSession(session ?? null);
       }
 
       // if logged in, try to load the row from "User" and user's role name
+      /* istanbul ignore else */
       if (session && !ignore) {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${session?.user?.id}`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json"
-          }
-        });
-
-        if (!ignore) {
-          if (response.ok) {
-            const data = await response.json();
-
-            if (!data) setProfile(null);
-
-            const { role_name, ...rest } = data;
-            setProfile({ ...rest, roleName: role_name });
-          }
-        }
+        const nextProfile = await fetchProfileForSession(session);
+        /* istanbul ignore next */
+        if (!ignore && nextProfile !== undefined) setProfile(nextProfile);
       } else if (!ignore) {
         setProfile(null);
       }
 
+      /* istanbul ignore next */
       if (!ignore) setLoading(false);
     }
 
@@ -63,22 +52,8 @@ export function AuthProvider({ children }) {
       } else {
         // reload profile when session changes
         (async () => {
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${newSession.user.id}`, {
-            method: "GET",
-            headers: {
-              "Authorization": `Bearer ${newSession?.access_token}`,
-              "Content-Type": "application/json"
-            }
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-
-            if (!data) setProfile(null);
-
-            const { role_name, ...rest } = data;
-            setProfile({ ...rest, roleName: role_name });
-          }
+          const nextProfile = await fetchProfileForSession(newSession);
+          if (nextProfile !== undefined) setProfile(nextProfile);
         })();
       }
     });

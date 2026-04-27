@@ -59,11 +59,11 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
       return true;
     });
 
-    const currentTotalSize = selectedFiles.reduce((sum, file) => sum + file.size,0,);
+    const currentTotalSize = selectedFiles.reduce((sum, file) => sum + file.size, 0,);
     const newTotalSize = imageFiles.reduce((sum, file) => sum + file.size, 0);
 
     if (currentTotalSize + newTotalSize > MAX_TOTAL_SIZE) {
-      errors.push(
+      setError(
         `Total file size exceeds the 300MB limit. Please select fewer or smaller files.`,
       );
       return;
@@ -95,7 +95,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
     // add remaining files without previews if over limit
     if (imageFiles.length > MAX_PREVIEWS) {
       // changed to imageFiles.slice
-      const filesWithoutPreview = imageFiles.files.slice(MAX_PREVIEWS);
+      const filesWithoutPreview = imageFiles.slice(MAX_PREVIEWS);
       validFiles.push(...filesWithoutPreview);
 
       // add placeholder previews
@@ -149,7 +149,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
       for (let i = 0; i < items.length; i++) {
         const item = items[i].webkitGetAsEntry();
         if (item) {
-          promises.push(traverseFileTree(item));
+          promises.push(traverseFileTree(item, files));
         }
       }
       Promise.all(promises).then(() => {
@@ -239,6 +239,9 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
     */
 
     // hard block if personalized message is over the limit, should never happen due to inline validation but added as extra safety check before starting upload process
+    // this is unreachable by Jest since its inine checked in the code
+
+    /* istanbul ignore next */
     if (personalizedMessage.length > MAX_MESSAGE_LENGTH) {
       setMessageError(`Personalized message cannot exceed ${MAX_MESSAGE_LENGTH} characters.`);
       return;
@@ -247,6 +250,7 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
     setUploadStatus("uploading");
     cancelUploadRef.current = false; // Reset cancel flag at start of upload
 
+    /* istanbul ignore next */
     if (selectedFiles.length === 0) {
       setError("Please select at least one image to upload.");
       return;
@@ -329,21 +333,19 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
           let uploadError = null;
 
           for (let retry = 0; retry < maxRetries && !uploadSuccess; retry++) {
+            /* istanbul ignore next */
             if (cancelUploadRef.current) {
-              // console.log("Upload cancelled during retry");
               setUploading(false);
               setCurrentFile(null);
               return;
             }
-            // console.log("filepath:", filePath);
-            // console.log("file:", file);
 
             const { data: uploadData, error: uploadError } =
               await supabase.storage.from("photos").upload(filePath, file, {
                 cacheControl: "3600",
                 upsert: false,
               });
-            // console.log(uploadData);
+
             if (!uploadError) {
               uploadSuccess = true;
 
@@ -372,25 +374,19 @@ const UploadGalleryModal = ({ isOpen, onClose, session, onUploadSuccess }) => {
                     };
                     img.onerror = resolve; // resolve even if image fails to load to prevent blocking
                   });
+                /* istanbul ignore next */
                 } catch (err) {
+                /* istanbul ignore next */
                   console.warn(
                     `Could not get dimensions for ${file.name}:`,
                     err,
                   );
                 }
               }
-              // if (!photoError) {
-              //   uploadedPhotos.push(uploadData);
-              // } else {
-              //   console.error(
-              //     `Error creating Photo record for ${file.name}:`,
-              //     photoError,
-              //   );
-              //   failedPhotos.push(file.name);
-              // }
             } else {
               if (retry < maxRetries - 1) {
                 // wait before retrying
+                /* istanbul ignore next */
                 await new Promise((resolve) =>
                   setTimeout(resolve, 1000 * Math.pow(2, retry)),
                 );

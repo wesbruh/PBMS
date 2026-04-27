@@ -6,10 +6,27 @@ import { createApp } from "./app.js";
 import { supabase } from "./supabaseClient.js";
 import { stripe } from "./stripeClient.js";
 
-const app = createApp({ supabaseClient: supabase, stripeClient: stripe });
+export function buildServerApp({
+  supabaseClient = supabase,
+  stripeClient = stripe,
+} = {}) {
+  return createApp({ supabaseClient, stripeClient });
+}
 
-const PORT = process.env.PORT || 5001;
+export function getServerPort(env) {
+  const resolvedEnv = env || process.env;
+  /* istanbul ignore next */
+  if (!resolvedEnv) return 5001;
+  return resolvedEnv.PORT || 5001;
+}
 
-app.listen(PORT, () => {
-  console.log(`HTTP Server running on ${PORT}.`);
-});
+export function startServer({ app, port }) {
+  return app.listen(port, () => {
+    console.log(`HTTP Server running on ${port}.`);
+  });
+}
+
+/* istanbul ignore next */
+if (process.env.NODE_ENV !== "test") {
+  startServer({ app: buildServerApp(), port: getServerPort() });
+}

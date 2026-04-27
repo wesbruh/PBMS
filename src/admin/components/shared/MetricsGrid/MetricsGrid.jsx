@@ -72,8 +72,9 @@ function MetricsGrid() {
         // 3) pending invoices - unpaid  CHNAGEEEE TOOO CHECK FOR REMAINING BALANCE
         supabase
           .from("Invoice")
-          .select("*", { count: "exact", head: true })
-          .eq("status", "Unpaid"),
+          .select("remaining", { count: "exact", head: true })
+          .eq("status", "Paid")
+          .gt("remaining", 0),
         // 4) paid invoices - sum the "total" column from Invoice for revenue
         //supabase
         // .from("Invoice")
@@ -97,7 +98,7 @@ function MetricsGrid() {
       //   throw paidInvoicesRes.error;
       // }
       if (paidPaymentsRes.error) {
-        paidPaymentsRes.error;
+        throw paidPaymentsRes.error;
       }
 
       // sum paid invoices + paid payments together for total revenue
@@ -157,9 +158,9 @@ function MetricsGrid() {
         loading={loading}
       />
       <MetricCard
-        label="Pending Invoices"
-        value={metrics.pendingPayment ?? "None"}
-        sub="Awaiting Payment"
+        label="Pending Payments"
+        value={metrics.pendingInvoices ?? "None"}
+        sub="Invoices Awaiting Remaining Payment"
         accent="red"
         loading={loading}
       />

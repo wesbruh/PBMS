@@ -18,6 +18,7 @@ export default function anonRoutes(supabaseClient) {
       if (defaultRoleError) {
         console.error("Role not found or error fetching role: ", defaultRoleError);
         return;
+        throw new Error("Internal Server Error: Role Fetching Error");
       }
 
       const { data: signUpData, error: signUpError } = await supabaseClient
@@ -30,6 +31,9 @@ export default function anonRoutes(supabaseClient) {
           throw new Error({ error: { message: "That email is already in use. Please log in instead." } });
         } else {
           throw new Error({ error: { message: signUpError.message || "Could not create account." } });
+          throw new Error("That email is already in use. Please log in instead.");
+        } else {
+          throw new Error(signUpError.message || "Could not create account.");
         }
       }
 
@@ -40,6 +44,7 @@ export default function anonRoutes(supabaseClient) {
         authUser.identities.length === 0;
 
       if (duplicateSignup) throw new Error({ error: { message: "That email is already in use. Please log in instead." } });
+      if (duplicateSignup) throw new Error("That email is already in use. Please log in instead.");
 
       // upsert into "User" and "UserRole" table
       if (authUser?.id) {
@@ -80,6 +85,17 @@ export default function anonRoutes(supabaseClient) {
     } catch (error) {
       console.error("Failed to signup:", error);
       res.status(500).json(error)
+
+        if (userTableErr || userRoleTableErr) throw new Error("Internal Server Error: Data Upsert Error");
+        res.status(200).json({
+          "info": {
+            "message": "We've sent you a confirmation link. Please check your email to finish creating your account."
+          }
+        });
+      } else throw new Error("User ID not found.");
+    } catch (error) {
+      console.error("Failed to signup:", error.message);
+      res.status(500).json({ "error": { message: error.message } })
     }
   });
 

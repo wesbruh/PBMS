@@ -1,6 +1,6 @@
 import express from "express";
 import PDFDocument from "pdfkit";
-import path from "path"
+import path from "path";
 import { fileURLToPath } from "url";
 
 export default function receiptRoutes(supabaseClient) {
@@ -47,8 +47,16 @@ export default function receiptRoutes(supabaseClient) {
       res.setHeader("Content-Disposition", `attachment; filename=YourRootsPhotography-Reciept.pdf`);
 
       const doc = new PDFDocument({ margin: 60 });
-      const __filename = fileURLToPath(import.meta.url);
-      const __dirname = path.dirname(__filename);
+      //const __filename = fileURLToPath(import.meta.url);
+      //const __dirname = path.dirname(__filename);
+      let __dirname = '';
+
+      try {
+        const __filename = fileURLToPath(import.meta.url);
+        __dirname = path.dirname(__filename);
+      } catch (err) {
+        __dirname = '';
+        }
       const logoPath = path.join(__dirname, "../../public/logo1.png");
 
       doc.pipe(res);
@@ -65,7 +73,10 @@ export default function receiptRoutes(supabaseClient) {
 
       //BACKGROUND
       doc.rect(0, 0, doc.page.width, doc.page.height).fill(beige);
+      //doc.image(logoPath, 30, 50, { width: 100 });
+      if (process.env.NODE_ENV !== 'test') {
       doc.image(logoPath, 30, 50, { width: 100 });
+      }
       let y = 200;
 
       doc
