@@ -4,11 +4,11 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 const mockUseAuth = jest.fn();
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-import ProtectedRoute from "../../../src/components/ProtectedRoute.jsx";
+import ProtectedRoute from "../../../../src/components/ProtectedRoute.jsx";
 
 function renderProtectedRoute() {
   return render(

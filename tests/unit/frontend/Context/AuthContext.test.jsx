@@ -1,10 +1,9 @@
-import React from "react";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const mockGetSession = jest.fn();
 const mockOnAuthStateChange = jest.fn();
 
-jest.mock("../../../src/lib/supabaseClient", () => ({
+jest.mock("../../../../src/lib/supabaseClient", () => ({
   supabase: {
     auth: {
       getSession: () => mockGetSession(),
@@ -13,7 +12,7 @@ jest.mock("../../../src/lib/supabaseClient", () => ({
   },
 }));
 
-import { AuthProvider, useAuth } from "../../../src/context/AuthContext.jsx";
+import { AuthProvider, useAuth } from "../../../../src/context/AuthContext.jsx";
 
 function Consumer() {
   const auth = useAuth();

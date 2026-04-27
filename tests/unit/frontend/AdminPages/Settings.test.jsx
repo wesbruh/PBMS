@@ -1,14 +1,13 @@
-import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const mockUseAuth = jest.fn();
 const mockStorageFrom = jest.fn();
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-jest.mock("../../../src/lib/supabaseClient", () => ({
+jest.mock("../../../../src/lib/supabaseClient", () => ({
   supabase: {
     storage: {
       from: (...args) => mockStorageFrom(...args),
@@ -16,15 +15,15 @@ jest.mock("../../../src/lib/supabaseClient", () => ({
   },
 }));
 
-jest.mock("../../../src/admin/components/shared/Sidebar/Sidebar", () => () => (
+jest.mock("../../../../src/admin/components/shared/Sidebar/Sidebar", () => () => (
   <aside data-testid="sidebar" />
 ));
 
-jest.mock("../../../src/admin/components/shared/Frame/Frame", () => ({ children }) => (
+jest.mock("../../../../src/admin/components/shared/Frame/Frame", () => ({ children }) => (
   <div data-testid="frame">{children}</div>
 ));
 
-import AdminSettings from "../../../src/admin/pages/Settings/Settings.jsx";
+import AdminSettings from "../../../../src/admin/pages/Settings/Settings.jsx";
 
 function createStorageMocks() {
   const storageApi = {

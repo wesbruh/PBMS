@@ -1,6 +1,5 @@
-import React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
-import SubtractBalanceModal from "../../../src/admin/pages/Payments/SubtractBalanceModal.jsx";
+import SubtractBalanceModal from "../../../../src/admin/pages/Payments/SubtractBalanceModal.jsx";
 
 describe("SubtractBalanceModal", () => {
   const originalConfirm = window.confirm;

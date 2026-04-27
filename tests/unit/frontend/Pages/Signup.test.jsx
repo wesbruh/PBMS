@@ -1,9 +1,9 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import SignUp from '../../../src/pages/SignUp/SignUp'; // adjust path
+import SignUp from '../../../../src/pages/SignUp/SignUp'; // adjust path
 import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
 

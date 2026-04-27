@@ -4,23 +4,23 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 const mockUseAuth = jest.fn();
 const mockTriggerAdminToast = jest.fn();
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-jest.mock("../../../src/components/AdminNotificationToast.jsx", () => ({
+jest.mock("../../../../src/components/AdminNotificationToast.jsx", () => ({
   triggerAdminToast: () => mockTriggerAdminToast(),
 }));
 
-jest.mock("../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () => () => (
+jest.mock("../../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () => () => (
   <aside data-testid="sidebar" />
 ));
 
-jest.mock("../../../src/admin/components/shared/Frame/Frame.jsx", () => ({ children }) => (
+jest.mock("../../../../src/admin/components/shared/Frame/Frame.jsx", () => ({ children }) => (
   <div data-testid="frame">{children}</div>
 ));
 
-jest.mock("../../../src/admin/components/shared/PaymentDetailsModal.jsx", () => ({
+jest.mock("../../../../src/admin/components/shared/PaymentDetailsModal.jsx", () => ({
   __esModule: true,
   default: ({ invoiceId, onClose }) => (
     <div data-testid="payment-details">
@@ -30,7 +30,7 @@ jest.mock("../../../src/admin/components/shared/PaymentDetailsModal.jsx", () => 
   ),
 }));
 
-jest.mock("../../../src/admin/pages/Payments/SubtractBalanceModal.jsx", () => ({
+jest.mock("../../../../src/admin/pages/Payments/SubtractBalanceModal.jsx", () => ({
   __esModule: true,
   default: ({ isOpen, currentBalance, onConfirm, onRefresh, onClose }) => (
     <div data-testid="subtract-modal">
@@ -43,7 +43,7 @@ jest.mock("../../../src/admin/pages/Payments/SubtractBalanceModal.jsx", () => ({
   ),
 }));
 
-jest.mock("../../../src/admin/components/shared/Table/Table.jsx", () => ({
+jest.mock("../../../../src/admin/components/shared/Table/Table.jsx", () => ({
   __esModule: true,
   default: ({ columns, data, tabFilter }) => (
     <div data-testid="payments-table">
@@ -72,7 +72,7 @@ jest.mock("../../../src/admin/components/shared/Table/Table.jsx", () => ({
   ),
 }));
 
-import AdminPayments from "../../../src/admin/pages/Payments/Payments.jsx";
+import AdminPayments from "../../../../src/admin/pages/Payments/Payments.jsx";
 
 describe("AdminPayments", () => {
   const originalAlert = window.alert;

@@ -1,4 +1,3 @@
-import React from "react";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 
 const mockNavigate = jest.fn();
@@ -16,7 +15,7 @@ jest.mock("react-router-dom", () => {
   };
 });
 
-jest.mock("../../../src/lib/supabaseClient", () => ({
+jest.mock("../../../../src/lib/supabaseClient", () => ({
   supabase: {
     auth: {
       getSession: () => mockGetSession(),
@@ -28,7 +27,7 @@ jest.mock("../../../src/lib/supabaseClient", () => ({
   },
 }));
 
-import AuthCallback from "../../../src/pages/Auth/AuthCallback.jsx";
+import AuthCallback from "../../../../src/pages/Auth/AuthCallback.jsx";
 
 describe("AuthCallback", () => {
   let originalFetch;

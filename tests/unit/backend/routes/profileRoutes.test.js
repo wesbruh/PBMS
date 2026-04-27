@@ -1,4 +1,4 @@
-import profileRoutes from "../../../backend/routes/profileRoutes.js";
+import profileRoutes from "../../../../backend/routes/profileRoutes.js";
 
 function createProfileSupabase({ listResult, singleResult, updateResult } = {}) {
   return {

@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { render, screen, waitFor } from "@testing-library/react";
-
+import { useAuth } from "../../../../src/context/AuthContext.jsx";
 const mockUseParams = jest.fn();
 const mockUseAuth = jest.fn();
 
@@ -8,27 +8,27 @@ jest.mock("react-router-dom", () => ({
     useParams: () => mockUseParams(),
 }));
 
-jest.mock("../../../src/context/AuthContext.jsx", () => ({
+jest.mock("../../../../src/context/AuthContext.jsx", () => ({
     useAuth: () => mockUseAuth(),
 }));
 
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
     API_URL: "http://localhost:5001",
 }));
 
-jest.mock("../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () => {
+jest.mock("../../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () => {
     return function MockSidebar() {
         return <div data-testid="sidebar">Sidebar</div>;
     };
 });
 
-jest.mock("../../../src/admin/components/shared/Frame/Frame.jsx", () => {
+jest.mock("../../../../src/admin/components/shared/Frame/Frame.jsx", () => {
     return function MockFrame({ children }) {
         return <div data-testid="frame">{children}</div>;
     };
 });
 
-jest.mock("../../../src/components/Dashboard/SharedClientDashboard", () => {
+jest.mock("../../../../src/components/Dashboard/SharedClientDashboard", () => {
     return function MockSharedClientDashboard(props) {
         return (
             <div data-testid="shared-client-dashboard">
@@ -49,13 +49,13 @@ jest.mock("../../../src/components/Dashboard/SharedClientDashboard", () => {
 
 const mockSupabaseFrom = jest.fn();
 
-jest.mock("../../../src/lib/supabaseClient.js", () => ({
+jest.mock("../../../../src/lib/supabaseClient.js", () => ({
     supabase: {
         from: (table) => mockSupabaseFrom(table),
     },
 }));
 
-import ContactView, { handleUpdate, cancelSession, } from "../../../src/admin/pages/Contacts/ContactView.jsx";
+import ContactView, { handleUpdate, cancelSession, } from "../../../../src/admin/pages/Contacts/ContactView.jsx";
 
 function createTableMock(results) {
     return (table) => {

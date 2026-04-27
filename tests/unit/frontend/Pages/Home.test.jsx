@@ -1,14 +1,14 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
-jest.mock('../../../src/components/HomePageComps/CarouselPhotos', () => () => (
+jest.mock('../../../../src/components/HomePageComps/CarouselPhotos', () => () => (
   <div data-testid="carousel-section" />
 ));
 
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Home from '../../../src/pages/Home/Home';
+import Home from '../../../../src/pages/Home/Home';
 
 describe('Home', () => {
   beforeEach(() => {

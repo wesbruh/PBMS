@@ -1,8 +1,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import SignUpSuccess from '../../../src/pages/SignUp/SignUpSuccess'; // adjust path
+import SignUpSuccess from '../../../../src/pages/SignUp/SignUpSuccess'; // adjust path
 import '@testing-library/jest-dom';
 import { MemoryRouter } from 'react-router-dom';
-
 
 const mockNavigate = jest.fn();
 
