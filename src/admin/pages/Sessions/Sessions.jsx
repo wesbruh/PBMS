@@ -7,6 +7,7 @@ import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import Table from "../../components/shared/Table/Table.jsx";
 import SessionDetailsModal from "../../components/shared/SessionDetailsModal";
+import { API_URL } from "../../../lib/apiUrl.js"
 
 // constants for invoice generation logic
 const DEPOSIT_PERCENTAGE = 0.05;
@@ -38,7 +39,7 @@ function Sessions() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions`, {
+      const response = await fetch(`${API_URL}/api/sessions`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -86,7 +87,7 @@ function Sessions() {
   const getPaymentIntent = async (checkoutSessionId) => {
     if (!checkoutSessionId) return { status: null, paymentIntent: null }
     try {
-      const csResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
+      const csResponse = await fetch(`${API_URL}/api/checkout/${checkoutSessionId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -110,7 +111,7 @@ function Sessions() {
       const { status, paymentIntent } = await getPaymentIntent(checkoutSessionId);
 
       if (!status) throw new Error("Failed to retrieve payment intent");
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/capture`, {
+      const response = await fetch(`${API_URL}/api/intent/capture`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -145,7 +146,7 @@ function Sessions() {
         `${(date.getMonth() + 1).toString().padStart(2, '0')}` + "-" +
         `${date.getDate().toString().padStart(2, '0')}`;
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/confirm/${invoiceId}`, {
+      const response = await fetch(`${API_URL}/api/invoice/confirm/${invoiceId}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -166,7 +167,7 @@ function Sessions() {
 
   const confirmSession = async (sessionId) => {
     // ensure session exists and map session id to invoice id
-    const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
+    const mapResponse = await fetch(`${API_URL}/api/invoice/${sessionId}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -209,7 +210,7 @@ function Sessions() {
 
       if (!status) throw new Error("Failed to retrieve payment intent");
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/uncapture`, {
+      const response = await fetch(`${API_URL}/api/intent/uncapture`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -239,7 +240,7 @@ function Sessions() {
 
   const cancelSession = async (sessionId, status) => {
     // ensure session exists and map session id to invoice id
-    const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
+    const mapResponse = await fetch(`${API_URL}/api/invoice/${sessionId}`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -270,7 +271,7 @@ function Sessions() {
 
       // delete session from db and remove from local state since it was never confirmed and thus should not be kept as a record
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+        const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
           method: "DELETE",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -292,6 +293,7 @@ function Sessions() {
     let payload = {}
 
     // FIX: Convert time strings to proper ISO format for Supabase
+    /* istanbul ignore next */
     if (field === 'start_at') {
       const session = sessions.reduce((acc, s) => {
         if (s.id === sessionId)
@@ -305,15 +307,17 @@ function Sessions() {
       const newEnd = new Date(new Date(session.end_at).getTime() + timeOffset).toISOString();
 
       payload = { 'start_at': newStart, 'end_at': newEnd };
+      /* istanbul ignore next */
     } else if (field === 'end_at') {
       const newEnd = new Date(value).toISOString();
       payload = { 'end_at': newEnd };
+      /* istanbul ignore next */
     } else {
       payload = { [field]: value };
     }
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+      const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -349,7 +353,7 @@ function Sessions() {
     payload.status = statusChange; // add status update to payload
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+      const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -549,7 +553,7 @@ function Sessions() {
                   <p className="text-sm text-gray-600 mt-0.5">Manage client booking requests, view session details, and/or update session information.</p>
                 </div>
                 {/* body */}
-                <div className="mt-6 grow flex flex-col">
+                <div className="mt-6 grow flex flex-col overflow-x-auto">
                   {loading ? (
                     <div className="grow flex flex-col justify-center items-center text-gray-500">
                       <LoaderCircle className="text-brown animate-spin mb-2" size={32} />

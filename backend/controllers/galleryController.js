@@ -1,20 +1,7 @@
-import {createClient} from "@supabase/supabase-js";
-import dotenv from "dotenv";
-import process from "node:process";
-
-dotenv.config();
-
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-async function uploadGallery (req, res) {
-    const {galleryId } = req.params;
-    const { expires_at} = req.body;
-
+export const uploadGallery = (supabase) => async (req, res) => {
     try {
+        const {galleryId } = req.params;
+        const { expires_at} = req.body;
          // fetch the gallery with proper joins to get the client info. joins between galleries, sessions, clients
         const { data: gallery, error } = await supabase
             .from('Gallery')
@@ -110,7 +97,4 @@ async function uploadGallery (req, res) {
         console.error("publishGallery error:", err);
         return res.status(500).json({ error: err.message });
     }
-}
-
-
-export { uploadGallery };
+};

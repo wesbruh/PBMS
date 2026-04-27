@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { X, LoaderCircle } from "lucide-react";
+import { API_URL } from "../../../lib/apiUrl.js";
 
 // function to format questionnaire answers for display on frontend 
 // handles both plain string answers and JSON arrays (for checkbox/radio/select questions)
@@ -36,7 +37,7 @@ export default function SessionDetailsModal({ sessionId, session, onClose }) {
     setLoading(true);
     setError("");
 
-    fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}/details`, {
+    fetch(`${API_URL}/api/sessions/${sessionId}/details`, {
       method: "GET",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,

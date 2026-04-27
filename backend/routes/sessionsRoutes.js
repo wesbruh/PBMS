@@ -27,7 +27,7 @@ export default function sessionsRoutes(supabaseClient) {
       const { data, error } = await supabaseClient
         .from("SessionType")
         .select();
-      
+
       if (error) throw error;
 
       res.status(200).json(data ?? null);
@@ -50,7 +50,7 @@ export default function sessionsRoutes(supabaseClient) {
 
       if (session_type_id)
         query = query.eq("id", session_type_id);
-      else if (session_type_name)
+      else
         query = query.eq("name", session_type_name);
 
       const { data, error } = await query.single();
@@ -97,7 +97,7 @@ export default function sessionsRoutes(supabaseClient) {
         .single();
 
       if (error) throw error;
-      
+
       res.status(200).json(data);
     } catch (error) {
       console.error("Error updating session:", error.message);
@@ -115,12 +115,12 @@ export default function sessionsRoutes(supabaseClient) {
         .from("Session")
         .delete()
         .eq("id", id)
-      
+
       if (response.status !== 204) throw new Error("Failed to delete session.");
 
-      res.status(204).json({ message: "Session deleted successfully." });
+      res.status(204).end();
     } catch (error) {
-      console.error("Error updating session:", error.message);
+      console.error("Error deleting session:", error.message);
       res.status(500).json({ error: "Internal Server Error" });
     }
   });
@@ -135,9 +135,9 @@ export default function sessionsRoutes(supabaseClient) {
     try {
       const { data, error } = await supabaseClient
         .from("Session")
-        .insert([{
-          client_id: client_id || null,
-          session_type_id: session_type_id || null,
+        .insert({
+          client_id: client_id,
+          session_type_id: session_type_id,
           start_at: requestStart,
           end_at: requestEnd,
           location_text: location_text,
@@ -145,7 +145,7 @@ export default function sessionsRoutes(supabaseClient) {
           notes: notes || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        }])
+        })
         .select()
         .maybeSingle();
 
@@ -178,7 +178,7 @@ export default function sessionsRoutes(supabaseClient) {
         .maybeSingle();
       if (responsesError) throw responsesError;
 
-      let questionnaire = null;
+      let questionnaire;
 
       if (response) {
         // get all answers for this response
@@ -199,11 +199,13 @@ export default function sessionsRoutes(supabaseClient) {
           .sort((a, b) => a.order_idx - b.order_idx); // ensure answers are in the same order as the questions in the template
 
         questionnaire = {
-          template_name: response.QuestionnaireTemplate.name ?? "Missing Template Name",
+          template_name: response.QuestionnaireTemplate.name,
           status: response.status,
           submitted_at: response.submitted_at,
           items: answerMap,
         };
+      } else {
+        questionnaire = null;
       }
 
       res.status(200).json({

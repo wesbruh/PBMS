@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import { useAuth } from "../../../context/AuthContext"
+import { API_URL } from "../../../lib/apiUrl.js"; 
 
 import ContractDetail from "../../../pages/Dashboard/ContractDetail.jsx";
 
@@ -22,7 +23,7 @@ export default function AdminContractView() {
 
     async function fetchContract() {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/${contractId}`, {
+        const response = await fetch(`${API_URL}/api/contract/${contractId}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -52,7 +53,7 @@ export default function AdminContractView() {
     
     async function fetchContractTemplate() {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/templates/${contract.template_id}`, {
+        const response = await fetch(`${API_URL}/api/contract/templates/${contract.template_id}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
