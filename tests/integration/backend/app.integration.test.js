@@ -23,13 +23,15 @@ describe("backend app integration", () => {
     const app = createApp({
       supabaseClient: createSupabaseMock(),
       stripeClient: createStripeMock(),
-      checkToken: false,
+      checkToken: false
     });
     const response = createResponse();
     const healthHandler = app.router.stack.find(
       (layer) => layer.route?.path === "/test-server"
     ).route.stack[0].handle;
+
     healthHandler({}, response);
+
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
       message: "HTTP server running and is both Supabase- and Stripe-compatible!",
@@ -40,24 +42,11 @@ describe("backend app integration", () => {
     const router = availabilityRoutes(
       createSupabaseMock({
         AvailabilitySettings: {
-          data: [
-            {
-              id: "settings-1",
-              work_start_time: "09:00",
-              work_end_time: "17:00",
-              timezone: "America/Los_Angeles",
-              updated_at: "2026-03-19T08:00:00.000Z",
-            },
-          ],
+          data: [{ work_start_time: "09:00", work_end_time: "17:00" }],
           error: null,
         },
         AvailabilityBlocks: {
-          data: [
-            {
-              id: "block-1",
-              start_time: "2026-03-19T09:00:00.000Z",
-            },
-          ],
+          data: [{ id: "block-1", start_time: "2026-03-19T09:00:00.000Z" }],
           error: null,
         },
       })
@@ -66,22 +55,13 @@ describe("backend app integration", () => {
     const handler = router.stack.find(
       (layer) => layer.route?.path === "" && layer.route.methods.get
     ).route.stack[0].handle;
+
     await handler({}, response);
+
     expect(response.statusCode).toBe(200);
     expect(response.body).toEqual({
-      settings: {
-        id: "settings-1",
-        work_start_time: "09:00",
-        work_end_time: "17:00",
-        timezone: "America/Los_Angeles",
-        updated_at: "2026-03-19T08:00:00.000Z",
-      },
-      blocks: [
-        {
-          id: "block-1",
-          start_time: "2026-03-19T09:00:00.000Z",
-        },
-      ],
+      settings: { work_start_time: "09:00", work_end_time: "17:00" },
+      blocks: [{ id: "block-1", start_time: "2026-03-19T09:00:00.000Z" }],
     });
   });
 });
