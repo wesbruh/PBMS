@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { Clock, Image, PencilLine, Trash2 } from "lucide-react";
+import { SUPABASE_URL } from "../../lib/viteApiUrl.js";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = "session-images";
 
 function getImageUrl(path) {

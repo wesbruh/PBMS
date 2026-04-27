@@ -42,7 +42,7 @@ describe("backend app integration", () => {
     const router = availabilityRoutes(
       createSupabaseMock({
         AvailabilitySettings: {
-          data: { work_start_time: "09:00", work_end_time: "17:00" },
+          data: [{ work_start_time: "09:00", work_end_time: "17:00" }],
           error: null,
         },
         AvailabilityBlocks: {

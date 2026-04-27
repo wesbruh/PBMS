@@ -48,15 +48,35 @@ function toLabel(timeStr) {
 /** Parse a DB `time` column value ("HH:MM:SS") → "HH:MM" */
 function dbTimeToHHMM(dbTime) {
   if (!dbTime) return null;
-  return dbTime.substring(0, 5); // "09:00:00" → "09:00"
+  return dbTime.substring(0, 5);
+}
+
+/**
+ * Parse timestamp-like values into "HH:MM" without timezone shifting.
+ * Works for:
+ *   - "2026-02-23T09:00:00.000Z"
+ *   - "2026-02-23T09:00:00"
+ *   - "09:00:00"
+ *   - "09:00"
+ */
+function extractHHMM(value) {
+  if (!value || typeof value !== "string") return null;
+
+  const timeMatch = value.match(/T(\d{2}:\d{2})/);
+  if (timeMatch) return timeMatch[1];
+
+  const plainTimeMatch = value.match(/^(\d{2}:\d{2})/);
+  if (plainTimeMatch) return plainTimeMatch[1];
+
+  return null;
 }
 
 // ── Slot generator ────────────────────────────────────────────────────────────
 
 function generateSlots(startMin, endMin) {
   const slots = [];
-  // Round startMin up to nearest 15
   const firstSlot = Math.ceil(startMin / 15) * 15;
+
   for (let t = firstSlot; t < endMin; t += 15) {
     slots.push({
       value: fromMin(t),
@@ -64,6 +84,7 @@ function generateSlots(startMin, endMin) {
       totalMin: t,
     });
   }
+
   return slots;
 }
 
@@ -84,7 +105,7 @@ export default function TimeSlotGrid({
   durationMinutes = 60,
   startTime,
   onSelectStart,
-  readOnly = false
+  readOnly = false,
 }) {
   // Work hours fetched from AvailabilitySettings
   const [workStart, setWorkStart] = useState("09:00");
@@ -104,16 +125,18 @@ export default function TimeSlotGrid({
           .limit(1)
           .single();
 
-        if (error || !data) return; // fall back to 09:00–17:00 defaults
+        if (error || !data) return;
 
         const s = dbTimeToHHMM(data.work_start_time);
         const e = dbTimeToHHMM(data.work_end_time);
+
         if (s) setWorkStart(s);
         if (e) setWorkEnd(e);
       } catch (err) {
         console.error("TimeSlotGrid: failed to fetch AvailabilitySettings", err);
       }
     }
+
     fetchWorkHours();
   }, []);
 
@@ -126,23 +149,8 @@ export default function TimeSlotGrid({
 
     async function fetchBlocks() {
       setLoadingBlocks(true);
+
       try {
-        // ── 1) Admin unavailability blocks ──────────────────────────────────
-        // Availability table: valid_from date, valid_to date
-        // A row means the admin is NOT available from valid_from to valid_to
-        // We treat the entire day range as blocked minutes.
-        // The table stores per-day blocks; for time-of-day granularity we use
-        // the stored timestamps directly if they fall on selectedDate.
-        //
-        // Schema: id, admin_user_id, valid_from (date), valid_to (date), created_at
-        // Note: availability_rule column is being removed per spec.
-        //
-        // Because valid_from/valid_to are DATEs (not timestamps), a row covering
-        // selectedDate means the admin is unavailable ALL DAY on that date.
-        // For time-granular blocks (like "16:15–18:15 on 2026-02-23"), your team
-        // should add valid_from_time / valid_to_time columns. Until then we block
-        // all slots on a day that has an Availability row.
-        //
         const startDateTime = new Date(`${selectedDate}T00:00:00.000`);
         const dayStart = startDateTime.toISOString();
 
@@ -155,25 +163,23 @@ export default function TimeSlotGrid({
           .gte("start_time", dayStart)
           .lte("end_time", dayEnd);
 
-        if (abErr) console.error("TimeSlotGrid: Availability fetch error", abErr);
+        if (abErr) {
+          console.error("TimeSlotGrid: Availability fetch error", abErr);
+        }
 
         const intervals = [];
 
         (adminBlocks ?? []).forEach((block) => {
-          const blockStartObj = new Date(block.start_time);
-          const blockEndObj = new Date(block.end_time);
+          const blockStart = extractHHMM(block.start_time);
+          const blockEnd = extractHHMM(block.end_time);
 
-          const blockStart = (blockStartObj.getHours().toString().padStart(2, '0')) + ":" +
-            (blockStartObj.getMinutes().toString().padStart(2, '0'));
-          const blockEnd = (blockEndObj.getHours().toString().padStart(2, '0')) + ":" +
-            (blockEndObj.getMinutes().toString().padStart(2, '0'));
+          if (!blockStart || !blockEnd) return;
 
-          intervals.push({ startMin: blockStart, endMin: blockEnd });
+          intervals.push({
+            startMin: blockStart,
+            endMin: blockEnd,
+          });
         });
-
-        // ── 2) Active booked sessions on selectedDate ───────────────────────
-        // selectedDate is local date, but timestampz are fetched
-        // compare table entries against UTC-calculated dayStart and dayEnd times 
 
         const { data: bookedSessions, error: bsErr } = await supabase
           .from("Session")
@@ -182,17 +188,17 @@ export default function TimeSlotGrid({
           .gte("start_at", dayStart)
           .lte("start_at", dayEnd);
 
-        if (bsErr) console.error("TimeSlotGrid: Session fetch error", bsErr);
+        if (bsErr) {
+          console.error("TimeSlotGrid: Session fetch error", bsErr);
+        }
 
-        (bookedSessions ?? []).forEach((s) => {
-          if (!s.start_at || !s.end_at) return;
-          const sessionStartObj = new Date(s.start_at);
-          const sessionEndObj = new Date(s.end_at);
+        (bookedSessions ?? []).forEach((session) => {
+          if (!session.start_at || !session.end_at) return;
 
-          const sessionStart = (sessionStartObj.getHours().toString().padStart(2, '0')) + ":" +
-            (sessionStartObj.getMinutes().toString().padStart(2, '0'));
-          const sessionEnd = (sessionEndObj.getHours().toString().padStart(2, '0')) + ":" +
-            (sessionEndObj.getMinutes().toString().padStart(2, '0'));
+          const sessionStart = extractHHMM(session.start_at);
+          const sessionEnd = extractHHMM(session.end_at);
+
+          if (!sessionStart || !sessionEnd) return;
 
           intervals.push({
             startMin: sessionStart,
@@ -212,22 +218,17 @@ export default function TimeSlotGrid({
   }, [selectedDate, workStart, workEnd]);
 
   // ── Generate all slots within work hours ─────────────────────────────────
-  const allSlots = useMemo(() => generateSlots(toMin(workStart), toMin(workEnd)),
-    [workStart, workEnd]);
+  const allSlots = useMemo(() => {
+    return generateSlots(toMin(workStart), toMin(workEnd));
+  }, [workStart, workEnd]);
 
   // ── Compute which slots are disabled ─────────────────────────────────────
-  //
-  // A slot at time T is disabled if:
-  //   A) The slot itself (T → T+15) overlaps any blocked interval.
-  //   B) The *session* starting at T (T → T+durationMinutes) overlaps any blocked interval.
-  //   C) T + durationMinutes > workEndMin (session would run past end of day).
-  //
   const blockedSet = useMemo(() => {
     const blocked = new Set();
 
     blockedIntervals.forEach((block) => {
       blocked.add(block.startMin);
-    })
+    });
 
     return blocked;
   }, [blockedIntervals]);
@@ -239,16 +240,18 @@ export default function TimeSlotGrid({
     allSlots.forEach((slot) => {
       const sessionEnd = slot.totalMin + durationMinutes;
 
-      // C) Runs past end of work day
       if (sessionEnd > workEndMin) {
         over.add(slot.value);
         return;
       }
 
       for (const block of blockedIntervals) {
+        const blockStartMin = toMin(block.startMin);
+        const blockEndMin = toMin(block.endMin);
+
         if (
-          overlaps(slot.totalMin, slot.totalMin + 15, toMin(block.startMin), toMin(block.endMin)) || // A
-          overlaps(slot.totalMin, sessionEnd, toMin(block.startMin), toMin(block.endMin))            // B
+          overlaps(slot.totalMin, slot.totalMin + 15, blockStartMin, blockEndMin) ||
+          overlaps(slot.totalMin, sessionEnd, blockStartMin, blockEndMin)
         ) {
           over.add(slot.value);
           break;
@@ -258,6 +261,7 @@ export default function TimeSlotGrid({
 
     return over;
   }, [allSlots, blockedIntervals, durationMinutes, workEnd]);
+
   // ── Auto-computed end time from startTime + duration ─────────────────────
   const computedEndTime = useMemo(() => {
     if (!startTime) return null;
@@ -266,7 +270,10 @@ export default function TimeSlotGrid({
 
   // ── Handle slot click ─────────────────────────────────────────────────────
   function handleSlotClick(slot) {
-    if (blockedSet.has(slot.value) || overlapSet.has(slot.value)) return;
+    if (blockedSet.has(slot.value) || overlapSet.has(slot.value) || readOnly) {
+      return;
+    }
+
     const end = fromMin(slot.totalMin + durationMinutes);
     onSelectStart(slot.value, end);
   }
@@ -286,26 +293,27 @@ export default function TimeSlotGrid({
         <h4 className="text-sm font-bold text-brown uppercase tracking-wider">
           Select Start Time
         </h4>
+
         <div className="text-xs text-neutral-500 italic">
           {loadingBlocks
             ? "Loading availability…"
             : startTime
               ? `${toLabel(startTime)} → ${toLabel(computedEndTime)} (${durationMinutes} min)`
-              : `Pick a ${durationMinutes}-min slot`
-          }
+              : `Pick a ${durationMinutes}-min slot`}
         </div>
       </div>
 
-      {/* Legend */}
       <div className="flex items-center gap-4 text-[10px] text-neutral-400">
         <span className="flex items-center gap-1">
           <span className="inline-block w-3 h-3 rounded bg-brown" /> Selected
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded bg-[#F4EFE6] border border-[#E7DFCF]" /> In session
+          <span className="inline-block w-3 h-3 rounded bg-[#F4EFE6] border border-[#E7DFCF]" /> In
+          session
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded bg-neutral-100 border border-neutral-200" /> Unavailable
+          <span className="inline-block w-3 h-3 rounded bg-neutral-100 border border-neutral-200" />{" "}
+          Unavailable
         </span>
       </div>
 
@@ -314,7 +322,8 @@ export default function TimeSlotGrid({
           const isBlocked = blockedSet.has(slot.value);
           const isOverlap = overlapSet.has(slot.value);
           const isStart = slot.value === startTime;
-          const isInRange = !isBlocked &&
+          const isInRange =
+            !isBlocked &&
             startTime &&
             computedEndTime &&
             slot.value > startTime &&
@@ -326,7 +335,7 @@ export default function TimeSlotGrid({
               type="button"
               disabled={isBlocked || isOverlap || readOnly}
               onClick={() => handleSlotClick(slot)}
-              title={(isBlocked || isOverlap) ? "Not available" : slot.label}
+              title={isBlocked || isOverlap ? "Not available" : slot.label}
               className={`
                 py-3 text-[11px] font-bold rounded-md border transition-all
                 ${isStart
