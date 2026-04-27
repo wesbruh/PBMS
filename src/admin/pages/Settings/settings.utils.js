@@ -18,6 +18,21 @@ export const getProfilePhotoPath = (userId, fileName) => {
   return `admins/${userId}/profile-${Date.now()}.${ext}`;
 };
 
+export const clearObjectUrl = (current) => {
+  if (current) URL.revokeObjectURL(current);
+  return "";
+};
+
+export const replaceObjectUrl = (current, nextUrl) => {
+  if (current) URL.revokeObjectURL(current);
+  return nextUrl;
+};
+
+export const replaceSavedObjectUrl = (current, nextUrl) => {
+  if (current && current !== nextUrl) URL.revokeObjectURL(current);
+  return nextUrl;
+};
+
 export const isIgnorableSettingsLoadError = (error) => {
   const message = String(error?.message || "").toLowerCase();
   return (

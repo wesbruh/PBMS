@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { formatDate } from "../_shared/utils.ts"
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const supabase = createClient(
@@ -12,15 +13,33 @@ Deno.serve(async (req: Request) => {
     return new Response("Method not allowed", { status: 405 });
   }
 
+  let email = "";
   try {
+    const body = await req.json();
+    const { name, URL, startAt, coverPhotoUrl, personalizedMessage } = body;
 
-    const { email, name, URL, sessionDate, coverPhotoUrl, personalizedMessage } = await req.json();
+    email = body.email ?? "";
 
-    if (!email || !URL) {
-      return new Response(
-        JSON.stringify({ error: "Missing required fields: email and URL" }),
-        { status: 400, headers: { "Content-Type": "application/json" } });
+    //validate required fields
+    const missingFields: string[] = [];
+
+    if (!email) {
+      missingFields.push("email");
     }
+    if (!URL) {
+      missingFields.push("URL");
+    }
+    if (!startAt) {
+      missingFields.push("startAt");
+    }
+    if (missingFields.length > 0) {
+      return new Response(
+        JSON.stringify({ error: `Missing required fields: ${missingFields.join(", ")}` }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const sessionDate = formatDate(startAt);
 
     const coverPhotoBlock = coverPhotoUrl
       ? `<img
@@ -135,11 +154,19 @@ Deno.serve(async (req: Request) => {
       html,
     });
 
+    // log FAILED email send to user_email_log table
     if (error) {
-      return new Response(JSON.stringify({ error }), { status: 500 });
+      await supabase.from("user_email_log").insert({
+        email_address: email,
+        email_type: "user_gallery_upload_email",
+        status: "Failed",
+        sent_at: new Date().toISOString(),
+        error_message: JSON.stringify(error),
+      });
+      return new Response(JSON.stringify({ error }), { status: 500, headers: { "Content-Type": "application/json" } });
     }
 
-    // log successful email send to user_email_log table
+    // log SUCCESSFUL email send to user_email_log table
     await supabase.from("user_email_log").insert({
       email_address: email,
       email_type: "user_gallery_upload_email",
@@ -151,6 +178,16 @@ Deno.serve(async (req: Request) => {
     return new Response(JSON.stringify({ success: true, data }), { status: 200, headers: { "Content-Type": "application/json" } });
 
   } catch (err) {
-    return new Response(JSON.stringify({ error: "Internal server error" }), { status: 500 });
+    console.error("Caught error:", err instanceof Error ? err.message : String(err));
+    if (email) {
+      await supabase.from("user_email_log").insert({
+        email_address: email,
+        email_type: "user_gallery_upload_email",
+        status: "Failed",
+        sent_at: new Date().toISOString(),
+        error_message: err instanceof Error ? err.message : "Unknown Error",
+      });
+    }
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "Content-Type": "application/json" } });
   }
 });

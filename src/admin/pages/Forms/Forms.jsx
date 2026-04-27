@@ -29,30 +29,33 @@ export default function Forms() {
       const { data: qTemplates, error: qFetchErr } = await supabase
         .from("QuestionnaireTemplate")
         .select(
-          "id, name, active, session_type_id, SessionType:session_type_id(name), schema_json",
+          "id, name, active, session_type_id, SessionType(name), schema_json",
         )
         .order("session_type_id", { ascending: true });
 
       const { data: cTemplates, error: cFetchErr } = await supabase
         .from("ContractTemplate")
-        .select("*, SessionType:session_type_id(name)")
+        .select("*, SessionType(name)")
         .eq("is_deleted", false)
         .order("session_type_id", { ascending: true });
 
       if (qFetchErr || cFetchErr) throw qFetchErr ?? cFetchErr;
 
-      qTemplates.forEach((t) => {
-        t.type = "Questionnaire"
-      });
+      if (qTemplates)
+        qTemplates.forEach((t) => {
+          t.type = "Questionnaire"
+        });
 
-      cTemplates.forEach((t) => {
-        t.type = "Contract"
-      });
+      if (cTemplates)
+        cTemplates.forEach((t) => {
+          t.type = "Contract"
+        });
 
-      const data = [...qTemplates, ...cTemplates];
+      const data = [...(qTemplates ?? []), ...(cTemplates ?? [])];
       setItems(data);
     } catch (e) {
-      setError(e.message || "Failed to load questionnaire templates.");
+      console.error(e.message);
+      setError("Failed to load templates.");
     } finally {
       setLoading(false);
     }
@@ -64,7 +67,7 @@ export default function Forms() {
 
   async function handleDelete(templateId) {
     const template = items.find((t) => t.id === templateId);
-    const templateName = template?.name ?? "Template";
+    const templateName = template.name;
 
     if (
       !window.confirm(
@@ -82,7 +85,9 @@ export default function Forms() {
           .eq("id", templateId);
 
         if (delErr) throw delErr;
-      } else if (template.type === "Contract") {
+      }
+
+      if (template.type === "Contract") {
         // delete the template safely, give success alert
 
         // check if id has been referenced by any contracts
@@ -90,7 +95,7 @@ export default function Forms() {
           .from("Contract")
           .select()
           .eq("template_id", templateId);
-        
+
         if (contractError) throw contractError;
 
         // if it isn't being referenced, safely delete
@@ -101,14 +106,14 @@ export default function Forms() {
             .from("ContractTemplate")
             .delete()
             .eq("id", templateId);
-          
-            if (delErr) throw delErr;
+
+          if (delErr) throw delErr;
         } else {
           const { error: updateErr } = await supabase
             .from("ContractTemplate")
             .update({ is_deleted: true })
             .eq("id", templateId);
-          
+
           if (updateErr) throw updateErr;
         }
       }
@@ -123,7 +128,7 @@ export default function Forms() {
 
   async function handleDuplicate(templateId) {
     const template = items.find((t) => t.id === templateId);
-    const templateName = template?.name ?? "Template";
+    const templateName = template.name;
 
     const payload = {
       name: `${templateName} Copy`,
@@ -139,7 +144,7 @@ export default function Forms() {
           .insert(payload)
           .select()
           .single();
-        
+
         if (newTemplateError) throw newTemplateError;
 
         // insert questions as new entries into Questions table to prevent templates referencing same ids
@@ -160,10 +165,12 @@ export default function Forms() {
           .from("QuestionnaireTemplate")
           .update({ schema_json: schemaJson })
           .eq("id", newTemplateData.id);
-        
+
         if (updateError) throw updateError;
 
-      } else if (template.type === "Contract") {
+      } 
+      
+      if (template.type === "Contract") {
         // duplicate the template safely
         payload.body = template.body;
         const { error: copyError } = await supabase
@@ -186,7 +193,7 @@ export default function Forms() {
     id: t.id,
     type: t.type,
     name: t.name,
-    sessionType: t.SessionType?.name ?? "—",
+    sessionType: t.SessionType.name,
     active: t.active,
   }));
 
@@ -225,7 +232,7 @@ export default function Forms() {
               e.stopPropagation();
               if (row.type === "Questionnaire")
                 navigate(`/admin/forms/questionnaires/${row.id}/edit`);
-              else if (row.type === "Contract")
+              if (row.type === "Contract")
                 navigate(`/admin/forms/contracts/${row.id}/edit`);
             }}
             className=" text-blue-600 cursor-pointer hover:text-blue-900"
@@ -293,6 +300,7 @@ export default function Forms() {
                     <button
                       onClick={() => navigate("/admin/forms/questionnaires/new")}
                       className="w-full flex justify-center gap-2 px-4 py-2 text-sm bg-black hover:bg-gray-700 cursor-pointer"
+                      title="New Questionnaire"
                     >
                       Questionnaire
                     </button>
@@ -301,6 +309,7 @@ export default function Forms() {
                     <button
                       onClick={() => navigate("/admin/forms/contracts/new")}
                       className="w-full flex justify-center gap-2 px-4 py-2 text-sm bg-black hover:bg-gray-700 cursor-pointer"
+                      title="New Contract"
                     >
                       Contract
                     </button>

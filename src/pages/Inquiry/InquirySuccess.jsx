@@ -1,6 +1,7 @@
 import { Link, useSearchParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
+import { API_URL } from "../../lib/apiUrl.js";
 
 export default function InquirySuccess() {
   const navigate = useNavigate();
@@ -33,7 +34,7 @@ export default function InquirySuccess() {
 
     const loadParameters = async () => {
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+        const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
@@ -86,7 +87,7 @@ export default function InquirySuccess() {
               REQUEST RECEIVED
             </h1>
             <p className="mt-3 text-sm md:text-base text-neutral-600 max-w-xl mx-auto">
-              Thank you, {fullName || ""} 🤍  I'll review your request and email/text you within 24 hours
+              Thank you, {fullName || /* istanbul ignore next */ ""} 🤍  I'll review your request and email/text you within 24 hours
               with availability and next steps.
             </p>
           </div>
@@ -116,22 +117,22 @@ export default function InquirySuccess() {
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
                 <div className="rounded-lg border border-black/10 bg-white/70 px-4 py-3">
                   <p className="text-[11px] tracking-widest text-neutral-500">SESSION TYPE</p>
-                  <p className="mt-1 font-serif text-[#7E4C3C]">{sessionType || "-"}</p>
+                  <p className="mt-1 font-serif text-[#7E4C3C]">{sessionType || "N/A"}</p>
                 </div>
 
                 <div className="rounded-lg border border-black/10 bg-white/70 px-4 py-3">
                   <p className="text-[11px] tracking-widest text-neutral-500">DATE &amp; TIME</p>
-                  <p className="mt-1 font-serif text-[#7E4C3C]">{dateTime || "—"}</p>
+                  <p className="mt-1 font-serif text-[#7E4C3C]">{dateTime || /* istanbul ignore next */ "N/A"}</p>
                 </div>
 
                 <div className="rounded-lg border border-black/10 bg-white/70 px-4 py-3">
                   <p className="text-[11px] tracking-widest text-neutral-500">LOCATION</p>
-                  <p className="mt-1 font-serif text-[#7E4C3C]">{location || "—"}</p>
+                  <p className="mt-1 font-serif text-[#7E4C3C]">{location || "N/A"}</p>
                 </div>
 
                 <div className="rounded-lg border border-black/10 bg-white/70 px-4 py-3">
                   <p className="text-[11px] tracking-widest text-neutral-500">CONTACT EMAIL</p>
-                  <p className="mt-1 font-serif text-[#7E4C3C]">{email || "—"}</p>
+                  <p className="mt-1 font-serif text-[#7E4C3C]">{email || "N/A"}</p>
                 </div>
               </div>
 
