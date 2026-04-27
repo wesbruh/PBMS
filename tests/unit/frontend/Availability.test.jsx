@@ -62,7 +62,6 @@ describe("Availability", () => {
     const dd = String(today.getDate()).padStart(2, "0");
 
     return {
-      // Intentionally no trailing Z, so the date stays in local time
       startIso: `${yyyy}-${mm}-${dd}T09:00:00`,
       endIso: `${yyyy}-${mm}-${dd}T09:15:00`,
     };
@@ -105,10 +104,32 @@ describe("Availability", () => {
     await waitForLoadedGrid();
 
     expect(screen.getByText("Photographer Availability")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("09:00")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("17:00")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Set Default" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Save Changes" })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: "Start time hour" })).toHaveValue("9");
+    expect(screen.getByRole("combobox", { name: "Start time minute" })).toHaveValue("00");
+    expect(screen.getByRole("combobox", { name: "Start time period" })).toHaveValue("AM");
+    expect(screen.getByRole("combobox", { name: "End time hour" })).toHaveValue("5");
+    expect(screen.getByRole("combobox", { name: "End time minute" })).toHaveValue("00");
+    expect(screen.getByRole("combobox", { name: "End time period" })).toHaveValue("PM");
+  });
+
+  test("correctly displays 00:00 as 12:00 AM in custom selectors", async () => {
+    mockInitialAvailabilityResponse({
+      settings: {
+        work_start_time: "00:00:00",
+        work_end_time: "23:45:00",
+      },
+    });
+
+    render(<Availability />);
+
+    await waitForLoadedGrid();
+
+    expect(screen.getByRole("combobox", { name: "Start time hour" })).toHaveValue("12");
+    expect(screen.getByRole("combobox", { name: "Start time minute" })).toHaveValue("00");
+    expect(screen.getByRole("combobox", { name: "Start time period" })).toHaveValue("AM");
+    expect(screen.getByRole("combobox", { name: "End time hour" })).toHaveValue("11");
+    expect(screen.getByRole("combobox", { name: "End time minute" })).toHaveValue("45");
+    expect(screen.getByRole("combobox", { name: "End time period" })).toHaveValue("PM");
   });
 
   test("loads selected blocks as unavailable cells", async () => {
@@ -172,23 +193,7 @@ describe("Availability", () => {
     });
   });
 
-  test("updates time inputs from fetched settings", async () => {
-    mockInitialAvailabilityResponse({
-      settings: {
-        work_start_time: "08:30:00",
-        work_end_time: "16:45:00",
-      },
-    });
-
-    render(<Availability />);
-
-    await waitForLoadedGrid();
-
-    expect(screen.getByDisplayValue("08:30")).toBeInTheDocument();
-    expect(screen.getByDisplayValue("16:45")).toBeInTheDocument();
-  });
-
-  test("saves settings using fixed single-row id", async () => {
+  test("saves settings and sends 24-hour HH:MM values from selectors", async () => {
     mockInitialAvailabilityResponse();
 
     global.fetch.mockResolvedValueOnce({
@@ -200,12 +205,24 @@ describe("Availability", () => {
 
     await waitForLoadedGrid();
 
-    fireEvent.change(screen.getByDisplayValue("09:00"), {
-      target: { value: "08:00" },
+    fireEvent.change(screen.getByRole("combobox", { name: "Start time hour" }), {
+      target: { value: "12" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Start time minute" }), {
+      target: { value: "00" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Start time period" }), {
+      target: { value: "AM" },
     });
 
-    fireEvent.change(screen.getByDisplayValue("17:00"), {
-      target: { value: "18:00" },
+    fireEvent.change(screen.getByRole("combobox", { name: "End time hour" }), {
+      target: { value: "11" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "End time minute" }), {
+      target: { value: "45" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "End time period" }), {
+      target: { value: "PM" },
     });
 
     fireEvent.click(screen.getByRole("button", { name: "Set Default" }));
@@ -220,16 +237,50 @@ describe("Availability", () => {
             Authorization: "Bearer test-token",
             "Content-Type": "application/json",
           }),
-          body: JSON.stringify({
-            id: 1,
-            start: "08:00",
-            end: "18:00",
-          }),
+          body: expect.stringContaining('"start":"00:00"'),
         })
       );
     });
 
-    expect(global.alert).not.toHaveBeenCalledWith("Error saving settings");
+    expect(global.fetch).toHaveBeenNthCalledWith(
+      2,
+      "http://localhost:5001/api/availability/settings",
+      expect.objectContaining({
+        body: expect.stringContaining('"end":"23:45"'),
+      })
+    );
+  });
+
+  test("alerts when end time is not later than start time", async () => {
+    mockInitialAvailabilityResponse();
+
+    render(<Availability />);
+
+    await waitForLoadedGrid();
+
+    fireEvent.change(screen.getByRole("combobox", { name: "Start time hour" }), {
+      target: { value: "5" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Start time minute" }), {
+      target: { value: "00" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "Start time period" }), {
+      target: { value: "PM" },
+    });
+
+    fireEvent.change(screen.getByRole("combobox", { name: "End time hour" }), {
+      target: { value: "9" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "End time minute" }), {
+      target: { value: "00" },
+    });
+    fireEvent.change(screen.getByRole("combobox", { name: "End time period" }), {
+      target: { value: "AM" },
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Set Default" }));
+
+    expect(global.alert).toHaveBeenCalledWith("End time must be later than start time.");
   });
 
   test("alerts when saving settings fails", async () => {

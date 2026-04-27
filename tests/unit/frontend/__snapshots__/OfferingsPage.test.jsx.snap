@@ -417,7 +417,7 @@ exports[`regression snapshots matches snapshot: masters list without selection 1
                   <img
                     alt="Portraits"
                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
-                    src="undefined/storage/v1/object/public/session-images/portraits/hero.jpg"
+                    src="https://test.supabase.co/storage/v1/object/public/session-images/portraits/hero.jpg"
                   />
                   <div
                     class="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-white/90 text-[9px] text-neutral-500 uppercase tracking-wide"

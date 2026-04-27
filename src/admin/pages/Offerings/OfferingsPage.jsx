@@ -60,9 +60,9 @@ export default function OfferingsPage() {
     // find active contract template
     const { data: activeTemplate, error: activeTemplateError } = await supabase
       .from("ContractTemplate")
+      .select("*")
       .eq("active", true)
       .eq("session_type_id", st.id)
-      .select()
       .maybeSingle();
 
     if (activeTemplateError) throw activeTemplateError;
@@ -73,14 +73,14 @@ export default function OfferingsPage() {
       // check if id has been referenced by any contracts
       const { data: contractData, error: contractError } = await supabase
         .from("Contract")
-        .select()
+        .select("*")
         .eq("template_id", templateId);
 
       if (contractError) throw contractError;
 
       // mark is_deleted as true if it is being referenced
       // this will allow previous contracts to still be viewed, even if the contract template itself is "deleted"
-      if (contractData) {
+      if (contractData && contractData.length > 0) {
         const { error: updateErr } = await supabase
           .from("ContractTemplate")
           .update({ is_deleted: true })

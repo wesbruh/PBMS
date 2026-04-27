@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import {
   format,
   addDays,
-  addMinutes,
   startOfDay,
   isBefore,
   isSameDay,
@@ -15,7 +14,98 @@ import { API_URL } from "../../../lib/apiUrl.js";
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 
-const SETTINGS_ROW_ID = 1;
+function toMinutes(timeStr) {
+  if (!timeStr) return 0;
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  return hours * 60 + (minutes || 0);
+}
+
+function minutesToHHMM(totalMinutes) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function hhmmToParts(timeStr) {
+  const [hourStr, minuteStr] = (timeStr || "09:00").split(":");
+  const hour24 = Number(hourStr);
+  const minute = minuteStr || "00";
+
+  const period = hour24 >= 12 ? "PM" : "AM";
+  let hour12 = hour24 % 12;
+  if (hour12 === 0) hour12 = 12;
+
+  return {
+    hour: String(hour12),
+    minute,
+    period,
+  };
+}
+
+function partsToHHMM(hour, minute, period) {
+  let hourNum = Number(hour);
+
+  if (period === "AM") {
+    if (hourNum === 12) hourNum = 0;
+  } else {
+    if (hourNum !== 12) hourNum += 12;
+  }
+
+  return `${String(hourNum).padStart(2, "0")}:${minute}`;
+}
+
+function TimeSelect({ value, onChange, label }) {
+  const parts = hhmmToParts(value);
+
+  const update = (nextParts) => {
+    onChange(partsToHHMM(nextParts.hour, nextParts.minute, nextParts.period));
+  };
+
+  return (
+    <div className="flex items-center gap-1" aria-label={label}>
+      <select
+        aria-label={`${label} hour`}
+        value={parts.hour}
+        onChange={(e) => update({ ...parts, hour: e.target.value })}
+        className="border rounded p-1"
+      >
+        {Array.from({ length: 12 }, (_, i) => {
+          const hour = String(i + 1);
+          return (
+            <option key={hour} value={hour}>
+              {hour}
+            </option>
+          );
+        })}
+      </select>
+
+      <span>:</span>
+
+      <select
+        aria-label={`${label} minute`}
+        value={parts.minute}
+        onChange={(e) => update({ ...parts, minute: e.target.value })}
+        className="border rounded p-1"
+      >
+        {["00", "15", "30", "45"].map((minute) => (
+          <option key={minute} value={minute}>
+            {minute}
+          </option>
+        ))}
+      </select>
+
+      <select
+        aria-label={`${label} period`}
+        value={parts.period}
+        onChange={(e) => update({ ...parts, period: e.target.value })}
+        className="border rounded p-1"
+      >
+        <option value="AM">AM</option>
+        <option value="PM">PM</option>
+      </select>
+    </div>
+  );
+}
 
 const Availability = () => {
   const [viewDate, setViewDate] = useState(startOfDay(new Date()));
@@ -84,14 +174,13 @@ const Availability = () => {
 
   const getTimeSlots = () => {
     const slots = [];
-    let current = new Date(`2000-01-01T${workDay.start}:00`);
-    const end = new Date(`2000-01-01T${workDay.end}:00`);
+    const startMinutes = toMinutes(workDay.start);
+    const endMinutes = toMinutes(workDay.end);
 
-    if (current >= end) return [];
+    if (startMinutes >= endMinutes) return [];
 
-    while (current < end) {
-      slots.push(format(current, "HH:mm"));
-      current = addMinutes(current, 15);
+    for (let mins = startMinutes; mins < endMinutes; mins += 15) {
+      slots.push(minutesToHHMM(mins));
     }
 
     return slots;
@@ -179,6 +268,17 @@ const Availability = () => {
 
   const saveSettings = async () => {
     try {
+      const startMinutes = toMinutes(workDay.start);
+      const endMinutes = toMinutes(workDay.end);
+
+      if (startMinutes >= endMinutes) {
+        alert("End time must be later than start time.");
+        return;
+      }
+
+      const browserTimezone =
+        Intl.DateTimeFormat().resolvedOptions().timeZone || "America/Los_Angeles";
+
       const response = await fetch(`${API_URL}/api/availability/settings`, {
         method: "POST",
         headers: {
@@ -186,15 +286,16 @@ const Availability = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          id: SETTINGS_ROW_ID,
           start: workDay.start,
           end: workDay.end,
+          timezone: browserTimezone,
         }),
       });
 
       if (!response.ok) throw new Error("Error saving settings");
 
-      window.location.reload();
+      alert("Settings saved successfully!");
+      await fetchAvailability();
     } catch (err) {
       console.error(err);
       alert("Error saving settings");
@@ -231,25 +332,27 @@ const Availability = () => {
               <>
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                   <div>
-                    <div className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded border">
+                    <div className="flex items-center gap-2 text-sm bg-gray-50 p-2 rounded border flex-wrap">
                       <span className="font-bold text-gray-600">Hours:</span>
-                      <input
-                        type="time"
+
+                      <TimeSelect
+                        label="Start time"
                         value={workDay.start}
-                        onChange={(e) =>
-                          setWorkDay({ ...workDay, start: e.target.value })
+                        onChange={(value) =>
+                          setWorkDay({ ...workDay, start: value })
                         }
-                        className="border rounded p-1"
                       />
+
                       <span>-</span>
-                      <input
-                        type="time"
+
+                      <TimeSelect
+                        label="End time"
                         value={workDay.end}
-                        onChange={(e) =>
-                          setWorkDay({ ...workDay, end: e.target.value })
+                        onChange={(value) =>
+                          setWorkDay({ ...workDay, end: value })
                         }
-                        className="border rounded p-1"
                       />
+
                       <button
                         onClick={saveSettings}
                         className="text-blue-600 hover:underline ml-2"
