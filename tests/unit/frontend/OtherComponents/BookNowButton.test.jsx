@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import BookNowButton from "../../../src/components/Buttons/BookNowButton";
+import BookNowButton from "../../../../src/components/Buttons/BookNowButton";
 
 const mockNavigate = jest.fn();
 const mockUseAuth = jest.fn();
@@ -9,7 +9,7 @@ jest.mock("react-router-dom", () => ({
   useNavigate: () => mockNavigate,
 }));
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 

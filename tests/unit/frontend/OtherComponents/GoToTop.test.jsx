@@ -1,6 +1,6 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter, Routes, Route, useNavigate } from "react-router-dom";
-import GoToTop from "../../../src/GoToTop";
+import GoToTop from "../../../../src/GoToTop";
 
 function TestNavigator() {
   const navigate = useNavigate();

@@ -1,9 +1,9 @@
 import React from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import CarouselSection from "../../../src/components/HomePageComps/CarouselPhotos.jsx";
+import CarouselSection from "../../../../src/components/HomePageComps/CarouselPhotos.jsx";
 
-jest.mock("../../../src/components/Buttons/BookNowButton.jsx", () => {
+jest.mock("../../../../src/components/Buttons/BookNowButton.jsx", () => {
   return function MockBookNowButton({ label }) {
     return <button>{label}</button>;
   };

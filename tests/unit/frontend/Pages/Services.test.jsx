@@ -1,4 +1,4 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
@@ -8,7 +8,7 @@ jest.mock("react-router-dom", () => ({
   Link: ({ to, children, className }) => <a href={to} className={className}>{children}</a>,
 }));
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: jest.fn(),
 }));
 
@@ -16,8 +16,8 @@ import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../src/context/AuthContext";
-import Services from "../../../src/pages/Services/Services.jsx";
+import { useAuth } from "../../../../src/context/AuthContext";
+import Services from "../../../../src/pages/Services/Services.jsx";
 
 describe("Services Component", () => {
   const mockNavigate = jest.fn();

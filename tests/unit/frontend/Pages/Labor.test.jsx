@@ -1,4 +1,4 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
@@ -7,21 +7,21 @@ jest.mock("react-router-dom", () => ({
   useNavigate: jest.fn(),
 }));
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: jest.fn(),
 }));
 
-jest.mock("../../../src/GoToTop", () => () => <div data-testid="go-to-top" />);
-jest.mock("../../../src/components/Buttons/BookNowButton", () => () => <div data-testid="book-now-button" />);
+jest.mock("../../../../src/GoToTop", () => () => <div data-testid="go-to-top" />);
+jest.mock("../../../../src/components/Buttons/BookNowButton", () => () => <div data-testid="book-now-button" />);
 
 import React from "react";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../../src/context/AuthContext";
-import Weddings from "../../../src/pages/Special/Weddings.jsx";
+import { useAuth } from "../../../../src/context/AuthContext";
+import Labor from "../../../../src/pages/Special/Labor.jsx";
 
-describe("Weddings Component", () => {
+describe("Labor Component", () => {
   const mockNavigate = jest.fn();
 
   beforeEach(() => {
@@ -33,96 +33,96 @@ describe("Weddings Component", () => {
   // --- Layout & Structure ---
   describe("Layout", () => {
     it("renders the hero heading", () => {
-      render(<Weddings />);
-      expect(screen.getByText(/WEDDING & ELOPEMENT PACKAGES/i)).toBeInTheDocument();
+      render(<Labor />);
+      expect(screen.getByText(/LABOR & DELIVERY PACKAGES/i)).toBeInTheDocument();
     });
 
     it("renders the packages title", () => {
-      render(<Weddings />);
-      expect(screen.getByText(/Wedding Packages & Pricing/i)).toBeInTheDocument();
+      render(<Labor />);
+      expect(screen.getByText(/Labor and Delivery Packages & Pricing/i)).toBeInTheDocument();
     });
 
     it("renders the Q&A section heading", () => {
-      render(<Weddings />);
+      render(<Labor />);
       expect(screen.getByText("Q&A")).toBeInTheDocument();
     });
 
     it("renders the GoToTop component", () => {
-      render(<Weddings />);
+      render(<Labor />);
       expect(screen.getByTestId("go-to-top")).toBeInTheDocument();
     });
   });
 
   // --- Packages ---
   describe("Packages", () => {
-    it("renders all 3 package cards", () => {
-      render(<Weddings />);
+    it("renders all 4 package cards", () => {
+      render(<Labor />);
       const headings = screen.getAllByRole("heading", { level: 2 });
-      expect(headings).toHaveLength(3);
+      expect(headings).toHaveLength(4);
     });
 
-    it("renders Ivory package", () => {
-      render(<Weddings />);
-      expect(screen.getByText("Ivory")).toBeInTheDocument();
+    it("renders First Breath package", () => {
+      render(<Labor />);
+      expect(screen.getByText("First Breath")).toBeInTheDocument();
     });
 
-    it("renders Champagne package", () => {
-      render(<Weddings />);
-      expect(screen.getByText("Champagne")).toBeInTheDocument();
+    it("renders The Birth Story package", () => {
+      render(<Labor />);
+      expect(screen.getByText("The Birth Story")).toBeInTheDocument();
     });
 
-    it("renders Pearl package", () => {
-      render(<Weddings />);
-      expect(screen.getByText("Pearl")).toBeInTheDocument();
+    it("renders From Womb to World package", () => {
+      render(<Labor />);
+      expect(screen.getByText("From Womb to World")).toBeInTheDocument();
+    });
+
+    it("renders Positive Test to First Breath package", () => {
+      render(<Labor />);
+      expect(screen.getByText("Positive Test to First Breath")).toBeInTheDocument();
     });
 
     it("renders package prices", () => {
-      render(<Weddings />);
-      expect(screen.getByText("FROM: $1600")).toBeInTheDocument();
-      expect(screen.getByText("FROM: $2400")).toBeInTheDocument();
-      expect(screen.getByText("FROM: $3800")).toBeInTheDocument();
+      render(<Labor />);
+      expect(screen.getByText("FROM: $400")).toBeInTheDocument();
+      expect(screen.getByText("FROM: $1000")).toBeInTheDocument();
+      expect(screen.getByText("$1750")).toBeInTheDocument();
     });
   });
 
   // --- Navigation ---
   describe("Package click navigation", () => {
     it("navigates to /signup when user is not logged in", async () => {
-      render(<Weddings />);
-      await userEvent.click(screen.getByText("Ivory"));
+      render(<Labor />);
+      await userEvent.click(screen.getByText("First Breath"));
       expect(mockNavigate).toHaveBeenCalledWith("/signup");
     });
 
     it("navigates to inquiry page with package name when user is logged in", async () => {
       useAuth.mockReturnValue({ user: { id: "123" } });
-      render(<Weddings />);
-      await userEvent.click(screen.getByText("Ivory"));
+      render(<Labor />);
+      await userEvent.click(screen.getByText("First Breath"));
       expect(mockNavigate).toHaveBeenCalledWith("/dashboard/inquiry", {
-        state: { selectedPackage: "Ivory" },
+        state: { selectedPackage: "First Breath" },
       });
     });
   });
 
   // --- Q&A ---
   describe("Q&A section", () => {
-    it("renders all 3 Q&A items", () => {
-      render(<Weddings />);
+    it("renders all 5 Q&A items", () => {
+      render(<Labor />);
       const questions = screen.getAllByText(/\d\./);
-      expect(questions).toHaveLength(3);
+      expect(questions).toHaveLength(5);
     });
 
     it("renders the deposit question", () => {
-      render(<Weddings />);
+      render(<Labor />);
       expect(screen.getByText(/How do we officially book with you/i)).toBeInTheDocument();
     });
 
     it("renders the gallery turnaround question", () => {
-      render(<Weddings />);
+      render(<Labor />);
       expect(screen.getByText(/How long does it take to receive our final gallery/i)).toBeInTheDocument();
-    });
-
-    it("renders the custom packages question", () => {
-      render(<Weddings />);
-      expect(screen.getByText(/Do you offer custom packages/i)).toBeInTheDocument();
     });
   });
 });

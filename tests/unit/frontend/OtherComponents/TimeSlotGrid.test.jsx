@@ -1,10 +1,10 @@
 import React from "react";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
-import TimeSlotGrid from "../../../src/components/TimeSlotGrid/TimeSlotGrid";
-import { supabase } from "../../../src/lib/supabaseClient";
+import TimeSlotGrid from "../../../../src/components/TimeSlotGrid/TimeSlotGrid";
+import { supabase } from "../../../../src/lib/supabaseClient";
 
-jest.mock("../../../src/lib/supabaseClient", () => ({
+jest.mock("../../../../src/lib/supabaseClient", () => ({
   supabase: {
     from: jest.fn(),
   },

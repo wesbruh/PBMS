@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import SignContractModal from "../../../src/components/contracts/SignContractModal.jsx";
+import SignContractModal from "../../../../src/components/contracts/SignContractModal.jsx";
 
 const mockUseAuth = jest.fn();
 
@@ -9,7 +9,7 @@ const mockSigInstance = {
   toDataURL: jest.fn(),
 };
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 

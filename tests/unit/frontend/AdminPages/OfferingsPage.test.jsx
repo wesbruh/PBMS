@@ -1,6 +1,6 @@
 // tests/unit/frontend/OfferingsPage.test.jsx
 //
-// 100% coverage tests for src/admin/pages/Offerings/OfferingsPage.jsx
+// 100% coverage tests for ../src/admin/pages/Offerings/OfferingsPage.jsx
 
 import React from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
@@ -52,11 +52,11 @@ Object.keys(mockChain).forEach((key) => {
   }
 });
 
-jest.mock("../../../src/lib/viteApiUrl.js", () => ({
+jest.mock("../../../../src/lib/viteApiUrl.js", () => ({
   SUPABASE_URL: "https://test.supabase.co",
 }));
 
-jest.mock("../../../src/lib/supabaseClient.js", () => ({
+jest.mock("../../../../src/lib/supabaseClient.js", () => ({
   supabase: new Proxy(
     {},
     {
@@ -77,7 +77,7 @@ jest.mock("react-router-dom", () => ({
 }));
 
 // ── SessionTypeCard ───────────────────────────────────────────────────────────
-jest.mock("../../../src/components/SessionTypeCard/SessionTypeCard.jsx", () => ({
+jest.mock("../../../../src/components/SessionTypeCard/SessionTypeCard.jsx", () => ({
   __esModule: true,
   default: ({ st, onEdit, onDelete, showEditControls }) => (
     <div data-testid={`session-card-${st.id}`}>
@@ -100,7 +100,7 @@ jest.mock("lucide-react", () => ({
 
 
 // ── Component under test (imported AFTER all mocks are registered) ────────────
-import OfferingsPage from "../../../src/admin/pages/Offerings/OfferingsPage.jsx";
+import OfferingsPage from "../../../../src/admin/pages/Offerings/OfferingsPage.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers

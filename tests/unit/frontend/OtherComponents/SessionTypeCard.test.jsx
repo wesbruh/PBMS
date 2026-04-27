@@ -1,7 +1,7 @@
 // tests/unit/frontend/SessionTypeCard.test.jsx
 //
 // 100% branch + statement coverage for
-// src/components/SessionTypeCard/SessionTypeCard.jsx
+// ../src/components/SessionTypeCard/SessionTypeCard.jsx
 //
 // Coverage targets
 // ─────────────────────────────────────────────────────────────────────────────
@@ -48,12 +48,12 @@ jest.mock("lucide-react", () => ({
 // ─────────────────────────────────────────────────────────────────────────────
 // viteApiUrl
 // ─────────────────────────────────────────────────────────────────────────────
-jest.mock("../../../src/lib/viteApiUrl.js", () => ({
+jest.mock("../../../../src/lib/viteApiUrl.js", () => ({
   SUPABASE_URL: "https://test.supabase.co",
 }));
 
 // ── Component under test ──────────────────────────────────────────────────────
-import SessionTypeCard from "../../../src/components/SessionTypeCard/SessionTypeCard.jsx";
+import SessionTypeCard from "../../../../src/components/SessionTypeCard/SessionTypeCard.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Fixtures

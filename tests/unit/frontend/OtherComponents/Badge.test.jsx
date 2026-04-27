@@ -1,10 +1,10 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import Badge from "../../../src/admin/components/shared/Badge/Badge.jsx";
+import Badge from "../../../../src/admin/components/shared/Badge/Badge.jsx";
 
 describe("Badge Component", () => {
   // --- Layout & Structure ---

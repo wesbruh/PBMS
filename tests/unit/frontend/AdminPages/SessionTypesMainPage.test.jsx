@@ -1,6 +1,6 @@
 // tests/unit/frontend/SessionTypesMainPage.test.jsx
 //
-// Unit tests for src/admin/pages/Offerings/SessionTypesMainPage.jsx
+// Unit tests for ../src/admin/pages/Offerings/SessionTypesMainPage.jsx
 // Tests component rendering, layout structure, and Outlet integration.
 
 import React from "react";
@@ -9,12 +9,12 @@ import { render, screen } from "@testing-library/react";
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 // Mock Sidebar and Frame so we don't pull in their dependencies
-jest.mock("../../../src/admin/components/shared/Sidebar/Sidebar", () => ({
+jest.mock("../../../../src/admin/components/shared/Sidebar/Sidebar", () => ({
   __esModule: true,
   default: () => <div data-testid="sidebar">Sidebar</div>,
 }));
 
-jest.mock("../../../src/admin/components/shared/Frame/Frame", () => ({
+jest.mock("../../../../src/admin/components/shared/Frame/Frame", () => ({
   __esModule: true,
   default: ({ children }) => <div data-testid="frame">{children}</div>,
 }));
@@ -30,7 +30,7 @@ jest.mock("react-router-dom", () => ({
 }));
 
 // Import AFTER mocks are registered
-import Offerings from "../../../src/admin/pages/Offerings/SessionTypesMainPage";
+import Offerings from "../../../../src/admin/pages/Offerings/SessionTypesMainPage";
 
 // ── Helper ────────────────────────────────────────────────────────────────────
 

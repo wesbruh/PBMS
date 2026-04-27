@@ -26,7 +26,7 @@ module.exports = {
   ],
   setupFilesAfterEnv: ["<rootDir>/tests/setup/backend.setup.js"],
   transform: {
-    "^.+\\.js$": ["babel-jest", { configFile: path.join(__dirname, "../babel.config.js") }],
+    "^.+\\.js$": ["babel-jest", { configFile: path.join(__dirname, "../babel.config.cjs") }],
   },
   testPathIgnorePatterns: ["/node_modules/", "<rootDir>/src/"],
 };

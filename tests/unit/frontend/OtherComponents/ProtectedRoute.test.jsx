@@ -1,4 +1,4 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
@@ -8,14 +8,14 @@ jest.mock("react-router-dom", () => ({
   useLocation: () => ({ pathname: "/admin" }),
 }));
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: jest.fn(),
 }));
 
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import { useAuth } from "../../../src/context/AuthContext";
-import ProtectedRoute from "../../../src/admin/components/shared/ProtectedRoute.jsx";
+import { useAuth } from "../../../../src/context/AuthContext";
+import ProtectedRoute from "../../../../src/admin/components/shared/ProtectedRoute.jsx";
 
 describe("ProtectedRoute Component", () => {
   // --- Loading State ---

@@ -8,28 +8,28 @@ import {
 } from "@testing-library/react";
 import "@testing-library/jest-dom";
 
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: jest.fn(),
 }));
 
-jest.mock("../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () => {
+jest.mock("../../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () => {
   return function Sidebar() {
     return <div data-testid="sidebar">Sidebar</div>;
   };
 });
 
-jest.mock("../../../src/admin/components/shared/Frame/Frame.jsx", () => {
+jest.mock("../../../../src/admin/components/shared/Frame/Frame.jsx", () => {
   return function Frame({ children }) {
     return <div data-testid="frame">{children}</div>;
   };
 });
 
-import Availability from "../../../src/admin/pages/Availability/Availability";
-import { useAuth } from "../../../src/context/AuthContext";
+import Availability from "../../../../src/admin/pages/Availability/Availability";
+import { useAuth } from "../../../../src/context/AuthContext";
 
 describe("Availability", () => {
   const originalFetch = global.fetch;

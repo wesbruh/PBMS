@@ -1,4 +1,4 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
@@ -7,15 +7,15 @@ jest.mock("react-router-dom", () => ({
   useLocation: jest.fn(),
 }));
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: jest.fn(),
 }));
 
 import React from "react";
 import { render, screen, act } from "@testing-library/react";
 import { useLocation } from "react-router-dom";
-import { useAuth } from "../../../src/context/AuthContext";
-import AdminNotificationToast, { triggerAdminToast } from "../../../src/components/AdminNotificationToast.jsx";
+import { useAuth } from "../../../../src/context/AuthContext";
+import AdminNotificationToast, { triggerAdminToast } from "../../../../src/components/AdminNotificationToast.jsx";
 
 describe("AdminNotificationToast Component", () => {
   beforeEach(() => {
