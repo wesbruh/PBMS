@@ -5,7 +5,6 @@ export default {
   ],
   plugins: [
     'babel-plugin-transform-import-meta',
-    'babel-plugin-transform-vite-meta-env',
-    "./babel-plugin-jest-import-meta-env.cjs",
+    'babel-plugin-transform-vite-meta-env'
   ]
 };
