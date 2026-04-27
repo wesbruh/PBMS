@@ -1,5 +1,5 @@
 import { createSupabaseMock } from "../../../../../../utils/backend/createSupabaseMock.js";
-import { render, screen, act, fireEvent, waitFor, logRoles } from "@testing-library/react";
+import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 
 // mocks
 const mockNavigate = jest.fn();
@@ -1025,7 +1025,7 @@ describe("QuestionnairesEditor", () => {
       name: "QTemplate",
       session_type_id: "123sessiontypeid",
       schema_json: [
-        { id: "1", questionnaire_id: "123qtemplateid", "label": "1", type: "radio", required: false, options: ["nice","bad",""] },
+        { id: "1", questionnaire_id: "123qtemplateid", "label": "1", type: "radio", required: false, options: ["nice", "bad", ""] },
         { id: "2", questionnaire_id: "123qtemplateid", "label": "2", type: "short_text", required: false },
         { id: "3", questionnaire_id: "123qtemplateid", "label": "3", type: "short_text", required: false }
       ]
@@ -1203,82 +1203,82 @@ describe("QuestionnairesEditor", () => {
     expect(screen.getByText("Question 4: label is required.")).toBeInTheDocument();
   });
 
-test("34. load and publish template error on setting only itself active", async () => {
-  mockSupabase = createSupabaseMock({ Questions: [{ error: null }, { error: null }, { error: null }] }, {}, true)
-  mockUseAuth = () => { return { session: { access_token: "fake-token" } } };
-  const sessionTypes = [{ name: "hi" }, { name: "nice" }, { name: "to" }, { name: "meet" }, { name: "you" }]
-  mockFetchSuccess(sessionTypes);
-  mockFetchSuccess({
-    id: "123qtemplateid",
-    name: "QTemplate",
-    session_type_id: "123sessiontypeid",
-    schema_json: [
-      { id: "1", questionnaire_id: "123qtemplateid", "label": "1", type: "short_text", required: false },
-      { id: "2", questionnaire_id: "123qtemplateid", "label": "2", type: "short_text", required: false },
-      { id: "3", questionnaire_id: "123qtemplateid", "label": "3", type: "short_text", required: false }
-    ]
-  });
-  mockFetchSuccess({ name: "hi" });
-  mockFetchSuccess({ id: "123sessiontypeid" });
-  mockFetchSuccess({ id: "123qtemplateid" });
-  mockFetchSuccess();
-  mockFetchFailure();
+  test("34. load and publish template error on setting only itself active", async () => {
+    mockSupabase = createSupabaseMock({ Questions: [{ error: null }, { error: null }, { error: null }] }, {}, true)
+    mockUseAuth = () => { return { session: { access_token: "fake-token" } } };
+    const sessionTypes = [{ name: "hi" }, { name: "nice" }, { name: "to" }, { name: "meet" }, { name: "you" }]
+    mockFetchSuccess(sessionTypes);
+    mockFetchSuccess({
+      id: "123qtemplateid",
+      name: "QTemplate",
+      session_type_id: "123sessiontypeid",
+      schema_json: [
+        { id: "1", questionnaire_id: "123qtemplateid", "label": "1", type: "short_text", required: false },
+        { id: "2", questionnaire_id: "123qtemplateid", "label": "2", type: "short_text", required: false },
+        { id: "3", questionnaire_id: "123qtemplateid", "label": "3", type: "short_text", required: false }
+      ]
+    });
+    mockFetchSuccess({ name: "hi" });
+    mockFetchSuccess({ id: "123sessiontypeid" });
+    mockFetchSuccess({ id: "123qtemplateid" });
+    mockFetchSuccess();
+    mockFetchFailure();
 
-  render(<QuestionnairesEditor mode={"edit"} />);
+    render(<QuestionnairesEditor mode={"edit"} />);
 
-  await waitFor(() => {
-    const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
-    expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
-    const [templateNameInput] = screen.getAllByRole("textbox");
-    expect(templateNameInput.value).toBe("QTemplate");
-    const select = screen.getByTitle("session-type-select");
-    expect(select.value).toBe("hi");
-  });
+    await waitFor(() => {
+      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
+      const [templateNameInput] = screen.getAllByRole("textbox");
+      expect(templateNameInput.value).toBe("QTemplate");
+      const select = screen.getByTitle("session-type-select");
+      expect(select.value).toBe("hi");
+    });
 
-  const publishButton = screen.getByTitle("Publish");
-  fireEvent.click(publishButton);
+    const publishButton = screen.getByTitle("Publish");
+    fireEvent.click(publishButton);
 
-  expect(await screen.findByText("Failed to publish template.")).toBeInTheDocument();
-});
-
-test("35. load and publish template success", async () => {
-  mockSupabase = createSupabaseMock({ Questions: [{ error: null }, { error: null }, { error: null }] }, {}, true)
-  mockUseAuth = () => { return { session: { access_token: "fake-token" } } };
-  const sessionTypes = [{ name: "hi" }, { name: "nice" }, { name: "to" }, { name: "meet" }, { name: "you" }]
-  mockFetchSuccess(sessionTypes);
-  mockFetchSuccess({
-    id: "123qtemplateid",
-    name: "QTemplate",
-    session_type_id: "123sessiontypeid",
-    schema_json: [
-      { id: "1", questionnaire_id: "123qtemplateid", "label": "1", type: "short_text", required: false },
-      { id: "2", questionnaire_id: "123qtemplateid", "label": "2", type: "short_text", required: false },
-      { id: "3", questionnaire_id: "123qtemplateid", "label": "3", type: "short_text", required: false }
-    ]
-  });
-  mockFetchSuccess({ name: "hi" });
-  mockFetchSuccess({ id: "123sessiontypeid" });
-  mockFetchSuccess({ id: "123qtemplateid" });
-  mockFetchSuccess();
-  mockFetchSuccess();
-
-  render(<QuestionnairesEditor mode={"edit"} />);
-
-  await waitFor(() => {
-    const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
-    expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
-    const [templateNameInput] = screen.getAllByRole("textbox");
-    expect(templateNameInput.value).toBe("QTemplate");
-    const select = screen.getByTitle("session-type-select");
-    expect(select.value).toBe("hi");
+    expect(await screen.findByText("Failed to publish template.")).toBeInTheDocument();
   });
 
-  const publishButton = screen.getByTitle("Publish");
-  fireEvent.click(publishButton);
+  test("35. load and publish template success", async () => {
+    mockSupabase = createSupabaseMock({ Questions: [{ error: null }, { error: null }, { error: null }] }, {}, true)
+    mockUseAuth = () => { return { session: { access_token: "fake-token" } } };
+    const sessionTypes = [{ name: "hi" }, { name: "nice" }, { name: "to" }, { name: "meet" }, { name: "you" }]
+    mockFetchSuccess(sessionTypes);
+    mockFetchSuccess({
+      id: "123qtemplateid",
+      name: "QTemplate",
+      session_type_id: "123sessiontypeid",
+      schema_json: [
+        { id: "1", questionnaire_id: "123qtemplateid", "label": "1", type: "short_text", required: false },
+        { id: "2", questionnaire_id: "123qtemplateid", "label": "2", type: "short_text", required: false },
+        { id: "3", questionnaire_id: "123qtemplateid", "label": "3", type: "short_text", required: false }
+      ]
+    });
+    mockFetchSuccess({ name: "hi" });
+    mockFetchSuccess({ id: "123sessiontypeid" });
+    mockFetchSuccess({ id: "123qtemplateid" });
+    mockFetchSuccess();
+    mockFetchSuccess();
 
-  await waitFor(() => {
-    expect(screen.queryByText("Failed to publish template.")).not.toBeInTheDocument();
-    expect(mockNavigate).toHaveBeenCalledWith("/admin/forms");
+    render(<QuestionnairesEditor mode={"edit"} />);
+
+    await waitFor(() => {
+      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
+      const [templateNameInput] = screen.getAllByRole("textbox");
+      expect(templateNameInput.value).toBe("QTemplate");
+      const select = screen.getByTitle("session-type-select");
+      expect(select.value).toBe("hi");
+    });
+
+    const publishButton = screen.getByTitle("Publish");
+    fireEvent.click(publishButton);
+
+    await waitFor(() => {
+      expect(screen.queryByText("Failed to publish template.")).not.toBeInTheDocument();
+      expect(mockNavigate).toHaveBeenCalledWith("/admin/forms");
+    });
   });
-});
 });
