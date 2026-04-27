@@ -6,14 +6,15 @@ import { useAuth } from "../../../context/AuthContext.jsx"
 import Sidebar from "../../components/shared/Sidebar/Sidebar.jsx";
 import Frame from "../../components/shared/Frame/Frame.jsx";
 import SharedClientDashboard from "../../../components/Dashboard/SharedClientDashboard";
+import { API_URL} from "../../../lib/apiUrl.js";
 
-async function handleUpdate(session, sessionId, field, value) {
+export async function handleUpdate(session, sessionId, field, value) {
   if (!session) return;
 
   const payload = { [field]: value };
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/${sessionId}`, {
+    const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
       method: "PATCH",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -32,13 +33,13 @@ async function handleUpdate(session, sessionId, field, value) {
   }
 };
 
-async function cancelSession(session, sessionId) {
+export async function cancelSession(session, sessionId) {
   if (!session || !sessionId) return;
 
   const getPaymentIntent = async (checkoutSessionId) => {
     if (!checkoutSessionId) return { status: null, paymentIntent: null }
     try {
-      const csResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/checkout/${checkoutSessionId}`, {
+      const csResponse = await fetch(`${API_URL}/api/checkout/${checkoutSessionId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -72,7 +73,7 @@ async function cancelSession(session, sessionId) {
 
       if (!status) throw new Error("Failed to retrieve payment intent");
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/intent/uncapture`, {
+      const response = await fetch(`${API_URL}/api/intent/uncapture`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -103,7 +104,7 @@ async function cancelSession(session, sessionId) {
   };
 
   // ensure session exists and map session id to invoice id
-  const mapResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/invoice/${sessionId}`, {
+  const mapResponse = await fetch(`${API_URL}/api/invoice/${sessionId}`, {
     method: "GET",
     headers: {
       "Authorization": `Bearer ${session?.access_token}`,
@@ -151,7 +152,7 @@ function ContactView() {
     if (!userId || !session) return;
 
     async function checkUser() {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/profile/${userId}`, {
+      const response = await fetch(`${API_URL}/api/profile/${userId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -200,7 +201,7 @@ function ContactView() {
       const now = new Date();
 
       // filter and update sessions that should be completed/cancelled based on current time
-      sessionRows.forEach((session) => {
+      (sessionRows ?? []).forEach((session) => {
         if (session.status === "Confirmed" && new Date(session.end_at) < now) {
           handleUpdate(session, session.id, "status", "Completed");
           session.status = "Completed";
