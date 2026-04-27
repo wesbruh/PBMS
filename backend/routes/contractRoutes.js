@@ -22,7 +22,7 @@ export default function contractRoutes(supabaseClient) {
         .eq("active", true);
 
       if (error) throw error;
-      res.status(200).json(data);
+      res.status(200).json(data ?? null);
     } catch (error) {
       console.error("Error fetching contract templates:", error.message);
       res.status(500).json({ error: "Internal Server Error" });
@@ -39,10 +39,10 @@ export default function contractRoutes(supabaseClient) {
         .select("id, name, body")
         .eq("id", template_id)
         .eq("active", true)
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
-      res.status(200).json(data ?? null);
+      res.status(200).json(data);
     } catch (error) {
       console.error("Error fetching contract template:", error.message);
       res.status(500).json({ error: "Internal Server Error" });
@@ -75,7 +75,7 @@ export default function contractRoutes(supabaseClient) {
           .eq("assigned_user_id", user_id)
           .eq("is_active", false)
           .is("session_id", null);
-
+        
         // create new Contract table entry
         const { data: contractData, error: contractError } = await supabaseClient
           .from("Contract")

@@ -241,7 +241,7 @@ function Notifications() {
                     View and manage all system notifications sent to clients.
                   </p>
                 </div>
-
+                <div className="grow flex flex-col overflow-x-auto">
                 {loading ? (
                   <div className="flex flex-col items-center justify-center grow text-gray-500">
                     <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
@@ -267,6 +267,7 @@ function Notifications() {
                     </div>
                   </>
                 )}
+                </div>
               </div>
             </div>
           </Frame>

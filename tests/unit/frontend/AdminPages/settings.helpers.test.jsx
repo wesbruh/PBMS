@@ -3,7 +3,7 @@ import {
   getProfilePhotoPath,
   getSettingsPath,
   isIgnorableSettingsLoadError,
-} from "../../../src/admin/pages/Settings/settings.utils.js";
+} from "../../../../src/admin/pages/Settings/settings.utils.js";
 
 describe("Admin settings helpers", () => {
   test("builds storage paths with the expected naming convention", () => {
