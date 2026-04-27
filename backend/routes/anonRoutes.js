@@ -17,6 +17,7 @@ export default function anonRoutes(supabaseClient) {
 
       if (defaultRoleError) {
         console.error("Role not found or error fetching role: ", defaultRoleError);
+        return;
         throw new Error("Internal Server Error: Role Fetching Error");
       }
 
@@ -27,6 +28,9 @@ export default function anonRoutes(supabaseClient) {
       if (signUpError) {
         const raw = signUpError.message?.toLowerCase() || "";
         if (raw.includes("already registered") || raw.includes("already exists")) {
+          throw new Error({ error: { message: "That email is already in use. Please log in instead." } });
+        } else {
+          throw new Error({ error: { message: signUpError.message || "Could not create account." } });
           throw new Error("That email is already in use. Please log in instead.");
         } else {
           throw new Error(signUpError.message || "Could not create account.");
@@ -39,6 +43,7 @@ export default function anonRoutes(supabaseClient) {
         Array.isArray(authUser.identities) &&
         authUser.identities.length === 0;
 
+      if (duplicateSignup) throw new Error({ error: { message: "That email is already in use. Please log in instead." } });
       if (duplicateSignup) throw new Error("That email is already in use. Please log in instead.");
 
       // upsert into "User" and "UserRole" table
@@ -51,6 +56,14 @@ export default function anonRoutes(supabaseClient) {
           role_id: defaultRole.id,
         };
 
+        if (signUpData?.session) {
+          profile_payload.last_login_at = new Date().toISOString();
+          profile_payload.is_active = true;
+          // NOTE: rolePayload.assigned_at was being set before, but assigned_at isn't defined here.
+          // If your table requires assigned_at, add it explicitly:
+          // rolePayload.assigned_at = new Date().toISOString();
+        }
+
         const { error: userTableErr } = await supabaseClient
           .from("User")
           .upsert(profile_payload);
@@ -60,6 +73,18 @@ export default function anonRoutes(supabaseClient) {
 
         if (userTableErr) console.error("User upsert error:", userTableErr);
         if (userRoleTableErr) console.error("UserRole upsert error:", userRoleTableErr);
+      }
+
+      if (!signUpData.session) {
+        res.status(200).json({
+          "info": {
+            "message": "We’ve sent you a confirmation link. Please check your email to finish creating your account."
+          }
+        });
+      }
+    } catch (error) {
+      console.error("Failed to signup:", error);
+      res.status(500).json(error)
 
         if (userTableErr || userRoleTableErr) throw new Error("Internal Server Error: Data Upsert Error");
         res.status(200).json({
