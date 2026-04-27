@@ -33,11 +33,11 @@ function Contacts() {
   const tableContactsColumns = [
     {
       key: "userid",
-      label: "",
+      label: "Info",
       render: (userid) => (
         <button
           onClick={() => navigate(`/admin/contacts/${userid}`)}
-          className="text-sm text-gray-500 hover:underline cursor-pointer"
+          className="hover:cursor-pointer hover:bg-gray-200 transition-all text-center px-2 py-1 rounded-md text-sm font-semibold border"
         >
           View
         </button>
@@ -61,7 +61,7 @@ function Contacts() {
             setSelectedContact(row);
             setShowDeleteModal(true);
           }}
-          className="text-sm text-red-500 hover:underline cursor-pointer"
+          className="hover:cursor-pointer px-3 py-1 rounded text-sm font-semibold border border-red-400 text-red-600 hover:bg-red-500 hover:text-white transition-colors duration-200"
         >
           Delete
         </button>
@@ -182,7 +182,7 @@ function Contacts() {
                     {errorMsg}
                   </div>
                 )}
-                <div className="grow flex flex-col">
+                <div className="grow flex flex-col overflow-x-auto">
                   {loading ? (
                     <div className="grow flex flex-col justify-center items-center text-gray-500">
                       <LoaderCircle className="text-brown animate-spin mb-2" size={32} />
@@ -212,7 +212,7 @@ function Contacts() {
           <div className="absolute inset-0 bg-black/50"></div>
 
           <div className="relative bg-white w-11/12 max-w-md p-6 border border-black rounded-md shadow-lg">
-            <h2 className="text-center text-2xl font-serif mb-4">
+            <h2 className="text-center text-2xl font-sans mb-4">
               Delete Contact
             </h2>
 
@@ -223,13 +223,13 @@ function Contacts() {
             <div className="flex justify-center gap-3">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 border border-black rounded-md"
+                className="px-4 py-1 border border-black rounded-md cursor-pointer hover:bg-gray-200"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDeleteContact}
-                className="px-4 py-2 bg-[#a00101] text-white rounded-md"
+                className="px-4 py-1 bg-[#a00101] hover:bg-[#870000] text-white rounded-md cursor-pointer"
               >
                 Delete
               </button>
