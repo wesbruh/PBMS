@@ -1,4 +1,4 @@
-import { createSupabaseMock } from "../../../../../../utils/backend/createSupabaseMock.js";
+import { createSupabaseMock } from "../../../../utils/backend/createSupabaseMock.js";
 import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 
 // mocks
@@ -10,13 +10,13 @@ jest.mock("react-router-dom", () => ({
   useParams: () => mockParams
 }));
 
-jest.mock("../../../../../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
 let mockSupabase;
 
-jest.mock("../../../../../../../src/lib/supabaseClient.js", () => ({
+jest.mock("../../../../../src/lib/supabaseClient.js", () => ({
   get supabase() {
     return mockSupabase;
   }
@@ -28,18 +28,18 @@ beforeEach(() => {
 
 let mockUseAuth;
 
-jest.mock("../../../../../../../src/context/AuthContext.jsx", () => ({
+jest.mock("../../../../../src/context/AuthContext.jsx", () => ({
   get useAuth() {
     return mockUseAuth;
   }
 }));
 
-jest.mock("../../../../../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () =>
+jest.mock("../../../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () =>
   () =>
     <div data-testid="sidebar">Sidebar</div>
 );
 
-jest.mock("../../../../../../../src/admin/components/shared/Frame/Frame.jsx", () =>
+jest.mock("../../../../../src/admin/components/shared/Frame/Frame.jsx", () =>
   ({ children }) =>
     <div data-testid="frame">{children}</div>
 );
@@ -53,7 +53,7 @@ afterEach(() => {
   consoleSpy.mockRestore();
 });
 
-import QuestionnairesEditor from "../../../../../../../src/admin/pages/Forms/Questionnaires/QuestionnairesEditor.jsx";
+import QuestionnairesEditor from "../../../../../src/admin/pages/Forms/Questionnaires/QuestionnairesEditor.jsx"
 
 // replace the real fetch with a Jest mock before each test so no actual HTTP requests are made
 beforeEach(() => {

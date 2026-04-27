@@ -1,4 +1,4 @@
-import { createSupabaseMock } from "../../../../../utils/backend/createSupabaseMock.js";
+import { createSupabaseMock } from "../../../utils/backend/createSupabaseMock.js";
 import { render, screen, act, fireEvent, waitFor } from "@testing-library/react";
 
 // mocks
@@ -12,18 +12,18 @@ jest.mock("react-router-dom", () => ({
 
 let mockSupabase;
 
-jest.mock("../../../../../../src/lib/supabaseClient", () => ({
+jest.mock("../../../../src/lib/supabaseClient.js", () => ({
   get supabase() {
     return mockSupabase;
   }
 }));
 
-jest.mock("../../../../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () =>
+jest.mock("../../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () =>
   () =>
     <div data-testid="sidebar">Sidebar</div>
 );
 
-jest.mock("../../../../../../src/admin/components/shared/Frame/Frame.jsx", () =>
+jest.mock("../../../../src/admin/components/shared/Frame/Frame.jsx", () =>
   ({ children }) =>
     <div data-testid="frame">{children}</div>
 );
@@ -68,7 +68,7 @@ afterEach(() => {
   consoleSpy.mockRestore();
 });
 
-import Forms from "../../../../../../src/admin/pages/Forms/Forms.jsx";
+import Forms from "../../../../src/admin/pages/Forms/Forms.jsx";
 
 // 23 TESTS //
 describe("Forms", () => {

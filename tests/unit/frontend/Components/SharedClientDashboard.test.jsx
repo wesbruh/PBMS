@@ -1,21 +1,21 @@
 import { jest } from "@jest/globals";
 import { render, screen, fireEvent } from "@testing-library/react";
-import SharedClientDashboard from "../../../src/components/Dashboard/SharedClientDashboard.jsx";
+import SharedClientDashboard from "../../../../src/components/Dashboard/SharedClientDashboard.jsx";
 
 // Mock child components so this test focuses on SharedClientDashboard behavior.
-jest.mock("../../../src/components/InvoiceButton/DownloadInvoiceButton", () => {
+jest.mock("../../../../src/components/InvoiceButton/DownloadInvoiceButton", () => {
     return function MockDownloadInvoiceButton({ invoiceId }) {
         return <button data-testid={`download-invoice-${invoiceId}`}>Invoice PDF</button>;
     };
 });
 
-jest.mock("../../../src/components/InvoiceButton/DownloadReceipt", () => {
+jest.mock("../../../../src/components/InvoiceButton/DownloadReceipt", () => {
     return function MockDownloadReceipt({ invoiceId }) {
         return <button data-testid={`download-receipt-${invoiceId}`}>Receipt PDF</button>;
     };
 });
 
-jest.mock("../../../src/components/SectionPager", () => {
+jest.mock("../../../../src/components/SectionPager", () => {
     return function MockSectionPager({ page, totalItems }) {
         return (
             <div data-testid="section-pager">

@@ -1,14 +1,13 @@
-import React from "react";
 import { render } from "@testing-library/react";
 
 const mockUseAuth = jest.fn();
 const mockSignOut = jest.fn();
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-jest.mock("../../../src/lib/supabaseClient", () => ({
+jest.mock("../../../../src/lib/supabaseClient", () => ({
   supabase: {
     auth: {
       signOut: () => mockSignOut(),
@@ -16,7 +15,7 @@ jest.mock("../../../src/lib/supabaseClient", () => ({
   },
 }));
 
-import IdleLogout from "../../../src/components/IdleLogout.jsx";
+import IdleLogout from "../../../../src/components/IdleLogout.jsx";
 
 describe("IdleLogout", () => {
   let originalFetch;

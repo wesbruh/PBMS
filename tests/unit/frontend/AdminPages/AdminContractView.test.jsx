@@ -9,22 +9,22 @@ const mockUseParams = jest.fn();
 const mockUseAuth = jest.fn();
 
 
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
-import AdminContractView from "../../../src/admin/pages/Contacts/AdminContractView.jsx";
+import AdminContractView from "../../../../src/admin/pages/Contacts/AdminContractView.jsx";
 
 jest.mock("react-router-dom", () => ({
   useParams: () => mockUseParams(),
   useNavigate: () => mockNavigate,
 }));
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-jest.mock("../../../src/pages/Dashboard/ContractDetail.jsx", () => {
+jest.mock("../../../../src/pages/Dashboard/ContractDetail.jsx", () => {
   return function MockContractDetail(props) {
     return (
       <div data-testid="contract-detail">

@@ -1,7 +1,7 @@
 import { jest } from "@jest/globals";
 import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
     API_URL: "http://localhost:5001",
     SUPABASE_URL: "https://zccwrooyhkpkslgqdkvq.supabase.co",
 }));
@@ -26,11 +26,11 @@ jest.mock("react-router-dom", () => ({
     useSearchParams: () => mockUseSearchParams(),
 }));
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
     useAuth: () => mockUseAuth(),
 }));
 
-jest.mock("../../../src/lib/supabaseClient", () => ({
+jest.mock("../../../../src/lib/supabaseClient", () => ({
     supabase: {
         from: (table) => mockSupabaseFrom(table),
         storage: {
@@ -56,7 +56,7 @@ jest.mock("file-saver", () => ({
     saveAs: (...args) => mockSaveAs(...args),
 }));
 
-jest.mock("../../../src/components/Dashboard/SharedClientDashboard", () => {
+jest.mock("../../../../src/components/Dashboard/SharedClientDashboard", () => {
     return function MockSharedClientDashboard(props) {
         return (
             <div data-testid="shared-dashboard">
@@ -106,8 +106,8 @@ jest.mock("../../../src/components/Dashboard/SharedClientDashboard", () => {
     };
 });
 
-import { supabase } from "../../../src/lib/supabaseClient";
-import ClientDashboard from "../../../src/pages/Dashboard/ClientDashboard.jsx";
+import { supabase } from "../../../../src/lib/supabaseClient";
+import ClientDashboard from "../../../../src/pages/Dashboard/ClientDashboard.jsx";
 
 function createBuilder(result = { data: [], error: null }) {
     const builder = {

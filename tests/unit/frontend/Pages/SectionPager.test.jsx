@@ -1,6 +1,6 @@
 import { jest } from "@jest/globals";
 import { render, screen, fireEvent } from "@testing-library/react";
-import SectionPager from "../../../src/components/SectionPager.jsx";
+import SectionPager from "../../../../src/components/SectionPager.jsx";
 
 jest.mock("lucide-react", () => ({
     ChevronLeft: () => <span data-testid="chevron-left">Left</span>,

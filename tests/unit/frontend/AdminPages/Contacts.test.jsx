@@ -1,13 +1,13 @@
 import { jest } from "@jest/globals";
 import { render, screen, waitFor, fireEvent, within } from "@testing-library/react";
-import { supabase } from "../../../src/lib/supabaseClient.js";
+import { supabase } from "../../../../src/lib/supabaseClient.js";
 
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
     API_URL: "http://localhost:5001",
     SUPABASE_URL: "https://zccwrooyhkpkslgqdkvq.supabase.co",
 }));
 
-import Contacts from "../../../src/admin/pages/Contacts/Contacts.jsx";
+import Contacts from "../../../../src/admin/pages/Contacts/Contacts.jsx";
 
 
 const mockNavigate = jest.fn();
@@ -18,11 +18,11 @@ jest.mock("react-router-dom", () => ({
     useNavigate: () => mockNavigate,
 }));
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
     useAuth: () => mockUseAuth(),
 }));
 
-jest.mock("../../../src/lib/supabaseClient.js", () => ({
+jest.mock("../../../../src/lib/supabaseClient.js", () => ({
     supabase: {
         auth: {
             getSession: () => mockGetSession(),
@@ -30,20 +30,20 @@ jest.mock("../../../src/lib/supabaseClient.js", () => ({
     },
 }));
 
-jest.mock("../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () => {
+jest.mock("../../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () => {
     return function MockSidebar() {
         return <div data-testid="sidebar">Sidebar</div>;
     };
 });
 
-jest.mock("../../../src/admin/components/shared/Frame/Frame.jsx", () => {
+jest.mock("../../../../src/admin/components/shared/Frame/Frame.jsx", () => {
     return function MockFrame({ children }) {
         return <div data-testid="frame">{children}</div>;
     };
 });
 
 // Mock table to directly test rows, buttons, and column render functions.
-jest.mock("../../../src/admin/components/shared/Table/Table.jsx", () => {
+jest.mock("../../../../src/admin/components/shared/Table/Table.jsx", () => {
     return function MockTable({ columns, data }) {
         return (
             <div data-testid="contacts-table">

@@ -1,8 +1,8 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
-jest.mock('../../../src/context/AuthContext', () => ({
+jest.mock('../../../../src/context/AuthContext', () => ({
   useAuth: () => ({
     session: { access_token: 'fake-token' }
   })
@@ -10,7 +10,7 @@ jest.mock('../../../src/context/AuthContext', () => ({
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import DownloadInvoiceButton from '../../../src/components/InvoiceButton/DownloadInvoiceButton';
+import DownloadInvoiceButton from '../../../../src/components/InvoiceButton/DownloadInvoiceButton';
 
 global.fetch = jest.fn();
 global.URL.createObjectURL = jest.fn(() => 'blob:url');

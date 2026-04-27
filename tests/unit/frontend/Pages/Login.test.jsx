@@ -1,7 +1,7 @@
 let mockAuth = { session: null, profile: null, loading: false };
 const mockNavigate = jest.fn();
 
-jest.mock('../../../src/lib/supabaseClient', () => ({
+jest.mock('../../../../src/lib/supabaseClient', () => ({
   supabase: {
     auth: {
       signInWithPassword: jest.fn(),
@@ -10,7 +10,7 @@ jest.mock('../../../src/lib/supabaseClient', () => ({
   }
 }));
 
-jest.mock('../../../src/context/AuthContext', () => ({
+jest.mock('../../../../src/context/AuthContext', () => ({
   useAuth: () => mockAuth
 }));
 
@@ -22,8 +22,8 @@ jest.mock('react-router-dom', () => ({
 
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import Login from '../../../src/pages/Login/Login';
-import { supabase } from '../../../src/lib/supabaseClient';
+import Login from '../../../../src/pages/Login/Login';
+import { supabase } from '../../../../src/lib/supabaseClient';
 
 describe('Login', () => {
   beforeEach(() => {

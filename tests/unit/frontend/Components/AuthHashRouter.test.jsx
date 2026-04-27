@@ -1,7 +1,7 @@
 import React from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import AuthHashRouter from "../../../src/components/AuthHashRouter.jsx";
+import AuthHashRouter from "../../../../src/components/AuthHashRouter.jsx";
 
 function renderAuthHashRouter(route = "/") {
   return render(
