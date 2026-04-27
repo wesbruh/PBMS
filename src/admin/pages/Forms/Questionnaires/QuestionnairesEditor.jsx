@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   Plus,
   LoaderCircle,
@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../../../context/AuthContext";
 import { supabase } from "../../../../lib/supabaseClient";
+import { API_URL } from "../../../../lib/apiUrl.js";
 
 import Sidebar from "../../../components/shared/Sidebar/Sidebar";
 import Frame from "../../../components/shared/Frame/Frame";
@@ -34,13 +35,20 @@ export default function QuestionnaireEditor({ mode }) {
   const { session } = useAuth();
 
   const [name, setName] = useState("");
-  const [sessionTypeOptions, setSessionTypeOptions] = useState([]);
+
+  const [sessionTypeOptions, setSessionTypeOptions] = useState(null);
+  const didFetchRef = useRef(false);
   const [sessionType, setSessionType] = useState("");
+
   const [saving, setSaving] = useState(false);
+  const [saveData, setSaveData] = useState({});
+
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState("");
+
   const [questions, setQuestions] = useState([]);
-  const [removedQuestionIds, setRemovedQuestionIds] = useState([]);
+  const [removedQuestionIds, setRemovedQuestionIds] = useState(null);
+
   const [initialState, setInitialState] = useState(null);
 
   // handlers for unsaved/saved changes state
@@ -55,6 +63,101 @@ export default function QuestionnaireEditor({ mode }) {
     });
   }, [loading, name, sessionType, questions, initialState]);
 
+  useEffect(() => {
+    if (!session || didFetchRef.current) return;
+    didFetchRef.current = true;
+
+    const loadSessionTypeOptions = async () => {
+      try {
+        const response = await fetch(`${API_URL}/api/sessions/types`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) throw new Error("Could not fetch session types");
+
+        const data = await response.json();
+        const sessionTypes = new Set();
+
+        data.forEach((sessionType) => {
+          sessionTypes.add({ label: `${sessionType.name}`, value: `${sessionType.name}` });
+        });
+
+        setSessionTypeOptions([...sessionTypes]);
+      } catch (error) {
+        console.error(error);
+        setLoading(false);
+      }
+    }
+
+    loadSessionTypeOptions();
+
+  }, [session]);
+
+  // ── Load existing template in edit mode ───────────────────────────────────────
+  useEffect(() => {
+    if (!id || !isEdit || sessionTypeOptions) return;
+
+    async function load() {
+      setError("");
+      try {
+        const response = await fetch(`${API_URL}/api/questionnaire/templates/${id}`, {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          }
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw errorData.error;
+        }
+
+        const qTemplate = await response.json();
+        setName(qTemplate.name);
+
+        // Resolve session_type_id → string value for the dropdown
+        const stResponse = await fetch(`${API_URL}/api/sessions/type`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${session?.access_token}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ session_type_id: qTemplate.session_type_id })
+        });
+
+        if (!stResponse.ok) {
+          const errorData = await stResponse.json();
+          throw errorData.error;
+        }
+
+        const data = await stResponse.json();
+        setSessionType(data.name);
+
+        // schema_json holds the questions array
+        const questions = (qTemplate.schema_json).map((question) => ({
+          id: question.id, // stable key stored in schema
+          label: question.label,
+          type: question.type,
+          required: question.required,
+          options: Array.isArray(question.options) ? question.options : null,
+        }));
+
+        setQuestions(questions);
+      } catch (e) {
+        setError(e?.message ?? "Failed to load template.");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    load();
+  }, [id, isEdit, sessionTypeOptions]);
+
   const isDirty =
     initialState !== null &&
     (name !== initialState.name ||
@@ -67,6 +170,7 @@ export default function QuestionnaireEditor({ mode }) {
       const confirmed = window.confirm(
         "You have unsaved changes. Are you sure you want to leave? Your changes will be lost.",
       );
+
       if (!confirmed) return;
     }
     navigate("/admin/forms");
@@ -82,7 +186,7 @@ export default function QuestionnaireEditor({ mode }) {
         label: "",
         type: "short_text",
         required: false,
-        options: []
+        options: null
       },
     ]);
   }
@@ -107,7 +211,10 @@ export default function QuestionnaireEditor({ mode }) {
       }
 
       if (removed && !removed?.is_temp) {
-        setRemovedQuestionIds((prevIds) => [...prevIds, id]);
+        if (!removedQuestionIds)
+          setRemovedQuestionIds([id]);
+        else
+          setRemovedQuestionIds((prevIds) => [...prevIds, id]);
       }
 
       return next;
@@ -128,7 +235,7 @@ export default function QuestionnaireEditor({ mode }) {
   function addOption(id) {
     setQuestions((prev) =>
       prev.map((q) =>
-        q.id === id ? { ...q, options: [...(q.options ?? []), ""] } : q,
+        q.id === id ? { ...q, options: [...q.options, ""] } : q,
       ),
     );
   }
@@ -137,7 +244,7 @@ export default function QuestionnaireEditor({ mode }) {
     setQuestions((prev) =>
       prev.map((q) => {
         if (q.id !== id) return q;
-        const opts = [...(q.options ?? [])];
+        const opts = [...q.options];
         opts[index] = value;
         return { ...q, options: opts };
       }),
@@ -148,124 +255,30 @@ export default function QuestionnaireEditor({ mode }) {
     setQuestions((prev) =>
       prev.map((q) => {
         if (q.id !== id) return q;
-        const opts = [...(q.options ?? [])];
+        const opts = [...q.options];
         opts.splice(index, 1);
         return { ...q, options: opts };
       }),
     );
   }
 
-  useEffect(() => {
-    if (!session) return;
-
-    const loadSessionTypeOptions = async () => {
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/types`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json"
-          }
-        });
-
-        if (!response.ok) throw new Error("Could not fetch session types");
-
-        const data = await response.json();
-
-        const sessionTypeOptions = new Set();
-        data.forEach((sessionType) => {
-          sessionTypeOptions.add({ label: `${sessionType.name}`, value: `${sessionType.name}` });
-        });
-
-        setSessionTypeOptions([...sessionTypeOptions]);
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    loadSessionTypeOptions();
-
-  }, [session]);
-
-  // ── Load existing template in edit mode ───────────────────────────────────────
-  useEffect(() => {
-    if (!isEdit || !session || !sessionTypeOptions) return;
-
-    async function load() {
-      setError("");
-      try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${id}`, {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json"
-          }
-        })
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw errorData.error;
-        }
-
-        const qTemplate = await response.json();
-        setName(qTemplate.name ?? "");
-
-        // Resolve session_type_id → string value for the dropdown
-        if (qTemplate.session_type_id) {
-          const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/type`, {
-            method: "POST",
-            headers: {
-              "Authorization": `Bearer ${session?.access_token}`,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ session_type_id: qTemplate.session_type_id })
-          });
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw errorData.error;
-          }
-
-          const data = await response.json();
-          setSessionType((data?.name ?? ""));
-        }
-
-        // schema_json holds the questions array
-        const questions = (qTemplate.schema_json ?? []).map((question) => ({
-          id: question.id, // stable key stored in schema
-          label: question.label ?? "",
-          type: question.type ?? "short_text",
-          required: question.required ?? false,
-          options: Array.isArray(question.options) ? question.options : [],
-        }));
-        setQuestions(questions);
-      } catch (e) {
-        setError(e?.message ?? "Failed to load template.");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    load();
-  }, [loading, isEdit, id, session, sessionTypeOptions]);
-
   // ------ Validation ------
   function validate() {
-    if (!name.trim()) return "Template name is required.";
-    if (!sessionType) return "Session type is required.";
+    if (!name.trim()) return { error: new Error("Template name is required.") };
+    if (!sessionType) return { error: new Error("Session type is required.") };
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       const num = i + 1;
-      if (!q.label?.trim()) return `Question ${num}: label is required.`;
+      if (!q.label?.trim()) return { error: new Error(`Question ${num}: label is required.`)};
       if (OPTION_TYPES.includes(q.type)) {
-        const clean = (q.options ?? [])
+        const clean = q.options
           .map((o) => (o ?? "").trim())
           .filter(Boolean);
         if (clean.length === 0)
-          return `Question ${num}: "${q.type}" requires at least 1 option.`;
+          return { error: new Error(`Question ${num}: "${q.type}" requires at least 1 option.`)};
       }
     }
-    return "";
+    return { error: null };
   }
 
   // ------ Build question arrays ------
@@ -285,7 +298,7 @@ export default function QuestionnaireEditor({ mode }) {
           required: q.required,
           order_index: index,
           options: OPTION_TYPES.includes(q.type)
-            ? (q.options ?? []).map((o) => (o ?? "").trim()).filter(Boolean)
+            ? q.options.map((o) => (o ?? "").trim()).filter(Boolean)
             : null
         }) :
         oldQuestionArray.push({
@@ -296,16 +309,20 @@ export default function QuestionnaireEditor({ mode }) {
           required: q.required,
           order_index: index,
           options: OPTION_TYPES.includes(q.type)
-            ? (q.options ?? []).map((o) => (o ?? "").trim()).filter(Boolean)
+            ? q.options.map((o) => (o ?? "").trim()).filter(Boolean)
             : null,
         })
       ));
-    return [oldQuestionArray, newQuestionArray];
+
+    return [
+            oldQuestionArray.length > 0 ? oldQuestionArray : null,
+            newQuestionArray.length > 0 ? newQuestionArray : null,
+          ];
   }
 
   // ------ Resolve SessionType UUID ------
   async function resolveSessionTypeId(value) {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/sessions/type`, {
+    const response = await fetch(`${API_URL}/api/sessions/type`, {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${session?.access_token}`,
@@ -320,117 +337,127 @@ export default function QuestionnaireEditor({ mode }) {
     return data.id;
   }
 
-  // ------ Save as draft (active: false) ------
-  async function handleSaveDraft() {
-    setError("");
-    const msg = validate();
-    if (msg) {
-      setError(msg);
-      return;
-    }
+  async function handleBasicSave() {    
+    setSaving(true);
+    let templateId;
+    const sessionTypeId = await resolveSessionTypeId(sessionType);
+    setSaveData((prev) => ({ ...prev, sessionTypeId}));
 
-    try {
-      setSaving(true);
-      let templateId;
-      const sessionTypeId = await resolveSessionTypeId(sessionType);
+    const payload = {
+      name: name.trim(),
+      session_type_id: sessionTypeId,
+      active: false,
+    };
 
-      const payload = {
-        name: name.trim(),
-        session_type_id: sessionTypeId,
-        active: false,
-      };
-
-      if (isEdit) {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${id}`, {
-          method: "PATCH",
-          headers: {
-            "Authorization": `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw errorData.error;
-        }
-
-        const data = await response.json();
-        templateId = data.id;
-      } else {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw errorData.error;
-        }
-
-        const data = await response.json();
-        templateId = data.id;
-      }
-      // delete removed questions that are still in db
-      if (removedQuestionIds) {
-        await supabase.from("Questions").delete().in("id", removedQuestionIds);
-      }
-
-      const [oldQuestionarray, newQuestionArray] = buildQuestionArrays(templateId);
-
-      // insert new questions
-      if (newQuestionArray) {
-        const { error: newInsertError } = await supabase
-          .from("Questions")
-          .insert(newQuestionArray);
-
-        if (newInsertError) {
-          console.error("Error updating questions:", newInsertError);
-          throw new Error("Failed to save questions to the database.");
-        }
-      }
-
-      // update old questions
-      if (oldQuestionarray) {
-        const { error: oldUpdateError } = await supabase
-          .from("Questions")
-          .upsert(oldQuestionarray);
-
-        if (oldUpdateError) {
-          console.error("Error updating questions:", oldUpdateError);
-          throw new Error("Failed to save questions to the database.");
-        }
-      }
-
-      // build/fetch schema_json from updated questions in db
-      const { data: schemaJson, error } = await supabase
-        .from("Questions")
-        .select()
-        .eq("questionnaire_id", templateId)
-        .order("order_index", { ascending: true });
-
-      if (error) {
-        console.error("Error fetching updated questions:", error);
-        throw new Error("Failed to fetch updated questions from the database.");
-      }
-      
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${templateId}`, {
+    if (isEdit) {
+      const response = await fetch(`${API_URL}/api/questionnaire/templates/${id}`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ schema_json: schemaJson })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
         const errorData = await response.json();
         throw errorData.error;
       }
+
+      const data = await response.json();
+      templateId = data.id;
+      setSaveData((prev) => ({ ...prev, templateId}));
+    } else {
+      const response = await fetch(`${API_URL}/api/questionnaire/templates`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${session?.access_token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw errorData.error;
+      }
+
+      const data = await response.json();
+      templateId = data.id;
+      setSaveData((prev) => ({ ...prev, templateId}));
+    }
+
+    // delete removed questions that are still in db
+    if (removedQuestionIds) {
+      await supabase.from("Questions").delete().in("id", removedQuestionIds);
+    }
+
+    const [oldQuestionarray, newQuestionArray] = buildQuestionArrays(templateId);
+
+    // insert new questions
+    if (newQuestionArray) {
+      const { error: newInsertError } = await supabase
+        .from("Questions")
+        .insert(newQuestionArray);
+
+      if (newInsertError) {
+        console.error("Error updating questions:", newInsertError);
+        throw new Error("Failed to save questions to the database.");
+      }
+    }
+
+    // update old questions
+    if (oldQuestionarray) {
+      const { error: oldUpdateError } = await supabase
+        .from("Questions")
+        .upsert(oldQuestionarray);
+
+      if (oldUpdateError) {
+        console.error("Error updating questions:", oldUpdateError);
+        throw new Error("Failed to save questions to the database.");
+      }
+    }
+
+    // build/fetch schema_json from updated questions in db
+    const { data: schemaJson, error } = await supabase
+      .from("Questions")
+      .select()
+      .eq("questionnaire_id", templateId)
+      .order("order_index", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching updated questions:", error);
+      throw new Error("Failed to fetch updated questions from the database.");
+    }
+
+    const response = await fetch(`${API_URL}/api/questionnaire/templates/${templateId}`, {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${session?.access_token}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ schema_json: schemaJson })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw errorData.error;
+    }
+  }
+
+  // ------ Save as draft (active: false) ------
+  async function handleSaveDraft() {
+    setError("");
+    const { error: validateError } = validate();
+
+    if (validateError) {
+      setError(validateError.message);
+      return;
+    }
+
+    try {
+      // perform basic save operations
+      await handleBasicSave();
 
       navigate("/admin/forms");
     } catch (e) {
@@ -449,128 +476,29 @@ export default function QuestionnaireEditor({ mode }) {
   // ------ Publish (active: true, deactivates others for same session type) ------
   async function handlePublish() {
     setError("");
-    const msg = validate();
-    if (msg) {
-      setError(msg);
+    const { error: validateError } = validate();
+
+    if (validateError) {
+      setError(validateError.message);
       return;
     }
 
     try {
-      setSaving(true);
-      let templateId;
-      const sessionTypeId = await resolveSessionTypeId(sessionType);
-
-      const payload = {
-        name: name.trim(),
-        session_type_id: sessionTypeId,
-        active: false,
-      };
-
-      if (isEdit) {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${id}`, {
-          method: "PATCH",
-          headers: {
-            "Authorization": `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw errorData.error;
-        }
-
-        const data = await response.json();
-        templateId = data.id;
-      } else {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${session?.access_token}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw errorData.error;
-        }
-
-        const data = await response.json();
-        templateId = data.id;
-      }
-
-      // delete removed questions that are still in db
-      if (removedQuestionIds) {
-        await supabase.from("Questions").delete().in("id", removedQuestionIds);
-      }
-
-      const [oldQuestionarray, newQuestionArray] = buildQuestionArrays(templateId);
-
-      // insert new questions
-      if (newQuestionArray) {
-        const { error: newInsertError } = await supabase
-          .from("Questions")
-          .insert(newQuestionArray);
-
-        if (newInsertError) {
-          console.error("Error updating questions:", newInsertError);
-          throw new Error("Failed to save questions to the database.");
-        }
-      }
-
-      // update old questions
-      if (oldQuestionarray) {
-        const { error: oldUpdateError } = await supabase
-          .from("Questions")
-          .upsert(oldQuestionarray);
-
-        if (oldUpdateError) {
-          console.error("Error updating questions:", oldUpdateError);
-          throw new Error("Failed to save questions to the database.");
-        }
-      }
-
-      // build/fetch schema_json from updated questions in db
-      const { data: schemaJson, error } = await supabase
-        .from("Questions")
-        .select()
-        .eq("questionnaire_id", templateId)
-        .order("order_index", { ascending: true });
-
-      if (error) {
-        console.error("Error fetching updated questions:", error);
-        throw new Error("Failed to fetch updated questions from the database.");
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${templateId}`, {
-        method: "PATCH",
-        headers: {
-          "Authorization": `Bearer ${session?.access_token}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ schema_json: schemaJson })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw errorData.error;
-      }
-
+      // perform basic save operations
+      await handleBasicSave();
+      
       // set only one questionnaire template active for this session type
-      const setResponse = await fetch(`${import.meta.env.VITE_API_URL}/api/questionnaire/templates/${templateId}/set`, {
+      const setResponse = await fetch(`${API_URL}/api/questionnaire/templates/${saveData.templateId}/set`, {
         method: "PATCH",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ session_type_id: sessionTypeId })
+        body: JSON.stringify({ session_type_id: saveData.sessionTypeId })
       });
 
       if (!setResponse.ok) {
-        const errorData = await response.json();
+        const errorData = await setResponse.json();
         throw errorData.error;
       }
 
@@ -616,6 +544,7 @@ export default function QuestionnaireEditor({ mode }) {
                   onClick={handleSaveDraft}
                   disabled={saving || loading}
                   className="px-4 py-2 rounded border text-sm bg-black text-white disabled:opacity-50 hover:bg-gray-700 transition-all cursor-pointer"
+                  title="Save Draft"
                 >
                   {saving ? "Saving..." : "Save Draft"}
                 </button>
@@ -623,6 +552,7 @@ export default function QuestionnaireEditor({ mode }) {
                   onClick={handlePublish}
                   disabled={saving || loading}
                   className="px-4 py-2 rounded bg-green-700 text-white text-sm disabled:opacity-50 hover:bg-green-800 transition-all cursor-pointer"
+                  title="Publish"
                 >
                   {saving ? "Publishing..." : "Publish"}
                 </button>
@@ -655,15 +585,16 @@ export default function QuestionnaireEditor({ mode }) {
 
                   {/* Session Type */}
                   <div>
-                    <label className="block text-sm font-medium">Session Type</label>
+                    <label htmlFor="session-type" className="block text-sm font-medium">Session Type</label>
                     <select
                       defaultValue={sessionType ?? ""}
                       onChange={(e) => setSessionType(e.target.value)}
                       className="mt-1 w-full border rounded px-3 py-2 text-sm cursor-pointer"
+                      title="session-type-select"
                     >
-                      <option value="" disabled>Select a session type</option>
-                      {sessionTypeOptions.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
+                      <option key="" value="" label="session-type-options" disabled>Select a session type</option>
+                      {(sessionTypeOptions ?? []).map((opt) => (
+                        <option key={opt.value} value={opt.value} label="session-type-options">
                           {opt.label}
                         </option>
                       ))}
@@ -691,6 +622,7 @@ export default function QuestionnaireEditor({ mode }) {
                       type="button"
                       onClick={() => addQuestion()}
                       className="flex items-center gap-2 px-3 py-2 rounded border text-sm hover:bg-gray-200 transition-all cursor-pointer"
+                      title="Add Question"
                     >
                       <Plus size={16} />
                       Add Question
@@ -746,6 +678,7 @@ export default function QuestionnaireEditor({ mode }) {
                                   type="button"
                                   onClick={() => removeQuestion(q.id)}
                                   className="text-xs text-red-500 underline cursor-pointer hover:text-red-900"
+                                  title="Remove Question"
                                 >
                                   <Trash2 size={18} />
                                 </button>
@@ -767,6 +700,7 @@ export default function QuestionnaireEditor({ mode }) {
                                 }
                                 className="mt-1 w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]"
                                 placeholder="e.g. How many weeks along will you be?"
+                                title="Update Question Label"
                               />
                             </div>
 
@@ -782,10 +716,11 @@ export default function QuestionnaireEditor({ mode }) {
                                     // Reset options when type changes to avoid stale data
                                     updateQuestion(q.id, {
                                       type: e.target.value,
-                                      options: [],
+                                      options: OPTION_TYPES.includes(e.target.value) ? [] : null
                                     })
                                   }
                                   className="mt-1 w-full border rounded px-3 py-2 text-sm cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]"
+                                  title="Update Question Type"
                                 >
                                   {TYPE_OPTIONS.map((t) => (
                                     <option key={t.value} value={t.value}>
@@ -805,6 +740,7 @@ export default function QuestionnaireEditor({ mode }) {
                                     })
                                   }
                                   className="h-4 w-4 cursor-pointer"
+                                  title="Update Question Required"
                                 />
                                 <label
                                   htmlFor={`req-${q.id}`}
@@ -826,6 +762,7 @@ export default function QuestionnaireEditor({ mode }) {
                                     type="button"
                                     onClick={() => addOption(q.id)}
                                     className="text-xs underline text-blue-600 cursor-pointer"
+                                    title="Add Option"
                                   >
                                     + Add option
                                   </button>
@@ -849,11 +786,13 @@ export default function QuestionnaireEditor({ mode }) {
                                           }
                                           className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/40 focus:border-[#AB8C4B]"
                                           placeholder={`Option ${i + 1}`}
+                                          title="Update Option"
                                         />
                                         <button
                                           type="button"
                                           onClick={() => removeOption(q.id, i)}
                                           className="text-xs text-red-500 underline shrink-0 cursor-pointer"
+                                          title="Remove Option"
                                         >
                                           Remove
                                         </button>
