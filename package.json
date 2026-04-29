@@ -11,7 +11,8 @@
     "test": "jest --silent --coverage", 
     "test:unit": "jest --config jest.config.cjs --silent --coverage --testPathPatterns=tests/unit",
     "test:frontend": "jest --config jest.config.cjs --silent --coverage --testPathPatterns=tests/unit/frontend",
-    "test:backend": "jest --config jest.config.cjs  --silent --coverage --testPathPatterns=tests/unit/backend/ --testPathPatterns=tests/e2e --testPathPatterns=tests/unit/backend/routes/ --testPathPatterns=tests/integration/backend/"
+    "test:backend": "jest --config jest.config.cjs  --silent --coverage --testPathPatterns=tests/unit/backend/ --testPathPatterns=tests/e2e --testPathPatterns=tests/unit/backend/routes/ --testPathPatterns=tests/integration/backend/",
+    "edge:test": "cd backend && deno test --clean --coverage=coverage"
   },
   "dependencies": {
     "@dnd-kit/react": "^0.3.2",
