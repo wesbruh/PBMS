@@ -62,6 +62,19 @@ function dbTimeToHHMM(dbTime) {
 function extractHHMM(value) {
   if (!value || typeof value !== "string") return null;
 
+  // if value contains a timezone
+  if (value.includes("+")) {
+    try {
+      const dateObj = new Date(value);
+
+      return (dateObj.getHours().toString().padStart(2, '0')) + ":" +
+             (dateObj.getMinutes().toString().padStart(2, '0'));
+    } catch (error) {
+      console.error(error)
+      return null;
+    }
+  }
+
   const timeMatch = value.match(/T(\d{2}:\d{2})/);
   if (timeMatch) return timeMatch[1];
 
@@ -172,7 +185,8 @@ export default function TimeSlotGrid({
         (adminBlocks ?? []).forEach((block) => {
           const blockStart = extractHHMM(block.start_time);
           const blockEnd = extractHHMM(block.end_time);
-
+          console.log(block);
+          console.log(blockStart, blockEnd);
           if (!blockStart || !blockEnd) return;
 
           intervals.push({
