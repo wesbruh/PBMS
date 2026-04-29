@@ -1,10 +1,10 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import ContractView from "../../../src/pages/Dashboard/ContractView.jsx";
+import ContractView from "../../../../src/pages/Dashboard/ContractView.jsx";
 
 const mockUseAuth = jest.fn();
 const mockNavigate = jest.fn();
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
@@ -14,7 +14,7 @@ jest.mock("react-router-dom", () => ({
   useParams: () => ({ id: "123" }),
 }));
 
-jest.mock("../../../src/pages/Dashboard/ContractDetail", () => {
+jest.mock("../../../../src/pages/Dashboard/ContractDetail", () => {
   return function MockContractDetail(props) {
     return (
       <div data-testid="contract-detail">

@@ -1,8 +1,8 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 
-jest.mock("../../../src/lib/supabaseClient", () => ({
+jest.mock("../../../../src/lib/supabaseClient", () => ({
   supabase: {
     from: jest.fn(),
     channel: jest.fn(() => ({
@@ -13,9 +13,9 @@ jest.mock("../../../src/lib/supabaseClient", () => ({
   },
 }));
 
-jest.mock("../../../src/admin/components/shared/Sidebar/Sidebar", () => () => <div data-testid="sidebar" />);
-jest.mock("../../../src/admin/components/shared/Frame/Frame", () => ({ children }) => <div data-testid="frame">{children}</div>);
-jest.mock("../../../src/admin/components/shared/Table/Table.jsx", () =>
+jest.mock("../../../../src/admin/components/shared/Sidebar/Sidebar", () => () => <div data-testid="sidebar" />);
+jest.mock("../../../../src/admin/components/shared/Frame/Frame", () => ({ children }) => <div data-testid="frame">{children}</div>);
+jest.mock("../../../../src/admin/components/shared/Table/Table.jsx", () =>
   ({ columns, data, tabFilter }) => {
     if (tabFilter && tabFilter.tabFilterFn) {
       tabFilter.tabFilterFn({ subject: "gallery upload" }, "Sessions");
@@ -46,8 +46,8 @@ jest.mock("../../../src/admin/components/shared/Table/Table.jsx", () =>
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { supabase } from "../../../src/lib/supabaseClient";
-import Notifications from "../../../src/admin/pages/Notifications/Notifications.jsx";
+import { supabase } from "../../../../src/lib/supabaseClient";
+import Notifications from "../../../../src/admin/pages/Notifications/Notifications.jsx";
 
 const mockFrom = (overrides = {}) => ({
   select: jest.fn().mockReturnThis(),

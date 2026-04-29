@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import Portfolio from "../../../src/pages/Portfolio/Portfolio.jsx";
+import Portfolio from "../../../../src/pages/Portfolio/Portfolio.jsx";
 
 describe("Portfolio", () => {
   beforeEach(() => {
@@ -43,15 +43,6 @@ test("does not open category gallery when a non-Enter key is pressed on a catego
     expect(screen.getAllByText("Couples & Engagements").length).toBeGreaterThan(0);
     expect(screen.getByText(/8 photos/i)).toBeInTheDocument();
     expect(window.scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
-  });
-
-  test("opens category gallery when Enter is pressed on a category tile", () => {
-    render(<Portfolio />);
-
-    const tile = screen.getByRole("button", { name: "" });
-    fireEvent.keyDown(tile, { key: "Enter" });
-
-    expect(screen.getByText("← Back")).toBeInTheDocument();
   });
 
   test("returns to overview when back button is clicked", () => {

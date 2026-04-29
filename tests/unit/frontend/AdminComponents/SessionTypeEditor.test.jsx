@@ -70,7 +70,7 @@ function resetChainDefaults() {
   mockStorageChain.upload.mockImplementation(() => nextUpload());
 }
 
-jest.mock("../../../src/lib/supabaseClient.js", () => ({
+jest.mock("../../../../src/lib/supabaseClient.js", () => ({
   supabase: {
     from: (...args) => mockChain.from(...args),
     storage: {
@@ -79,7 +79,7 @@ jest.mock("../../../src/lib/supabaseClient.js", () => ({
   },
 }));
 
-jest.mock("../../../src/lib/viteApiUrl.js", () => ({
+jest.mock("../../../../src/lib/viteApiUrl.js", () => ({
   SUPABASE_URL: "https://test.supabase.co",
 }));
 
@@ -136,7 +136,7 @@ global.URL.createObjectURL = jest.fn(() => "blob:mock-url");
 // Component under test
 // ─────────────────────────────────────────────────────────────────────────────
 
-import SessionTypeEditor from "../../../src/admin/pages/Offerings/SessionTypeEditor.jsx";
+import SessionTypeEditor from "../../../../src/admin/pages/Offerings/SessionTypeEditor.jsx";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Queue helpers

@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import Testimonials from "../../../src/pages/Testimonials/Testimonials.jsx";
+import Testimonials from "../../../../src/pages/Testimonials/Testimonials.jsx";
 
-jest.mock("../../../src/components/Buttons/BookNowButton", () => {
+jest.mock("../../../../src/components/Buttons/BookNowButton", () => {
   return function MockBookNowButton(props) {
     return (
       <button className={props.className}>

@@ -1,10 +1,10 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import ContractsPage from "../../../src/pages/Dashboard/Contracts.jsx";
+import ContractsPage from "../../../../src/pages/Dashboard/Contracts.jsx";
 
 const mockUseAuth = jest.fn();
 const mockNavigate = jest.fn();
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 

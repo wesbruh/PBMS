@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
-import ContractDetail from "../../../src/pages/Dashboard/ContractDetail.jsx";
+import ContractDetail from "../../../../src/pages/Dashboard/ContractDetail.jsx";
 
-jest.mock("../../../src/components/contracts/SignContractModal", () => {
+jest.mock("../../../../src/components/contracts/SignContractModal", () => {
   return function MockSignContractModal(props) {
     return (
       <div data-testid="sign-contract-modal">

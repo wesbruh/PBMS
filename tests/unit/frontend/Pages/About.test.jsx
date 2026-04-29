@@ -1,9 +1,9 @@
-jest.mock("../../../src/lib/apiUrl.js", () => ({
+jest.mock("../../../../src/lib/apiUrl.js", () => ({
   API_URL: "http://localhost:5001",
 }));
 import React from "react";
 import { render, screen } from "@testing-library/react";
-import About from "../../../src/pages/About/About.jsx";
+import About from "../../../../src/pages/About/About.jsx";
 
 describe("About Component", () => {
   beforeEach(() => {

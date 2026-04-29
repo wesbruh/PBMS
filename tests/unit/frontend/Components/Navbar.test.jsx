@@ -1,16 +1,16 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import Navbar from "../../../src/components/Navbar/Navbar";
+import Navbar from "../../../../src/components/Navbar/Navbar";
 
 const mockNavigate = jest.fn();
 const mockUseAuth = jest.fn();
 const mockSignOut = jest.fn();
 
-jest.mock("../../../src/context/AuthContext", () => ({
+jest.mock("../../../../src/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-jest.mock("../../../src/lib/supabaseClient", () => ({
+jest.mock("../../../../src/lib/supabaseClient", () => ({
   supabase: {
     auth: {
       signOut: (...args) => mockSignOut(...args),
