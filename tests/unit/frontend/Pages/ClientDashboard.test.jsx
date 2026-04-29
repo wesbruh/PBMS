@@ -657,13 +657,13 @@ describe("ClientDashboard", () => {
 
         await waitFor(() => {
             expect(global.fetch).toHaveBeenCalledWith(
-                expect.stringContaining("/api/checkout/rest"),
+                expect.stringContaining("api/sessions/session-1"),
                 expect.any(Object)
             );
         });
 
         expect(global.fetch).toHaveBeenCalledWith(
-            expect.stringContaining("/api/checkout/rest"),
+            expect.stringContaining("/api/sessions/session-1"),
             expect.any(Object)
         );
     });
@@ -2623,9 +2623,7 @@ describe("ClientDashboard", () => {
                 return Promise.resolve({
                     ok: true,
                     json: async () => ({
-                        session: {
-                            payment_status: "paid",
-                        },
+                        payment_status: "paid"
                     }),
                 });
             }

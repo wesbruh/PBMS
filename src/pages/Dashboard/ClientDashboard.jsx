@@ -173,7 +173,6 @@ export default function ClientDashboard() {
   // used to track download gallery progress
   const [downloadingGalleries, setDownloadingGalleries] = useState({});
 
-
   const handlePayment = async (invoice) => {
     const { id: invoiceId, session_id: sessionId, remaining: amountDue } = invoice;
 
@@ -192,31 +191,21 @@ export default function ClientDashboard() {
       const sessionData = await sessionResponse.json()
       const sessionTypeData = sessionData.SessionType;
 
-      // check if entry already exists in Payment table for this invoice to avoid duplicates
-      const { data: existingPayment } = await supabase
+      // create entry in Payment Table
+      const { data: paymentData, error: paymentError } = await supabase
         .from("Payment")
+        .insert({
+          invoice_id: invoiceId,
+          provider: "Stripe",
+          amount: amountDue + (amountDue * 0.0725), // add tax to amount
+          currency: "USD",
+          status: "Pending",
+          type: "Rest"
+        })
         .select()
-        .eq("invoice_id", invoiceId)
-        .eq("type", "Rest")
-        .maybeSingle();
+        .single();
 
-      if (!existingPayment) {
-        // create entry in Payment Table
-        const { error: paymentError } = await supabase
-          .from("Payment")
-          .insert({
-            invoice_id: invoiceId,
-            provider: "Stripe",
-            amount: amountDue + (amountDue * 0.0725), // add tax to amount
-            currency: "USD",
-            status: "Pending",
-            type: "Rest"
-          })
-          .select()
-          .single();
-
-        if (paymentError) throw paymentError;
-      }
+      if (paymentError) throw paymentError;
 
       // create checkout session in backend
       const checkoutSession = await fetch(`${API_URL}/api/checkout/rest`, {
@@ -247,7 +236,7 @@ export default function ClientDashboard() {
             status: "Pending",
             created_at: new Date().toISOString(),
           })
-          .eq("id", existingPayment.id)
+          .eq("id", paymentData.id)
           .select()
           .single();
 
@@ -298,7 +287,7 @@ export default function ClientDashboard() {
             const status = await response.json()
               .then((data) => {
                 // console.log("Checkout session: ", data.session); // DEBUGGING
-                return data.session.payment_status
+                return data.payment_status
               });
 
             // if session has been fully paid and processed

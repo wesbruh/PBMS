@@ -59,7 +59,7 @@ describe("DownloadReceipt", () => {
 
     await waitFor(() => {
       expect(fetch).toHaveBeenCalledWith(
-        expect.stringContaining("/api/receipt/123"),
+        expect.stringContaining("/api/receipts/123"),
         expect.objectContaining({
             method: "GET",
             headers: expect.objectContaining({

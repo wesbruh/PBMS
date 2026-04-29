@@ -1,24 +1,25 @@
+// create mock FIRST
+const mockPDF = jest.fn().mockImplementation(() => ({
+  pipe: jest.fn(),
+  page: { width: 612, height: 792 },
+  rect: jest.fn().mockReturnThis(),
+  fill: jest.fn().mockReturnThis(),
+  image: jest.fn().mockReturnThis(),
+  fontSize: jest.fn().mockReturnThis(),
+  font: jest.fn().mockReturnThis(),
+  fillColor: jest.fn().mockReturnThis(),
+  text: jest.fn().mockReturnThis(),
+  moveDown: jest.fn().mockReturnThis(),
+  moveTo: jest.fn().mockReturnThis(),
+  lineTo: jest.fn().mockReturnThis(),
+  stroke: jest.fn().mockReturnThis(),
+  strokeColor: jest.fn().mockReturnThis(),
+  circle: jest.fn().mockReturnThis(),
+  end: jest.fn()
+}));
+
 import path from 'path';
-
-jest.mock('pdfkit', () => {
-  return jest.fn().mockImplementation(() => ({
-    pipe: jest.fn(),
-    rect: jest.fn().mockReturnThis(),
-    fill: jest.fn().mockReturnThis(),
-    image: jest.fn().mockReturnThis(),
-    fontSize: jest.fn().mockReturnThis(),
-    font: jest.fn().mockReturnThis(),
-    fillColor: jest.fn().mockReturnThis(),
-    text: jest.fn().mockReturnThis(),
-    moveDown: jest.fn().mockReturnThis(),
-    moveTo: jest.fn().mockReturnThis(),
-    lineTo: jest.fn().mockReturnThis(),
-    stroke: jest.fn().mockReturnThis(),
-    circle: jest.fn().mockReturnThis(),
-    end: jest.fn()
-  }));
-});
-
+import PDFDocument from "pdfkit";
 import request from 'supertest';
 import express from 'express';
 import * as url from 'url';
@@ -37,34 +38,24 @@ const successMock = {
   from: jest.fn(() => ({
     select: jest.fn(() => ({
       eq: jest.fn(() => ({
-        eq: jest.fn(() => ({
-          single: jest.fn(() => ({
-            data: {
-              id: "abc12345",
-              amount: 100,
-              currency: "USD",
-              provider: "Stripe",
-              status: "Paid",
-              paid_at: new Date().toISOString(),
-              type: "Deposit",
-              Invoice: {
-                invoice_number: "INV-1",
-                Session: {
-                  SessionType: {
-                    name: "Test Session",
-                    base_price: 100
-                  },
-                  User: {
-                    first_name: "John",
-                    last_name: "Doe",
-                    email: "john@test.com",
-                    phone: "1234567890"
-                  }
-                }
+        single: jest.fn(() => ({
+          data: {
+            invoice_number: "INV-1",
+            status: "Paid",
+            Session: {
+              SessionType: {
+                name: "Test Session",
+                base_price: 100
+              },
+              User: {
+                first_name: "John",
+                last_name: "Doe",
+                email: "john@test.com",
+                phone: "1234567890"
               }
-            },
-            error: null
-          }))
+            }
+          },
+          error: null
         }))
       }))
     }))
@@ -76,6 +67,7 @@ describe('Receipt Routes', () => {
   test('GET /api/receipts/:invoice_id returns 200', async () => {
     const app = createApp(successMock);
     const res = await request(app).get('/api/receipts/1');
+
     expect(res.statusCode).toBe(200);
   });
 
@@ -84,11 +76,9 @@ describe('Receipt Routes', () => {
       from: jest.fn(() => ({
         select: jest.fn(() => ({
           eq: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              single: jest.fn(() => ({
-                data: null,
-                error: { message: "not found" }
-              }))
+            single: jest.fn(() => ({
+              data: null,
+              error: { message: "not found" }
             }))
           }))
         }))
@@ -106,19 +96,15 @@ describe('Receipt Routes', () => {
       from: jest.fn(() => ({
         select: jest.fn(() => ({
           eq: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              single: jest.fn(() => ({
-                data: {
-                  status: "Pending",
-                  Invoice: {
-                    Session: {
-                      SessionType: {},
-                      User: {}
-                    }
-                  }
-                },
-                error: null
-              }))
+            single: jest.fn(() => ({
+              data: {
+                status: "Unpaid",
+                Session: {
+                  SessionType: {},
+                  User: {}
+                }
+              },
+              error: null
             }))
           }))
         }))
@@ -149,30 +135,22 @@ describe('Receipt Routes', () => {
       from: jest.fn(() => ({
         select: jest.fn(() => ({
           eq: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              single: jest.fn(() => ({
-                data: {
-                  id: "fallback",
-                  amount: 200,
-                  status: "Paid",
-                  paid_at: null,
-                  type: "Deposit",
-                  provider: "Stripe",
-                  Invoice: {
-                    invoice_number: "INV-2",
-                    Session: {
-                      SessionType: null,
-                      User: {
-                        first_name: "Jane",
-                        last_name: "Doe",
-                        email: "jane@test.com",
-                        phone: "123"
-                      }
-                    }
+            single: jest.fn(() => ({
+              data: {
+                invoice_number: "INV-2",
+                status: "Paid",
+                paid_at: null,
+                Session: {
+                  SessionType: null,
+                  User: {
+                    first_name: "Jane",
+                    last_name: "Doe",
+                    email: "jane@test.com",
+                    phone: "123"
                   }
-                },
-                error: null
-              }))
+                }
+              },
+              error: null
             }))
           }))
         }))
@@ -190,33 +168,24 @@ describe('Receipt Routes', () => {
       from: jest.fn(() => ({
         select: jest.fn(() => ({
           eq: jest.fn(() => ({
-            eq: jest.fn(() => ({
-              single: jest.fn(() => ({
-                data: {
-                  id: "edge",
-                  amount: 180,
-                  status: "Paid",
-                  paid_at: new Date().toISOString(),
-                  provider: "",
-                  type: "",
-                  Invoice: {
-                    invoice_number: "INV-EDGE",
-                    Session: {
-                      SessionType: {
-                        name: "Portrait",
-                        base_price: undefined
-                      },
-                      User: {
-                        first_name: "Edge",
-                        last_name: "Case",
-                        email: "edge@test.com",
-                        phone: "000"
-                      }
-                    }
+            single: jest.fn(() => ({
+              data: {
+                invoice_number: "INV-EDGE",
+                status: "Paid",
+                Session: {
+                  SessionType: {
+                    name: "Portrait",
+                    base_price: undefined
+                  },
+                  User: {
+                    first_name: "Edge",
+                    last_name: "Case",
+                    email: "edge@test.com",
+                    phone: "000"
                   }
-                },
-                error: null
-              }))
+                }
+              },
+              error: null
             }))
           }))
         }))
@@ -230,17 +199,16 @@ describe('Receipt Routes', () => {
   });
 
   test('covers __dirname catch branch', async () => {
+    jest.spyOn(path, 'dirname').mockImplementationOnce(() => {
+      throw new Error("force dirname failure");
+    });
 
-  jest.spyOn(path, 'dirname').mockImplementationOnce(() => {
-    throw new Error("force dirname failure");
+    const app = createApp(successMock);
+    const res = await request(app).get('/api/receipts/1');
+
+    expect(res.statusCode).toBe(200);
+
+    jest.restoreAllMocks();
   });
-
-  const app = createApp(successMock);
-  const res = await request(app).get('/api/receipts/1');
-
-  expect(res.statusCode).toBe(200); 
-
-  jest.restoreAllMocks();
-});
 
 });
