@@ -4,16 +4,16 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 
 export default function Login() {
-  const { session, profile, loading } = useAuth();
+  const { session, profile } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-
+  const [loading, setLoading] = useState(false);
   // save navigation path
   const from = location.state?.from?.pathname;
 
   const [form, setForm] = useState({ email: "", password: "", });
   const [error, setError] = useState("");
-  const [errors, setErrors ] = useState({});
+  const [errors, setErrors] = useState({});
 
   // Forgot-password modal state 
   const [showReset, setShowReset] = useState(false);
@@ -23,7 +23,7 @@ export default function Login() {
   // navigate when everything is loaded
   useEffect(() => {
     // something hasn't been initialized or found
-    if (loading || !session || !profile) {
+    if (!session || !profile) {
       return;
     }
 
@@ -32,8 +32,10 @@ export default function Login() {
       profile.roleName === "User" ? from || "/dashboard" :
         from;
 
+    setLoading(false);
+
     navigate(navLoc, { replace: true });
-  }, [loading, session, profile, from, navigate]);
+  }, [session, profile, from, navigate, setLoading]);
 
 
   const onChange = (e) => {
@@ -63,12 +65,17 @@ export default function Login() {
 
     setErrors({});
 
+    setLoading(true);
+
     const { error } = await supabase.auth.signInWithPassword({
       email: form.email,
       password: form.password,
     });
 
+
     if (error) {
+      setLoading(false);
+
       const msg = error.message?.toLowerCase() || "";
       if (msg.includes("email not confirmed")) {
         setError("Please confirm your email first. Check your inbox for the link.");
@@ -93,6 +100,7 @@ export default function Login() {
       });
 
       if (!response.ok) {
+        setLoading(false);
         // if you see this in console, you have RLS blocking it
         const errorData = await response.json();
         console.error("User update failed:", errorData.error);
@@ -137,84 +145,86 @@ export default function Login() {
     <div className="min-h-[calc(100vh-80px)] bg-[#FFFDF4]">
       <div className="mx-4 md:mx-6 lg:mx-10 py-10 md:py-14 flex justify-center">
         <div className="w-full max-w-3xl">
-        {/* Headline in serif font */}
-        <div className="text-center mb-8 md:mb-10">
-          <h1 className="text-center text-3xl md:text-5xl font-serif  tracking wide">
-            Log in to Your Account
-          </h1>
-          <p className="mt-5 text-sm md:text-lg text-neutral-700 max-w-full mx-auto">
-            Log in to manage your account, make payments, or submit a booking request.
-          </p>
-        </div>
-
-        {/* Card */}
-        <div className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl shadow-md px-5 md:px-8 py-6">
-          <form
-            className="flex flex-col gap-5 font-sans"
-            noValidate
-            onSubmit={onSubmit}
-          >
-            {/* Email */}
-          <label>
-            <p className="text-brown py-2 text-[14px] font-sans">Email *</p>
-            <input
-              className={`w-full rounded-md border border-neutral-200 px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50
-              ${errors.email ? "border-red-500" : "border-neutral-200"}`}
-              id="email" name="email" type="email" autoComplete="email" required
-              value={form.email} onChange={onChange} placeholder = "jane@example.com" />
-              {errors.email && (
-              <p className="mt-2 text-red-600 text-xs">{errors.email}</p>
-              )}
-          </label>
-
-            {/* Password */}
-          <label>
-            <p className="text-brown py-2 text-[14px] font-sans">Password *</p>
-            <input
-              className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${
-              errors.password ? "border-red-500" : "border-neutral-200"
-              }`}
-              id="password" name="password" type="password" autoComplete="current-password" required
-              value={form.password} onChange={onChange} placeholder = "••••••••" />
-              {errors.password && (
-              <p className="mt-2 text-red-600 text-xs">{errors.password}</p>
-            )}
-          </label>
-
-          {/* Forgot password link */}
-          <div className="text-center mt-2 flex flex-col gap-3 items-center">
-            <button
-              type="button"
-              onClick={openReset}
-              className="font-sans text-sm hover:underline underline-offset-4 cursor-pointer"
-            >
-              Forgot password?
-            </button>
-            <Link to="/signup" className=" font-sans text-sm text-[#7E4C3C] underline underline-offset-4 hover:text-[#AB8C4B]">
-            <button
-              type="button"
-              className="hover:underline underline-offset-4 cursor-pointer"
-            >
-              Create an account
-            </button>
-            </Link>
+          {/* Headline in serif font */}
+          <div className="text-center mb-8 md:mb-10">
+            <h1 className="text-center text-3xl md:text-5xl font-serif  tracking wide">
+              Log in to Your Account
+            </h1>
+            <p className="mt-5 text-sm md:text-lg text-neutral-700 max-w-full mx-auto">
+              Log in to manage your account, make payments, or submit a booking request.
+            </p>
           </div>
 
-          {error && <p className="text-center text-red-600 text-xs mt-2">{error}</p>}
+          {/* Card */}
+          <div className="bg-white/60 backdrop-blur-sm border border-black/10 rounded-2xl shadow-md px-5 md:px-8 py-6">
+            <form
+              className="flex flex-col gap-5 font-sans"
+              noValidate
+              onSubmit={onSubmit}
+            >
+              {/* Email */}
+              <label>
+                <p className="text-brown py-2 text-[14px] font-sans">Email *</p>
+                <input
+                  className={`w-full rounded-md border border-neutral-200 px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50
+              ${errors.email ? "border-red-500" : "border-neutral-200"}`}
+                  id="email" name="email" type="email" autoComplete="email" required
+                  value={form.email} onChange={onChange} placeholder="jane@example.com" />
+                {errors.email && (
+                  <p className="mt-2 text-red-600 text-xs">{errors.email}</p>
+                )}
+              </label>
 
-          <button className="flex justify-center items-center w-full md:w-1/2 mx-auto mt-2 mb-2
-                             bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-sans rounded-md transition cursor-pointer"
-            type="submit"
-            aria-label="login-button">
-            Log In
-          </button>
-        </form>
+              {/* Password */}
+              <label>
+                <p className="text-brown py-2 text-[14px] font-sans">Password *</p>
+                <input
+                  className={`w-full rounded-md border px-4 py-3 text-sm bg-white/80 focus:outline-none focus:ring-2 focus:ring-[#AB8C4B]/50 ${errors.password ? "border-red-500" : "border-neutral-200"
+                    }`}
+                  id="password" name="password" type="password" autoComplete="current-password" required
+                  value={form.password} onChange={onChange} placeholder="••••••••" />
+                {errors.password && (
+                  <p className="mt-2 text-red-600 text-xs">{errors.password}</p>
+                )}
+              </label>
+
+              {/* Forgot password link */}
+              <div className="text-center mt-2 flex flex-col gap-3 items-center">
+                <button
+                  type="button"
+                  onClick={openReset}
+                  className="font-sans text-sm hover:underline underline-offset-4 cursor-pointer"
+                >
+                  Forgot password?
+                </button>
+                <Link to="/signup" className=" font-sans text-sm text-[#7E4C3C] underline underline-offset-4 hover:text-[#AB8C4B]">
+                  <button
+                    type="button"
+                    className="hover:underline underline-offset-4 cursor-pointer"
+                  >
+                    Create an account
+                  </button>
+                </Link>
+              </div>
+
+              {error && <p className="text-center text-red-600 text-xs mt-2">{error}</p>}
+
+              <button className={`flex justify-center items-center w-full md:w-1/2 mx-auto mt-2 mb-2
+                                 bg-brown hover:bg-[#AB8C4B] h-12 text-white text-sm font-sans rounded-md transition cursor-pointer
+                                 disabled:opacity-40 ${loading ? "cursor-wait" : "disabled:cursor-not-allowed"}`}
+                type="submit"
+                aria-label="login-button"
+                disabled={loading}
+                >
+                {loading ? "Logging In..." : "Log In"}
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
-    </div>
-  </div>
 
       {/* Modal popup for Forgot Password */}
-      {showReset && (
+      {!loading && showReset && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center"
           role="dialog" aria-modal="true"
