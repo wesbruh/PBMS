@@ -1,7 +1,7 @@
 {
   "name": "pbms",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -105,7 +105,7 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "config": {
-    "engine-strict": false
+  "engines": {
+    "node": ">=24.0.0"
   }
 }
