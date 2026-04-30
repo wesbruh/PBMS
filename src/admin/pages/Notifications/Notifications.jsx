@@ -41,7 +41,6 @@ function Notifications() {
           id,
           user_id,
           session_id,
-          template_id,
           channel,
           subject,
           body,
