@@ -268,6 +268,13 @@ export default function InquiryForm() {
   const watchedDate = watch("date");
   const watchedStartTime = watch("startTime");
 
+  // ── Handle updates to date ────────────────────
+  useEffect(() => {
+    if (!watchedDate) return;
+
+    setValue("startTime", "", { shouldValidate: false });
+  }, [watchedDate])
+
   // ── Category card clicked ─────────────────────────────────────────────────
   // Sets the category, pre-selects the master as the active session type
   // (will be overridden if user picks a child)
@@ -302,6 +309,24 @@ export default function InquiryForm() {
     setValue("sessionTypeId", st.id, { shouldValidate: true });
     trigger(["sessionTypeId"]);
     const dur = st.default_duration_minutes ?? 60;
+    setDurationMinutes(dur);
+    setValue("startTime", "", { shouldValidate: false });
+  }
+
+  function handleSelectCategory(masterRow) {
+    if (!submitLock) return;
+
+    // if clicking already-selected category -- do nothing
+    if (selectedCategory?.id === masterRow.id) return;
+
+    setSelectedCategory(masterRow);
+
+    // Pre-select master as the active session type
+    setSelectedSessionType(masterRow);
+    setValue("sessionTypeId", masterRow.id, { shouldValidate: true });
+    trigger(["sessionTypeId"]);
+
+    const dur = masterRow.default_duration_minutes ?? 60;
     setDurationMinutes(dur);
     setValue("startTime", "", { shouldValidate: false });
   }

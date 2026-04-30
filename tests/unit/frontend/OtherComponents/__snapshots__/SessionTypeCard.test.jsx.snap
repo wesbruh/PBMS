@@ -1,0 +1,582 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`regression snapshots matches snapshot: grid default state 1`] = `
+<div>
+  <div
+    class="relative group rounded-xl border overflow-hidden bg-white shadow-sm transition-all
+          border-black/10 hover:border-[#7E4C3C]/40 hover:shadow-md false
+          
+        "
+  >
+    <div
+      class="relative h-48 w-full bg-linear-to-br from-neutral-50 to-neutral-100 overflow-hidden"
+    >
+      <div
+        class="h-full w-full flex items-center justify-center"
+      >
+        <div
+          class="text-center text-neutral-300"
+        >
+          <span
+            class="flex flex-col items-center text-md"
+          >
+            <span
+              data-size="32"
+              data-testid="icon-image"
+            />
+            No image 
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      class="p-4 space-y-3"
+    >
+      <div>
+        <div
+          class="flex items-start justify-between gap-2"
+        >
+          <h3
+            class="font-serif text-base font-semibold text-neutral-900 leading-snug"
+          >
+            Ivory Package
+          </h3>
+        </div>
+        <p
+          class="text-sm text-[#7E4C3C] font-semibold mt-1"
+        >
+          From $375
+        </p>
+      </div>
+      <p
+        class="text-xs text-neutral-600 leading-relaxed line-clamp-3"
+      >
+        A beautiful package.
+      </p>
+      <ul
+        class="space-y-1.5 text-xs text-neutral-600"
+      >
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            1 Hour Coverage
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            35+ edited photos
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            Online gallery
+          </span>
+        </li>
+      </ul>
+      <div
+        class="pt-2 border-t border-neutral-100 flex items-center gap-1.5 text-xs text-neutral-500"
+      >
+        <span
+          class="flex gap-1"
+        >
+           
+          <span
+            data-size="16"
+            data-testid="icon-clock"
+          />
+          60
+           minutes
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`regression snapshots matches snapshot: grid disabled + many bullets + image 1`] = `
+<div>
+  <div
+    class="relative group rounded-xl border overflow-hidden bg-white shadow-sm transition-all
+          border-black/10 hover:border-[#7E4C3C]/40 hover:shadow-md false
+          pointer-events-none opacity-60
+        "
+  >
+    <div
+      class="relative h-48 w-full bg-linear-to-br from-neutral-50 to-neutral-100 overflow-hidden"
+    >
+      <img
+        alt="Ivory Package"
+        class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        src="https://cdn.example.com/img.jpg"
+      />
+    </div>
+    <div
+      class="p-4 space-y-3"
+    >
+      <div>
+        <div
+          class="flex items-start justify-between gap-2"
+        >
+          <h3
+            class="font-serif text-base font-semibold text-neutral-900 leading-snug"
+          >
+            Ivory Package
+          </h3>
+        </div>
+        <p
+          class="text-sm text-[#7E4C3C] font-semibold mt-1"
+        >
+          From $375
+        </p>
+      </div>
+      <p
+        class="text-xs text-neutral-600 leading-relaxed line-clamp-3"
+      >
+        A beautiful package.
+      </p>
+      <ul
+        class="space-y-1.5 text-xs text-neutral-600"
+      >
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            A
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            B
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            C
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            D
+          </span>
+        </li>
+        <li
+          class="text-[10px] text-neutral-400 italic pl-4"
+        >
+          +
+          2
+           more...
+        </li>
+      </ul>
+      <div
+        class="pt-2 border-t border-neutral-100 flex items-center gap-1.5 text-xs text-neutral-500"
+      >
+        <span
+          class="flex gap-1"
+        >
+           
+          <span
+            data-size="16"
+            data-testid="icon-clock"
+          />
+          60
+           minutes
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`regression snapshots matches snapshot: grid selected + showEditControls 1`] = `
+<div>
+  <div
+    class="relative group rounded-xl border overflow-hidden bg-white shadow-sm transition-all
+          border-[#7E4C3C] ring-2 ring-[#7E4C3C]/20 shadow-md
+          
+        "
+  >
+    <div
+      class="absolute top-2 right-2 z-10 flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
+    >
+      <button
+        class="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-100 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm cursor-pointer transition-colors"
+        title="Edit Session Type"
+        type="button"
+      >
+        <span
+          data-size="16"
+          data-testid="icon-pencil"
+        />
+      </button>
+      <button
+        class="px-2 py-1 rounded-md bg-white/95 hover:bg-red-100 border border-red-200 text-red-600 text-xs font-medium shadow-sm cursor-pointer transition-colors"
+        title="Delete Session Type"
+        type="button"
+      >
+        <span
+          data-size="16"
+          data-testid="icon-trash"
+        />
+      </button>
+    </div>
+    <div
+      class="relative h-48 w-full bg-linear-to-br from-neutral-50 to-neutral-100 overflow-hidden"
+    >
+      <div
+        class="h-full w-full flex items-center justify-center"
+      >
+        <div
+          class="text-center text-neutral-300"
+        >
+          <span
+            class="flex flex-col items-center text-md"
+          >
+            <span
+              data-size="32"
+              data-testid="icon-image"
+            />
+            No image 
+          </span>
+        </div>
+      </div>
+    </div>
+    <div
+      class="p-4 space-y-3"
+    >
+      <div>
+        <div
+          class="flex items-start justify-between gap-2"
+        >
+          <h3
+            class="font-serif text-base font-semibold text-neutral-900 leading-snug"
+          >
+            Ivory Package
+          </h3>
+          <span
+            class="px-2 py-0.5 rounded-full bg-[#AB8C4B]/10 text-[12px] text-[#AB8C4B] font-mono uppercase tracking-wide shrink-0"
+          >
+            Standard
+          </span>
+        </div>
+        <p
+          class="text-sm text-[#7E4C3C] font-semibold mt-1"
+        >
+          From $375
+        </p>
+      </div>
+      <p
+        class="text-xs text-neutral-600 leading-relaxed line-clamp-3"
+      >
+        A beautiful package.
+      </p>
+      <ul
+        class="space-y-1.5 text-xs text-neutral-600"
+      >
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            1 Hour Coverage
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            35+ edited photos
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="text-[#AB8C4B] mt-0.5 shrink-0"
+          >
+            •
+          </span>
+          <span
+            class="leading-relaxed"
+          >
+            Online gallery
+          </span>
+        </li>
+      </ul>
+      <div
+        class="pt-2 border-t border-neutral-100 flex items-center gap-1.5 text-xs text-neutral-500"
+      >
+        <span
+          class="flex gap-1"
+        >
+           
+          <span
+            data-size="16"
+            data-testid="icon-clock"
+          />
+          60
+           minutes
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`regression snapshots matches snapshot: list default state 1`] = `
+<div>
+  <div
+    class="relative group flex gap-4 rounded-xl border p-4 bg-white transition-all
+          border-neutral-200 hover:border-[#7E4C3C]/40 cursor-default
+          
+        "
+  >
+    <div
+      class="flex-1 min-w-0"
+    >
+      <div
+        class="flex items-start justify-between gap-2"
+      >
+        <div>
+          <p
+            class="font-serif text-sm font-medium text-neutral-900"
+          >
+            Ivory Package
+          </p>
+          <p
+            class="text-xs text-[#7E4C3C] font-semibold mt-0.5"
+          >
+            From $375
+          </p>
+        </div>
+      </div>
+      <p
+        class="mt-1 text-[11px] text-neutral-500 leading-relaxed line-clamp-2"
+      >
+        A beautiful package.
+      </p>
+      <ul
+        class="mt-1.5 space-y-0.5 text-[11px] text-neutral-500 list-disc list-inside"
+      >
+        <li>
+          1 Hour Coverage
+        </li>
+        <li>
+          35+ edited photos
+        </li>
+        <li>
+          Online gallery
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`regression snapshots matches snapshot: list isOnlyOption=true 1`] = `
+<div>
+  <div
+    class="relative group flex gap-4 rounded-xl border p-4 bg-white transition-all
+          border-[#7E4C3C]/30 cursor-default
+          
+        "
+  >
+    <div
+      class="flex-1 min-w-0"
+    >
+      <div
+        class="flex items-start justify-between gap-2"
+      >
+        <div>
+          <p
+            class="font-serif text-sm font-medium text-neutral-900"
+          >
+            Ivory Package
+          </p>
+          <p
+            class="text-xs text-[#7E4C3C] font-semibold mt-0.5"
+          >
+            From $375
+          </p>
+        </div>
+      </div>
+      <p
+        class="mt-1 text-[11px] text-neutral-500 leading-relaxed line-clamp-2"
+      >
+        A beautiful package.
+      </p>
+      <ul
+        class="mt-1.5 space-y-0.5 text-[11px] text-neutral-500 list-disc list-inside"
+      >
+        <li>
+          1 Hour Coverage
+        </li>
+        <li>
+          35+ edited photos
+        </li>
+        <li>
+          Online gallery
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`regression snapshots matches snapshot: list selected + showEditControls 1`] = `
+<div>
+  <div
+    class="relative group flex gap-4 rounded-xl border p-4 bg-white transition-all
+          border-[#7E4C3C] ring-1 ring-[#7E4C3C]/20 shadow-sm
+          
+        "
+  >
+    <div
+      class="absolute top-3 right-3 z-10 flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all"
+    >
+      <button
+        class="px-2 py-1 rounded-md bg-white/95 hover:bg-blue-50 border border-blue-200 text-blue-600 text-xs font-medium shadow-sm "
+        title="Edit Session Type"
+        type="button"
+      >
+        <span
+          data-size="16"
+          data-testid="icon-pencil"
+        />
+      </button>
+      <button
+        class="px-2 py-1 rounded-md bg-white/95 hover:bg-red-50 border border-red-200 text-red-600 text-xs font-medium shadow-sm"
+        title="Delete Session Type"
+        type="button"
+      >
+        <span
+          data-size="16"
+          data-testid="icon-trash"
+        />
+      </button>
+    </div>
+    <div
+      class="flex-1 min-w-0"
+    >
+      <div
+        class="flex items-start justify-between gap-2"
+      >
+        <div>
+          <p
+            class="font-serif text-sm font-medium text-neutral-900"
+          >
+            Ivory Package
+            <span
+              class="ml-2 text-[9px] text-[#AB8C4B] font-mono uppercase"
+            >
+              standard
+            </span>
+          </p>
+          <p
+            class="text-xs text-[#7E4C3C] font-semibold mt-0.5"
+          >
+            From $375
+          </p>
+        </div>
+        <span
+          class="text-[#7E4C3C] text-xs shrink-0 mt-0.5"
+        >
+          ✓
+        </span>
+      </div>
+      <p
+        class="mt-1 text-[11px] text-neutral-500 leading-relaxed line-clamp-2"
+      >
+        A beautiful package.
+      </p>
+      <ul
+        class="mt-1.5 space-y-0.5 text-[11px] text-neutral-500 list-disc list-inside"
+      >
+        <li>
+          1 Hour Coverage
+        </li>
+        <li>
+          35+ edited photos
+        </li>
+        <li>
+          Online gallery
+        </li>
+      </ul>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`regression snapshots matches snapshot: unknown variant (renders null) 1`] = `<div />`;

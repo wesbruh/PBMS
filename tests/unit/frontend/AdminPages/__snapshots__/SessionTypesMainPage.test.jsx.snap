@@ -1,0 +1,65 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`SessionTypesMainPage (Offerings) regression matches snapshot with no outlet content 1`] = `
+<div>
+  <div
+    class="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip"
+  >
+    <div
+      class="flex md:min-w-50"
+    >
+      <div
+        data-testid="sidebar"
+      >
+        Sidebar
+      </div>
+    </div>
+    <div
+      class="flex h-full w-full shadow-inner bg-[#fcfcfc] rounded-lg overflow-y-auto"
+    >
+      <div
+        data-testid="frame"
+      >
+        <div
+          class="w-screen flex flex-col p-6"
+        />
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`SessionTypesMainPage (Offerings) regression matches snapshot with outlet content 1`] = `
+<div>
+  <div
+    class="flex my-2 md:my-4 h-[80vh] mx-4 md:mx-6 lg:mx-10 bg-[#faf8f4] rounded-lg overflow-clip"
+  >
+    <div
+      class="flex md:min-w-50"
+    >
+      <div
+        data-testid="sidebar"
+      >
+        Sidebar
+      </div>
+    </div>
+    <div
+      class="flex h-full w-full shadow-inner bg-[#fcfcfc] rounded-lg overflow-y-auto"
+    >
+      <div
+        data-testid="frame"
+      >
+        <div
+          class="w-screen flex flex-col p-6"
+        >
+          <p
+            data-testid="child"
+          >
+            Child Page
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+`;

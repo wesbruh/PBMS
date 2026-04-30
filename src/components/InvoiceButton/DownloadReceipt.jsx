@@ -12,7 +12,7 @@ export default function DownloadReceiptButton({ invoiceId }) {
 
   const handleDownload = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/receipt/${invoiceId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/receipts/${invoiceId}`, {
         method: "GET",
         headers: {
           "Authorization": `Bearer ${session?.access_token}`,
@@ -22,6 +22,8 @@ export default function DownloadReceiptButton({ invoiceId }) {
       });
 
       if (!response.ok) {
+        const errorRes = await response.json();
+        console.log(errorRes);
         throw new Error("Failed to download receipt.");
       }
 

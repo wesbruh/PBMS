@@ -23,8 +23,8 @@ import {
 } from "lucide-react";
 import { DragDropProvider } from "@dnd-kit/react";
 import { useSortable } from "@dnd-kit/react/sortable";
+import { SUPABASE_URL } from "../../../lib/viteApiUrl.js";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = "session-images";
 
 function getPublicUrl(path) {
@@ -61,6 +61,7 @@ function SortableBullet({
         onChange={(e) => onChange(e.target.value)}
         className={`${inputCls} flex-1`}
         placeholder={placeholder}
+        data-bullet-id={id}
       />
       <button
         type="button"
@@ -273,32 +274,46 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
   }
 
   async function updateActive(value) {
-    try {
-      // check if session type has an active contract and questionnaire first
-      const { error: contractError } = await supabase
-        .from("ContractTemplate")
-        .select()
-        .eq("session_type_id", id)
-        .eq("active", true)
-        .single();
+  setError("");
 
-      if (contractError) throw new Error("No active contract found. Save this and create one for this session type first!")
-
-      const { error: questionnaireError } = await supabase
-        .from("QuestionnaireTemplate")
-        .select()
-        .eq("session_type_id", id)
-        .eq("active", true)
-        .single();
-
-      if (questionnaireError) throw new Error("No active questionnaire found. Save this and create one for this session type first!")
-
-      setActive(value);
-    } catch (e) {
-      setError(e.message);
-      console.error(e.message ?? "Could not set SessionType active.");
-    }
+  if (!isEdit || !id) {
+    setActive(value);
+    return;
   }
+
+  try {
+    const { error: contractError } = await supabase
+      .from("ContractTemplate")
+      .select()
+      .eq("session_type_id", id)
+      .eq("active", true)
+      .single();
+
+    if (contractError) {
+      throw new Error(
+        "No active contract found. Save this and create one for this session type first!"
+      );
+    }
+
+    const { error: questionnaireError } = await supabase
+      .from("QuestionnaireTemplate")
+      .select()
+      .eq("session_type_id", id)
+      .eq("active", true)
+      .single();
+
+    if (questionnaireError) {
+      throw new Error(
+        "No active questionnaire found. Save this and create one for this session type first!"
+      );
+    }
+
+    setActive(value);
+  } catch (e) {
+    setError(e.message);
+    console.error(e.message ?? "Could not set SessionType active.");
+  }
+}
 
   function validate() {
     if (!name.trim()) return "Name is required.";
@@ -345,7 +360,7 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
         price_label: priceLabel.trim() || null,
         bullet_points: cleanBullets.length > 0 ? cleanBullets : null,
         display_order: Number(displayOrder),
-        active,
+        active: isEdit? active: false,
         is_master: isMaster,
       };
 
@@ -721,13 +736,21 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
                 <input
                   id="active-toggle"
                   type="checkbox"
-                  checked={active}
+                  checked={isEdit? active : false}
                   onChange={(e) => updateActive(e.target.checked)}
-                  className="h-4 w-4"
+                  disabled={!isEdit}
+                  className="h-4 w-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 />
-                <label htmlFor="active-toggle" className="text-md">
-                  Visible to clients (active)
-                </label>
+                <div>
+                  <label htmlFor="active-toggle" className="text-md">
+                    Visible to clients (active)
+                  </label>
+                  {!isEdit && (
+                    <p className="test-xs text-gray-400 mt-1">
+                      You can enable this after creating an active contract and questionnaire
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </div>

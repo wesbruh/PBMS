@@ -10,10 +10,11 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../../lib/supabaseClient.js";
 import { Plus, LoaderCircle } from "lucide-react";
+import { SUPABASE_URL } from "../../../lib/viteApiUrl.js";
 
 import SessionTypeCard from "../../../components/SessionTypeCard/SessionTypeCard.jsx";
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+//const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const BUCKET = "session-images";
 
 function getImageUrl(path) {
@@ -59,9 +60,9 @@ export default function OfferingsPage() {
     // find active contract template
     const { data: activeTemplate, error: activeTemplateError } = await supabase
       .from("ContractTemplate")
+      .select("*")
       .eq("active", true)
       .eq("session_type_id", st.id)
-      .select()
       .maybeSingle();
 
     if (activeTemplateError) throw activeTemplateError;
@@ -72,14 +73,14 @@ export default function OfferingsPage() {
       // check if id has been referenced by any contracts
       const { data: contractData, error: contractError } = await supabase
         .from("Contract")
-        .select()
+        .select("*")
         .eq("template_id", templateId);
 
       if (contractError) throw contractError;
 
       // mark is_deleted as true if it is being referenced
       // this will allow previous contracts to still be viewed, even if the contract template itself is "deleted"
-      if (contractData) {
+      if (contractData && contractData.length > 0) {
         const { error: updateErr } = await supabase
           .from("ContractTemplate")
           .update({ is_deleted: true })

@@ -15,14 +15,6 @@ function Testimonials() {
     { client: "Lexi Padilla", img: "/images/temp_lp.jpg", test: "Loveddd it, felt so comfortable. I cant wait for our next one!" }
   ];
 
-  const prev = () => {
-    setItr((prevItr) => (prevItr === 0 ? temp_list.length - 1 : prevItr - 1));
-  };
-
-  const next = () => {
-    setItr((prevItr) => (prevItr === temp_list.length - 1 ? 0 : prevItr + 1));
-  };
-
   const temp_img = "/images/temp_img.jpg";
   const temp_booking = "/images/temp_booking.jpg";
   const GOOGLE_REVIEW_URL = "https://www.google.com/maps/place/Your+Roots+Photography/@38.8726015,-122.7047573,902583m/data=!3m1!1e3!4m8!3m7!1s0x4b67897ec0df59c9:0x7cba12b3c02b0bfa!8m2!3d38.898041!4d-120.0651799!9m1!1b1!16s%2Fg%2F11x3305chs?entry=ttu&g_ep=EgoyMDI2MDMxMS4wIKXMDSoASAFQAw%3D%3D";
@@ -95,61 +87,6 @@ function Testimonials() {
           </div>
         </div>
       </div>
-
-      {/* Featured Testimonials Slider */}
-      {/* <div className='flex flex-col bg-[#887C62] text-white'>
-        <div className='mt-8 md:mt-12 lg:mt-18'></div>
-        <div className='flex flex-col md:flex-row lg:flex-row mx-5'>
-          <div className='flex flex-col w-full md:h-80 lg:h-120 md:w-3/8 lg:w-3/8 md:mx-5 lg:mx-10'>
-            <div className='font-mono font-extralight flex flex-col justify-between'>
-              <p className='flex text-sm md:text-lg mt-5 md:mt-10 lg:mt-20 mb-5 md:mb-12 lg:mb-20'>TESTIMONIALS</p>
-              <div className='flex md:h-44 lg:h-47 items-center'>
-                <p className='flex text-xs md:text-lg my-10 md:my-15 lg:my-25 w-4/5 md:w-full lg:w-full italic'>
-                  "{temp_list[itr].test}"
-                </p>
-              </div>
-            </div>
-            <div className='font-sans font-extralight text-2xl mt-5 md:mt-18 lg:mt-20 mb-5 md:mb-12 lg:mb-20'>
-              <p className='text-2xl md:text-3xl lg:text-3xl font-serif'>{temp_list[itr].client}</p>
-            </div>
-          </div>
-
-          <div className='flex flex-col mr-0 md:mr-5 lg:mr-10 w-full md:w-5/8 lg:w-5/8'>
-            <div className='relative h-full w-full'> */}
-              {/* Overlay Navigation Buttons */}
-              {/* <div className='absolute inset-0 flex flex-row z-10'>
-                <button 
-                  onClick={prev} 
-                  className="w-1/2 h-full cursor-pointer bg-transparent"
-                  aria-label="Previous slide"
-                />
-                <button 
-                  onClick={next} 
-                  className="w-1/2 h-full cursor-pointer bg-transparent"
-                  aria-label="Next slide"
-                />
-              </div>
-              <img 
-                className='object-cover object-[0%_60%] h-70 md:h-80 lg:h-100 w-full transition-opacity duration-500' 
-                src={temp_list[itr].img} 
-                alt={temp_list[itr].client} 
-              />
-            </div>
-
-            <div className='w-full h-auto'>
-              <div className='flex w-full h-auto font-sans font-extralight text-2xl mt-8 md:mt-10 lg:mt-12 mb-8 md:mb-10 lg:mb-12 justify-between items-center'>
-                <button onClick={prev} className="p-2 hover:opacity-60 transition-opacity">←</button>
-                <div className='flex flex-row py-2 text-xs font-mono'>
-                  <p>{itr + 1}</p>
-                  <p className='px-3'>/</p>
-                  <p>{temp_list.length}</p>
-                </div>
-                <button onClick={next} className="p-2 hover:opacity-60 transition-opacity">→</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> */}
 
       {/* Booking Footer Section */}
       <div className='relative h-100 md:h-110 lg:h-120 w-full'>
