@@ -5,6 +5,7 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   lint:
@@ -47,4 +48,25 @@ jobs:
           node-version: 24
       - run: npm ci
       - run: npm run build
+      
+  deploy:
+    name: Deploy to Render
+    needs: [build]
+    runs-on: ubuntu-latest
+    # Only deploy if pushing to main (prevents deploys on every PR commit)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy Backend Service
+        uses: JorgeLNJunior/render-deploy@v1.4.4
+        with:
+          service_id: ${{ secrets.RENDER_BACKEND_SERVICE_ID }} 
+          api_key: ${{ secrets.RENDER_API_KEY }}             
+          wait_for_success: true
+
+      - name: Deploy Frontend Service
+        uses: JorgeLNJunior/render-deploy@v1.4.4
+        with:
+          service_id: ${{ secrets.RENDER_FRONTEND_SERVICE_ID }} 
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          wait_for_success: true
 
