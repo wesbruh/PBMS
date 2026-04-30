@@ -53,7 +53,8 @@ jobs:
     name: Deploy to Render
     needs: [build]
     runs-on: ubuntu-latest
-    # Only deploy if pushing to main (prevents deploys on every PR commit)
+    environment: Render  # environemnt name in github
+    # only deploy if pushing to main (prevents deploys on every PR commit)
     if: (github.event_name == 'push' || github.event_name == 'worflow_dispatch') && github.ref == 'refs/heads/main'
     steps:
       - name: Deploy Backend Service
