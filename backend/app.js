@@ -55,7 +55,7 @@ export function createApp({ supabaseClient, stripeClient, checkToken=true } = {}
 
   const app = express();
 
-  const allowedOrigins = ["http://localhost:5173", "https://www.yourrootsphotography.space"];
+  const allowedOrigins = ["http://localhost:5173", "https://www.yourrootsphotography.space", "yourrootsphotography.space"];
   app.use(
     cors({
       origin: function (origin, callback) {
