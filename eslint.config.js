@@ -6,9 +6,11 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist']),
-  globalIgnores([                          
+  globalIgnores([
     'backend/supabase/functions/**',
     'backend/node_modules/**',
+    'backend/coverage/**',
+    'coverage/**'
   ]),
   {
     files: ['**/*.{js,jsx}'],
@@ -28,6 +30,24 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+    },
+  },
+  {
+    files: ['tests/**/*.{js,jsx}', '**/*.test.{js,jsx}', '**/*.spec.{js,jsx}'],
+    languageOptions: {
+      globals: {
+        ...globals.jest,
+        ...globals.node
+      }
+    },
+        rules: {
+      'no-unused-vars': 'off',
+    },
+  },
+  {
+    files: ['backend/**/*.{js,jsx}'],
+    languageOptions: {
+      globals: globals.node,
     },
   },
 ])
