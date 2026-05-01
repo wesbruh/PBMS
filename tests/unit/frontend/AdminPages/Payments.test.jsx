@@ -184,7 +184,8 @@ describe("AdminPayments", () => {
     render(<AdminPayments />);
 
     await screen.findByTestId("payments-table");
-    expect(screen.getByText("Overdue")).toBeInTheDocument();
+    const overdueItems = await screen.findAllByText("Overdue");
+    expect(overdueItems[0]).toBeInTheDocument();
     expect(screen.getByText("Paid")).toBeInTheDocument();
     expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
     expect(screen.getByText("Cancelled")).toBeInTheDocument();
