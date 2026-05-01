@@ -158,14 +158,14 @@ describe("AdminPayments", () => {
             id: "invoice-4",
             invoice_number: "INV-4",
             issue_date: "2026-04-04",
-            due_date: "2026-05-01",
+            due_date: "2099-05-01",
             remaining: 5,
             status: "Pending",
           },
           {
             id: "invoice-5",
             invoice_number: "INV-5",
-            issue_date: "2026-04-05",
+            issue_date: "2099-04-05",
             due_date: null,
             remaining: 5,
             status: null,
@@ -203,7 +203,7 @@ describe("AdminPayments", () => {
     await screen.findByTestId("payments-table");
     await screen.findByTestId("payments-table");
 
-    // 2. Await EACH dynamic status to handle slow CI re-renders
+    // Await EACH dynamic status to handle slow CI re-renders
     // This works because findBy/findAllBy will poll the DOM for up to 1000ms
     const overdueItems = await screen.findAllByText("Overdue");
     expect(overdueItems[0]).toBeInTheDocument();
