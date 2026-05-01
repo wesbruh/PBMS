@@ -201,16 +201,24 @@ describe("AdminPayments", () => {
     render(<AdminPayments />);
 
     await screen.findByTestId("payments-table");
-    // GATEKEEPER: Wait for 'Overdue' to appear (handles CI slowness)
+    await screen.findByTestId("payments-table");
+
+    // 2. Await EACH dynamic status to handle slow CI re-renders
+    // This works because findBy/findAllBy will poll the DOM for up to 1000ms
     const overdueItems = await screen.findAllByText("Overdue");
     expect(overdueItems[0]).toBeInTheDocument();
-    // FIX: queryAllBy returns an array, so check .length or select index [0]
-    const paidItems = screen.queryAllByText("Paid");
+
+    const paidItems = await screen.findAllByText("Paid");
     expect(paidItems.length).toBeGreaterThan(0);
-    expect(screen.queryAllByText("Pending").length).toBeGreaterThan(0);
-    const cancelledItems = screen.queryAllByText("Cancelled");
+
+    const pendingItems = await screen.findAllByText("Pending");
+    expect(pendingItems.length).toBeGreaterThan(0);
+
+    const cancelledItems = await screen.findAllByText("Cancelled");
     expect(cancelledItems.length).toBeGreaterThan(0);
-    const viewButtons = screen.queryAllByText("View");
+
+    const viewButtons = await screen.findAllByText("View");
+    expect(viewButtons.length).toBeGreaterThan(0);
     expect(viewButtons.length).toBeGreaterThan(0);
     expect(screen.getByText("25.00")).toBeInTheDocument();
     expect(screen.getByTestId("overdue-filter")).toHaveTextContent("true");
