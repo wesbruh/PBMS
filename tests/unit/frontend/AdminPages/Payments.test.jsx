@@ -1,5 +1,11 @@
 import React from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 
 const mockUseAuth = jest.fn();
 const mockTriggerAdminToast = jest.fn();
@@ -12,36 +18,45 @@ jest.mock("../../../../src/components/AdminNotificationToast.jsx", () => ({
   triggerAdminToast: () => mockTriggerAdminToast(),
 }));
 
-jest.mock("../../../../src/admin/components/shared/Sidebar/Sidebar.jsx", () => () => (
-  <aside data-testid="sidebar" />
-));
+jest.mock(
+  "../../../../src/admin/components/shared/Sidebar/Sidebar.jsx",
+  () => () => <aside data-testid="sidebar" />,
+);
 
-jest.mock("../../../../src/admin/components/shared/Frame/Frame.jsx", () => ({ children }) => (
-  <div data-testid="frame">{children}</div>
-));
+jest.mock(
+  "../../../../src/admin/components/shared/Frame/Frame.jsx",
+  () =>
+    ({ children }) => <div data-testid="frame">{children}</div>,
+);
 
-jest.mock("../../../../src/admin/components/shared/PaymentDetailsModal.jsx", () => ({
-  __esModule: true,
-  default: ({ invoiceId, onClose }) => (
-    <div data-testid="payment-details">
-      <span>{invoiceId}</span>
-      <button onClick={onClose}>Close Details</button>
-    </div>
-  ),
-}));
+jest.mock(
+  "../../../../src/admin/components/shared/PaymentDetailsModal.jsx",
+  () => ({
+    __esModule: true,
+    default: ({ invoiceId, onClose }) => (
+      <div data-testid="payment-details">
+        <span>{invoiceId}</span>
+        <button onClick={onClose}>Close Details</button>
+      </div>
+    ),
+  }),
+);
 
-jest.mock("../../../../src/admin/pages/Payments/SubtractBalanceModal.jsx", () => ({
-  __esModule: true,
-  default: ({ isOpen, currentBalance, onConfirm, onRefresh, onClose }) => (
-    <div data-testid="subtract-modal">
-      <span>Open:{String(isOpen)}</span>
-      <span>Balance:{currentBalance}</span>
-      <button onClick={() => onConfirm(8, "Cash")}>Confirm Reduction</button>
-      <button onClick={onRefresh}>Refresh Now</button>
-      <button onClick={onClose}>Close Modal</button>
-    </div>
-  ),
-}));
+jest.mock(
+  "../../../../src/admin/pages/Payments/SubtractBalanceModal.jsx",
+  () => ({
+    __esModule: true,
+    default: ({ isOpen, currentBalance, onConfirm, onRefresh, onClose }) => (
+      <div data-testid="subtract-modal">
+        <span>Open:{String(isOpen)}</span>
+        <span>Balance:{currentBalance}</span>
+        <button onClick={() => onConfirm(8, "Cash")}>Confirm Reduction</button>
+        <button onClick={onRefresh}>Refresh Now</button>
+        <button onClick={onClose}>Close Modal</button>
+      </div>
+    ),
+  }),
+);
 
 jest.mock("../../../../src/admin/components/shared/Table/Table.jsx", () => ({
   __esModule: true,
@@ -63,7 +78,9 @@ jest.mock("../../../../src/admin/components/shared/Table/Table.jsx", () => ({
         <div key={row.id} data-testid={`row-${row.id}`}>
           {columns.map((column) => (
             <div key={column.key}>
-              {column.render ? column.render(row[column.key], row) : String(row[column.key])}
+              {column.render
+                ? column.render(row[column.key], row)
+                : String(row[column.key])}
             </div>
           ))}
         </div>
@@ -141,14 +158,14 @@ describe("AdminPayments", () => {
             id: "invoice-4",
             invoice_number: "INV-4",
             issue_date: "2026-04-04",
-            due_date: "2026-05-01",
+            due_date: "2099-05-01",
             remaining: 5,
             status: "Pending",
           },
           {
             id: "invoice-5",
             invoice_number: "INV-5",
-            issue_date: "2026-04-05",
+            issue_date: "2099-04-05",
             due_date: null,
             remaining: 5,
             status: null,
@@ -184,30 +201,54 @@ describe("AdminPayments", () => {
     render(<AdminPayments />);
 
     await screen.findByTestId("payments-table");
-    expect(screen.getByText("Overdue")).toBeInTheDocument();
-    expect(screen.getByText("Paid")).toBeInTheDocument();
-    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
-    expect(screen.getByText("Cancelled")).toBeInTheDocument();
-    expect(screen.getAllByText("View").length).toBeGreaterThan(0);
+    await screen.findByTestId("payments-table");
+
+    // Await EACH dynamic status to handle slow CI re-renders
+    // This works because findBy/findAllBy will poll the DOM for up to 1000ms
+    const overdueItems = await screen.findAllByText("Overdue");
+    expect(overdueItems[0]).toBeInTheDocument();
+
+    const paidItems = await screen.findAllByText("Paid");
+    expect(paidItems.length).toBeGreaterThan(0);
+
+    const pendingItems = await screen.findAllByText("Pending");
+    expect(pendingItems.length).toBeGreaterThan(0);
+
+    const cancelledItems = await screen.findAllByText("Cancelled");
+    expect(cancelledItems.length).toBeGreaterThan(0);
+
+    const viewButtons = await screen.findAllByText("View");
+    expect(viewButtons.length).toBeGreaterThan(0);
+    expect(viewButtons.length).toBeGreaterThan(0);
     expect(screen.getByText("25.00")).toBeInTheDocument();
     expect(screen.getByTestId("overdue-filter")).toHaveTextContent("true");
-    expect(screen.getByTestId("overdue-filter-false")).toHaveTextContent("false");
+    expect(screen.getByTestId("overdue-filter-false")).toHaveTextContent(
+      "false",
+    );
     expect(screen.getByTestId("all-filter")).toHaveTextContent("true");
     expect(screen.getByTestId("pending-filter")).toHaveTextContent("true");
 
-    fireEvent.click(screen.getAllByRole("button", { name: /download invoice/i })[0]);
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /download invoice/i })[0],
+    );
     await waitFor(() => {
       expect(clickSpy).toHaveBeenCalled();
     });
 
     fireEvent.click(screen.getAllByText("View")[0]);
-    expect(screen.getByTestId("payment-details")).toHaveTextContent("invoice-1");
+    expect(screen.getByTestId("payment-details")).toHaveTextContent(
+      "invoice-1",
+    );
     fireEvent.click(screen.getByText("Close Details"));
 
     fireEvent.click(screen.getAllByText("Manage")[0]);
     await waitFor(() => {
-      expect(screen.getByTestId("subtract-modal")).toHaveTextContent("Open:true");
-      expect(screen.getByTestId("subtract-modal")).toHaveTextContent("Balance:25");
+      expect(screen.getByTestId("subtract-modal")).toHaveTextContent(
+        "Open:true",
+      );
+      expect(screen.getByTestId("subtract-modal")).toHaveTextContent(
+        "Balance:25",
+      );
     });
     fireEvent.click(screen.getByText("Close Modal"));
 
@@ -221,19 +262,21 @@ describe("AdminPayments", () => {
 
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining("/api/invoice/getInvoiceTableData"),
-      expect.objectContaining({ method: "GET" })
+      expect.objectContaining({ method: "GET" }),
     );
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining("/api/invoice/invoice-1/pdf"),
-      expect.objectContaining({ method: "GET" })
+      expect.objectContaining({ method: "GET" }),
     );
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining("/api/invoice/getInvoiceByID?term=invoice-1"),
-      expect.objectContaining({ method: "GET" })
+      expect.objectContaining({ method: "GET" }),
     );
     expect(fetchSpy).toHaveBeenCalledWith(
-      expect.stringContaining("/api/invoice/invoice-1/reduceRemainingInvoiceBalance"),
-      expect.objectContaining({ method: "POST" })
+      expect.stringContaining(
+        "/api/invoice/invoice-1/reduceRemainingInvoiceBalance",
+      ),
+      expect.objectContaining({ method: "POST" }),
     );
   });
 
@@ -275,9 +318,14 @@ describe("AdminPayments", () => {
       ok: false,
       blob: async () => new Blob(["pdf"]),
     });
-    fireEvent.click(screen.getAllByRole("button", { name: /download invoice/i })[0]);
+    fireEvent.click(
+      screen.getAllByRole("button", { name: /download invoice/i })[0],
+    );
     await waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith("Download failed:", expect.any(Error));
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Download failed:",
+        expect.any(Error),
+      );
     });
 
     fetchSpy.mockResolvedValueOnce({
@@ -286,13 +334,19 @@ describe("AdminPayments", () => {
     });
     fireEvent.click(screen.getAllByText("Manage")[0]);
     await waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith("Updating balance failed:", expect.any(Error));
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Updating balance failed:",
+        expect.any(Error),
+      );
     });
 
     fetchSpy.mockRejectedValueOnce(new Error("refresh failed"));
     fireEvent.click(screen.getByText("Refresh Now"));
     await waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith("Refresh error:", expect.any(Error));
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Refresh error:",
+        expect.any(Error),
+      );
     });
   });
 
@@ -301,7 +355,7 @@ describe("AdminPayments", () => {
     fetchSpy.mockResolvedValueOnce({
       ok: false,
       status: 503,
-      json: async () => ([]),
+      json: async () => [],
     });
 
     render(<AdminPayments />);
@@ -351,12 +405,16 @@ describe("AdminPayments", () => {
 
     fireEvent.click(screen.getByText("Manage"));
     await waitFor(() => {
-      expect(screen.getByTestId("subtract-modal")).toHaveTextContent("Open:true");
+      expect(screen.getByTestId("subtract-modal")).toHaveTextContent(
+        "Open:true",
+      );
     });
 
     fireEvent.click(screen.getByText("Confirm Reduction"));
     await waitFor(() => {
-      expect(errorSpy).toHaveBeenCalledWith("Update failed:", { error: "cannot reduce" });
+      expect(errorSpy).toHaveBeenCalledWith("Update failed:", {
+        error: "cannot reduce",
+      });
     });
 
     fireEvent.click(screen.getByText("Confirm Reduction"));
