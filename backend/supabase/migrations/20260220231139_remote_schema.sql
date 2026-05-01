@@ -256,7 +256,15 @@ alter table "public"."user_notifications" validate constraint "user_notification
 
 set check_function_bodies = off;
 
-create type "public"."_time_trial_type" as ("a_time" numeric);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_type WHERE typname = '_time_trial_type'
+  ) THEN
+    CREATE TYPE public._time_trial_type AS (a_time numeric);
+  END IF;
+END
+$$;
 
 CREATE OR REPLACE FUNCTION public.sync_contacts_from_user()
  RETURNS trigger
