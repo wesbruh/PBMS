@@ -185,10 +185,13 @@ describe("AdminPayments", () => {
 
     await screen.findByTestId("payments-table");
     const overdueItems = await screen.findAllByText("Overdue");
+    const pendingItems = await screen.findAllByText("Pending");
+    const paidItems = await screen.findAllByText("Paid");
+    const cancelledItems = await screen.findAllByText("Cancelled");
     expect(overdueItems[0]).toBeInTheDocument();
-    expect(screen.getByText("Paid")).toBeInTheDocument();
-    expect(screen.getAllByText("Pending").length).toBeGreaterThan(0);
-    expect(screen.getByText("Cancelled")).toBeInTheDocument();
+    expect(pendingItems[0]).toBeInTheDocument();
+    expect(paidItems[0]).toBeInTheDocument();
+    expect(cancelledItems[0]).toBeInTheDocument();
     expect(screen.getAllByText("View").length).toBeGreaterThan(0);
     expect(screen.getByText("25.00")).toBeInTheDocument();
     expect(screen.getByTestId("overdue-filter")).toHaveTextContent("true");
