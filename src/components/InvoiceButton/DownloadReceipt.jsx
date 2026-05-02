@@ -52,10 +52,10 @@ export default function DownloadReceiptButton({ invoiceId }) {
       {
         loading ? <></> : <button
         onClick={handleDownload}
-        className="text-[#7A4A3A] hover:opacity-70 flex items-center"
+        className="text-[#7A4A3A] hover:opacity-70 flex items-center justify-center w-3 h-5"
         aria-label="Download Receipt"
       >
-        <i className="fa-solid fa-file-invoice text-sm"></i>
+        <i className="fa-solid fa-file-invoice text-sm leading-none"></i>
       </button>
       }
     </div>
