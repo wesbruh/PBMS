@@ -285,6 +285,7 @@ export default function InquiryForm() {
     if (selectedCategory?.id === masterRow.id) return;
 
     setSelectedCategory(masterRow);
+    updateContractTemplate(contractTemplates[masterRow.id]);
 
     // Pre-select master as the active session type
     setSelectedSessionType(masterRow);
@@ -306,6 +307,8 @@ export default function InquiryForm() {
     }
 
     setSelectedSessionType(st);
+    updateContractTemplate(contractTemplates[st.id]);
+
     setValue("sessionTypeId", st.id, { shouldValidate: true });
     trigger(["sessionTypeId"]);
     const dur = st.default_duration_minutes ?? 60;
