@@ -51,7 +51,7 @@ export default function ContractView() {
 
     async function fetchContractTemplate() {
       try {
-        const response = await fetch(`http://localhost:5001/api/contract/templates/${contract.template_id}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/api/contract/templates/${contract.template_id}`, {
           method: "GET",
           headers: {
             "Authorization": `Bearer ${session?.access_token}`,
