@@ -592,9 +592,9 @@ export default function QuestionnaireEditor({ mode }) {
                       className="mt-1 w-full border rounded px-3 py-2 text-sm cursor-pointer"
                       title="session-type-select"
                     >
-                      <option key="" value="" label="session-type-options" disabled>Select a session type</option>
+                      <option key="" value="" title="session-type-options" disabled>Select a session type</option>
                       {(sessionTypeOptions ?? []).map((opt) => (
-                        <option key={opt.value} value={opt.value} label="session-type-options">
+                        <option key={opt.value} value={opt.value} title="session-type-options">
                           {opt.label}
                         </option>
                       ))}

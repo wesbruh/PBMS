@@ -241,7 +241,7 @@ describe("QuestionnairesEditor", () => {
     render(<QuestionnairesEditor mode={"edit"} />);
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -444,7 +444,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("");
@@ -466,7 +466,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       fireEvent.change(templateNameInput, { target: { value: "Test Template Name" } });
@@ -491,7 +491,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       fireEvent.change(templateNameInput, { target: { value: "Test Template Name" } });
@@ -531,7 +531,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       fireEvent.change(templateNameInput, { target: { value: "Test Template Name" } });
@@ -580,7 +580,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       fireEvent.change(templateNameInput, { target: { value: "Test Template Name" } });
@@ -647,7 +647,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       fireEvent.change(templateNameInput, { target: { value: "Test Template Name" } });
@@ -714,7 +714,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       fireEvent.change(templateNameInput, { target: { value: "Test Template Name" } });
@@ -781,8 +781,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
-      expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options"); expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       fireEvent.change(templateNameInput, { target: { value: "Test Template Name" } });
       expect(templateNameInput.value).toBe("Test Template Name");
@@ -850,7 +849,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -889,7 +888,7 @@ describe("QuestionnairesEditor", () => {
     });
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -931,7 +930,7 @@ describe("QuestionnairesEditor", () => {
     render(<QuestionnairesEditor mode={"edit"} />);
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -984,7 +983,7 @@ describe("QuestionnairesEditor", () => {
     render(<QuestionnairesEditor mode={"edit"} />);
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -1037,7 +1036,7 @@ describe("QuestionnairesEditor", () => {
     render(<QuestionnairesEditor mode={"edit"} />);
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -1091,7 +1090,7 @@ describe("QuestionnairesEditor", () => {
     render(<QuestionnairesEditor mode={"edit"} />);
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -1145,7 +1144,7 @@ describe("QuestionnairesEditor", () => {
     render(<QuestionnairesEditor mode={"edit"} />);
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -1181,7 +1180,7 @@ describe("QuestionnairesEditor", () => {
     render(<QuestionnairesEditor mode={"edit"} />);
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -1227,7 +1226,7 @@ describe("QuestionnairesEditor", () => {
     render(<QuestionnairesEditor mode={"edit"} />);
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
@@ -1265,7 +1264,7 @@ describe("QuestionnairesEditor", () => {
     render(<QuestionnairesEditor mode={"edit"} />);
 
     await waitFor(() => {
-      const sessionTypeOptions = screen.getAllByRole("option").filter(el => el.label === "session-type-options");
+      const sessionTypeOptions = screen.getAllByTitle("session-type-options");
       expect(sessionTypeOptions.length).toBe(sessionTypes.length + 1)
       const [templateNameInput] = screen.getAllByRole("textbox");
       expect(templateNameInput.value).toBe("QTemplate");
