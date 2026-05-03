@@ -359,7 +359,7 @@ export default function QuestionnaireEditor({ mode }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw errorData.error;
+        return { error: errorData.error };
       }
 
       const data = await response.json();
@@ -376,7 +376,7 @@ export default function QuestionnaireEditor({ mode }) {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw errorData.error;
+        return { error: errorData.error };
       }
 
       const data = await response.json();
@@ -398,7 +398,7 @@ export default function QuestionnaireEditor({ mode }) {
 
       if (newInsertError) {
         console.error("Error updating questions:", newInsertError);
-        throw new Error("Failed to save questions to the database.");
+        return { error: new Error("Failed to save questions to the database.")};
       }
     }
 
@@ -410,7 +410,7 @@ export default function QuestionnaireEditor({ mode }) {
 
       if (oldUpdateError) {
         console.error("Error updating questions:", oldUpdateError);
-        throw new Error("Failed to save questions to the database.");
+        return { error: new Error("Failed to save questions to the database.")};
       }
     }
 
@@ -423,7 +423,7 @@ export default function QuestionnaireEditor({ mode }) {
 
     if (error) {
       console.error("Error fetching updated questions:", error);
-      throw new Error("Failed to fetch updated questions from the database.");
+      return { error: new Error("Failed to fetch updated questions from the database.")};
     }
 
     const response = await fetch(`${API_URL}/api/questionnaire/templates/${templateId}`, {
@@ -437,10 +437,10 @@ export default function QuestionnaireEditor({ mode }) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw errorData.error;
+      return { error: errorData.error };
     }
 
-    return { templateId, sessionTypeId };
+    return { templateId, sessionTypeId, error: null };
   }
 
   // ------ Save as draft (active: false) ------
@@ -455,7 +455,9 @@ export default function QuestionnaireEditor({ mode }) {
 
     try {
       // perform basic save operations
-      await handleBasicSave();
+      const saveData = await handleBasicSave();
+      
+      if (saveData.error) throw saveData.error;
 
       navigate("/admin/forms");
     } catch (e) {
@@ -485,6 +487,8 @@ export default function QuestionnaireEditor({ mode }) {
       // perform basic save operations
       const saveData = await handleBasicSave();
       
+      if (saveData.error) throw saveData.error;
+
       // set only one questionnaire template active for this session type
       const setResponse = await fetch(`${API_URL}/api/questionnaire/templates/${saveData.templateId}/set`, {
         method: "PATCH",
