@@ -41,7 +41,6 @@ export default function QuestionnaireEditor({ mode }) {
   const [sessionType, setSessionType] = useState("");
 
   const [saving, setSaving] = useState(false);
-  const [saveData, setSaveData] = useState({});
 
   const [loading, setLoading] = useState(isEdit);
   const [error, setError] = useState("");
@@ -341,7 +340,6 @@ export default function QuestionnaireEditor({ mode }) {
     setSaving(true);
     let templateId;
     const sessionTypeId = await resolveSessionTypeId(sessionType);
-    setSaveData((prev) => ({ ...prev, sessionTypeId}));
 
     const payload = {
       name: name.trim(),
@@ -366,7 +364,6 @@ export default function QuestionnaireEditor({ mode }) {
 
       const data = await response.json();
       templateId = data.id;
-      setSaveData((prev) => ({ ...prev, templateId}));
     } else {
       const response = await fetch(`${API_URL}/api/questionnaire/templates`, {
         method: "POST",
@@ -384,7 +381,6 @@ export default function QuestionnaireEditor({ mode }) {
 
       const data = await response.json();
       templateId = data.id;
-      setSaveData((prev) => ({ ...prev, templateId}));
     }
 
     // delete removed questions that are still in db
@@ -443,6 +439,8 @@ export default function QuestionnaireEditor({ mode }) {
       const errorData = await response.json();
       throw errorData.error;
     }
+
+    return { templateId, sessionTypeId };
   }
 
   // ------ Save as draft (active: false) ------
@@ -485,7 +483,7 @@ export default function QuestionnaireEditor({ mode }) {
 
     try {
       // perform basic save operations
-      await handleBasicSave();
+      const saveData = await handleBasicSave();
       
       // set only one questionnaire template active for this session type
       const setResponse = await fetch(`${API_URL}/api/questionnaire/templates/${saveData.templateId}/set`, {

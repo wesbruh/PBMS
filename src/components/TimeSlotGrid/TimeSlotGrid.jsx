@@ -185,8 +185,7 @@ export default function TimeSlotGrid({
         (adminBlocks ?? []).forEach((block) => {
           const blockStart = extractHHMM(block.start_time);
           const blockEnd = extractHHMM(block.end_time);
-          console.log(block);
-          console.log(blockStart, blockEnd);
+
           if (!blockStart || !blockEnd) return;
 
           intervals.push({

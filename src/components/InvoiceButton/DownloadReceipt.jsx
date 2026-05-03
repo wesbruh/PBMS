@@ -23,7 +23,6 @@ export default function DownloadReceiptButton({ invoiceId }) {
 
       if (!response.ok) {
         const errorRes = await response.json();
-        console.log(errorRes);
         throw new Error("Failed to download receipt.");
       }
 

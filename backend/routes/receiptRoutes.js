@@ -69,7 +69,6 @@ export default function receiptRoutes(supabaseClient) {
       } catch (err) {
         __dirname = '';
       }
-      console.log("hi");
 
       const logoPath = path.join(__dirname, "../../public/logo1.png");
 

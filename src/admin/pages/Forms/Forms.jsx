@@ -193,7 +193,7 @@ export default function Forms() {
     id: t.id,
     type: t.type,
     name: t.name,
-    sessionType: t.SessionType.name,
+    sessionType: t?.SessionType?.name ?? "-",
     active: t.active,
   }));
 

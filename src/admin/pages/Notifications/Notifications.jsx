@@ -114,7 +114,7 @@ function Notifications() {
       if (updateError) {
         console.error("markAllRead error:", updateError);
       } else {
-        console.log(`markAllRead: updated ${data?.length ?? 0} notification(s) to "read"`);
+        // console.log(`markAllRead: updated ${data?.length ?? 0} notification(s) to "read"`);
       }
 
       // Record the visit timestamp so the toast knows what counts as "new"
