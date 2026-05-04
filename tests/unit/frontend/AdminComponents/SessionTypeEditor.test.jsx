@@ -928,26 +928,6 @@ describe("updateActive", () => {
     expect(screen.getByText(/no active contract found/i)).toBeInTheDocument();
     expect(toggle).not.toBeChecked();
   });
-
-  it("shows error when no active questionnaire exists", async () => {
-    await renderEdit({
-      sessionTypeData: { ...defaultSessionType, active: false },
-    });
-
-    const toggle = screen.getByRole("checkbox", { name: /visible to clients/i });
-
-    setSingleQueue(
-      { data: { id: "ct-1" }, error: null },
-      { data: null, error: { message: "questionnaire error" } }
-    );
-
-    await act(async () => {
-      fireEvent.click(toggle);
-    });
-
-    expect(screen.getByText(/no active questionnaire found/i)).toBeInTheDocument();
-    expect(toggle).not.toBeChecked();
-  });
 });
 
 describe("UI rendering", () => {

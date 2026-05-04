@@ -295,19 +295,6 @@ export default function SessionTypeEditor({ mode, isMasterDefault = false }) {
       );
     }
 
-    const { error: questionnaireError } = await supabase
-      .from("QuestionnaireTemplate")
-      .select()
-      .eq("session_type_id", id)
-      .eq("active", true)
-      .single();
-
-    if (questionnaireError) {
-      throw new Error(
-        "No active questionnaire found. Save this and create one for this session type first!"
-      );
-    }
-
     setActive(value);
   } catch (e) {
     setError(e.message);
