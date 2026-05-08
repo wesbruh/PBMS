@@ -132,41 +132,6 @@ This diagram outlines the relationships between key components such as clients, 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-<!-- CSC 191 ROADMAP -->
-# CSC 191 Roadmap
-
-Based on the current state of the project, a general timeline for functionalities to be developed during CSC 191 include  
-
-### Sprint 5 (Jan 25 - Feb 7)
-- Integrate role-based access to secure role-specific dashboards
-- Create/update all admin UI and have it match previous for consistency
-
-### Sprint 6 (Feb 8 - Feb 21)
-- Implement inquiry review functionality
-- Develop customizable questionnaire functionality
-- Generate an audit log of notifications for admin to view
-
-### Sprint 7 (Feb 22 - Mar 7)
-- Create dynamic calendar for admin
-- Implement session scheduling functionality
-- Develop Contacts viewing to show per-client information 
-
-### Sprint 8 (Mar 8 - Mar 22)
-- Implement gallery upload, generation, and publishing, with additional (optional) password protection
-- Incorporate gallery previews on client's side
-- Create analytical reports for business transactions
-
-### Sprint 9 (Mar 23 - April 5)
-- Integrate a trusted and secure third-party payment service to handle transactions
-- Design and display updated portfolio
-- Generate thank-you responses and photo-delivery reminders
-- Ensure notifications are sent per task assigned to each user
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
 <!-- DEVELOPER INSTRUCTIONS -->
 ## DEVELOPER INSTRUCTIONS
 
@@ -177,8 +142,33 @@ Placeholder, will be done in CSC 191.
 
 <!-- TESTING -->
 ## TESTING
+To test any new changes made to the application and help prevent regressions, run the local test suite before pushing code changes to the repository. This helps ensure that new changes do not affect existing functionality.
 
-Placeholder, will be done in CSC 191.
+To run all tests with coverage enabled, use the following command:
+
+`npm test -- --coverage`
+
+To run a specific test file with coverage enabled, use the following command:
+
+`npm test <test_file_path> -- --coverage`
+
+For example, to run the existing `SessionTypesMainPage.test.js` test file located in `tests/unit/frontend`, use the following command:
+
+`npm test tests/unit/frontend/SessionTypesMainPage.test.js -- --coverage`
+
+Additionally, below are the scripts available to run specific tests:
+
+`npm run test` — Runs all tests  
+
+`npm run test:unit` — Runs all unit tests in `tests/unit`  
+
+`npm run test:frontend` — Runs frontend unit tests  
+
+`npm run test:backend` — Runs backend unit tests  
+
+`npm run test:integration` — Runs integration tests  
+
+`npm run test:e2e` — Runs end-to-end tests
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
