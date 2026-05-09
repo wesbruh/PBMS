@@ -184,7 +184,7 @@ This diagram outlines the relationships between key components such as clients, 
 <!-- DEVELOPER INSTRUCTIONS -->
 # DEVELOPER INSTRUCTIONS
 ## Getting Started 
-Follow these instructions to get a local copy of the project up and running on your machine. ADdtionally, more information can be found  in the entirety of the **Maintenance Manual, and including Sections 3.5, 3.6 and Section 6: Database**.
+Follow these instructions to get a local copy of the project up and running on your machine. Addtionally, more information can be found  in the entirety of the **Maintenance Manual, and including Sections 3.5, 3.6 and Section 6: Database**.
  
 ## Prerequisites
 
@@ -281,8 +281,8 @@ Additionally, below are the scripts available to run specific tests:
 |---|---|
 | `npm run test` | Runs all tests |
 | `npm run test:unit` | Runs all unit tests in `tests/unit` |
-| `npm run test:frontend` | Runs all unit tests in `tests/unit` |
-| `npm run test:backend` | Runs backend unit tests, including integration tests and e2e tests |
+| `npm run test:frontend` | Runs all unit tests in `tests/frontend` |
+| `npm run test:backend` | Runs backend unit tests in `tests/backend`, including integration tests and e2e tests |
 | `npm run edge:test` | Runs Deno test for edge function transactional emails |
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -292,16 +292,16 @@ Additionally, below are the scripts available to run specific tests:
 The PBMS application is deployed using a CI/CD pipeline that connects GitHub, GitHub Actions, and Render.
 ### How It Works
 
-1. A devloper pushes code to the `main` branch or merges a pull request.
-2. GitHub Actions ruins the workflow defined in `.github/worflows/deploy.yml`, which executes lint, frontend tests, backend tests, and a build step.
+1. A developer pushes code to the `main` branch or merges a pull request.
+2. GitHub Actions runs the workflow defined in `.github/workflows/deploy.yml`, which executes lint, frontend tests, backend tests, and a build step.
 3. If all checks pass and the trigger was a push to `main`, the deploy job authenticates with the Render API using secrets stored in the GitHub `Render` environment and triggers deployment for both services.
 4. Render pulls the latest code, builds, and publishes the backend Web Service and frontend Static Site.
-> Auto-deploy on Render is set to **Off**. All deployments are initiated exclusively through the GitHub Actions worflow to ensure no untested code reaches production.
+> Auto-deploy on Render is set to **Off**. All deployments are initiated exclusively through the GitHub Actions workflow to ensure no untested code reaches production.
 
 ### Production Services
 | Service | Type | URL |
 |---|---|---|
-| Frontend | Static Site (CDN) | [yourrootsphotography.space](https:www.yourrootsphotography.space) |
+| Frontend | Static Site (CDN) | [yourrootsphotography.space](https://www.yourrootsphotography.space) |
 | Backend | Web Service | [Render Web Service (internal API)](https://dashboard.render.com/login) | 
 | Database | PostgreSQL + Auth | [Supabase](https://supabase.com/dashboard/sign-in) |
 | Payments | Payment Processing | [Stripe](https://dashboard.stripe.com/login) |
@@ -320,9 +320,22 @@ For full deployment documentation including Render Service Configuration, enviro
 
 <!-- UNIVERSITY/TEAM MEMBER CONTACT -->
 # Contact
+### Project Members
+<p align="left"> 
+Westley Valentin - <a href="mailto:wvalentin@csus.edu">wvalentin@csus.edu</a>&emsp;&emsp;&emsp;&emsp;&emsp;&ensp;&nbsp;Erds Mabilog - <a href="mailto:emabilog@csus.edu">emabilog@csus.edu</a>
+<br>
+Luis De Santiago - <a href="mailto:lpdesantiago@csus.edu">lpdesantiago@csus.edu</a>&emsp;&emsp;&emsp;&emsp;Munir Omar - <a href="mailto:muniromar@csus.edu">muniromar@csus.edu</a>
+<br>
+Ritchie Martinez - <a href="mailto:ritchiemartinez@csus.edu">ritchiemartinez@csus.edu</a>&emsp;&emsp;&emsp;&ensp;Frank Kutsar - <a href="mailto:fkutsar@csus.edu">fkutsar@csus.edu</a>
+<br>
+Abhijit Singh Ubhi - <a href="mailto:abhijitsinghubhi@csus.edu">abhijitsinghubhi@csus.edu</a>&emsp;&emsp;Gaurav Shergill - <a href="mailto:gauravshergill@csus.edu">gauravshergill@csus.edu</a>
+<br>
+<br>
+</p>
 
 <div align="center">
   <img src="public/images/Sac State Computer Science Logo.jpg" alt="CSUS College of Engineering & Computer Science Logo" width="200">
+  <img src="public/readme-images/CODE_BLOODED_LOGO.jpg" alt="Code Blooded Team Logo" width="200">
 </div>
 
 <h3 align="center"> College of Engineering and Computer Science
@@ -333,32 +346,11 @@ California State University, Sacramento
 <br>
 Campus Main Phone: (916) 278-6011
 <br>
-<a href="https://www.csus.edu/college/engineering-computer-science/computer-science/">Computer Science Department</a>
+<a href="https://www.csus.edu/college/engineering-computer-science/computer-science/">Computer Science Department</a> 
 </h3>
 
-
-## Project Members
-
-<table>
-  <tr>
-    <td>
-      Westley Valentin - wvalentin@csus.edu<br>
-      Munir Omar - muniromar@csus.edu<br>
-      Erds Mabilog - emabilog@csus.edu<br>
-      Luis De Santiago - lpdesantiago@csus.edu<br>
-      Ritchie Martinez - ritchiemartinez@csus.edu<br>
-      Frank Kutsar - fkutsar@csus.edu<br>
-      Abhijit Singh Ubhi - abhijitsinghubhi@csus.edu<br>
-      Gaurav Shergill - gauravshergill@csus.edu
-    </td>
-    <td>
-      <img src="public/readme-images/CODE_BLOODED_LOGO.jpg" alt="Code Blooded Team Logo" width="200">
-    </td>
-  </tr>
-</table>
-
+#### Project Link: [PBMS](https://github.com/wesbruh/PBMS)
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- MARKDOWN LINKS & IMAGES -->
