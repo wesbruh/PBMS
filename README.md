@@ -97,35 +97,41 @@ Our team recognized the need for a centralized, automated platform that would st
 The home page introduces Your Roots Photography and highlights key services such as weddings, engagements, family portraits, and lifestyle shoots.
 
 <div align="center">
-  <img src="public/images/ProductNameSSForREADME.png" alt="PBMS client dashboard screenshot" width="900">
+  <img src="public/readme-images/LandingPage.png" alt="PBMS landing page screenshot" width="900">
+  <img src="public/readme-images/Services.png" alt="PBMS landing page screenshot" width="900">
 </div>
 
 ### Login Page
 Users can create an account and log in to securely access their personal dashboard and content.
 
 <div align="center">
-  <img src="public/images/login.png" alt="PBMS client dashboard screenshot" width="900">
+  <img src="public/readme-images/Login.png" alt="PBMS login page screenshot" width="900">
 </div>
 
 ### Booking Request (Inquiry Form)
-text here and new image
+Clients can submit a booking request through the inquiry form by providing their name, contact information, desired session type, preferred date and location, and any special requests. Available dates are dynamically generated based on the photographer's current availability. To submit an inquiry for the first time, an account must be created by the user first.
 
 <div align="center">
-  <img src="" alt="PBMS client dashboard screenshot" width="900">
+  <img src="public/readme-images/Inquiry1.png" alt="PBMS inquiry page screenshot" width="900">
+  <img src="public/readme-images/Inquiry2.png" alt="PBMS inquiry page screenshot" width="900">
+  <img src="public/readme-images/Inquiry3.png" alt="PBMS inquiry page screenshot" width="900">
 </div>
 
 ### Client Dashboard
 The Client Dashboard offers users a clean, organized, and personalized overview of all their photography-related information including upcoming sessions, invoices, galleries, and notifications.
 
 <div align="center">
-  <img src="public/images/westdash.png" alt="PBMS client dashboard screenshot" width="900">
+  <img src="public/readme-images/ClientDashboard.png" alt="PBMS client dashboard screenshot" width="900">
 </div>
 
 ### Admin Dashboard
-text here and new image
+The Admin Dashboard gives the photographer full control over all business operations. From here, the admin can view business analytics, view and manage pending client bookings, upload photo galleries, create and download/send invoices, and manage pre-session questionnaires and contracts, all from a single centralized interface.
 
 <div align="center">
-  <img src="" alt="PBMS admin dashboard screenshot" width="900">
+  <img src="public/readme-images/AdminHome.png" alt="PBMS admin home page dashboard screenshot" width="900">
+  <img src="public/readme-images/AdminSessions.png" alt="PBMS admin home page dashboard screenshot" width="900">
+  <img src="public/readme-images/AdminGalleries.png" alt="PBMS admin home page dashboard screenshot" width="900">
+  <img src="public/readme-images/AdminForms.png" alt="PBMS admin home page dashboard screenshot" width="900">
 </div>
 
 
@@ -140,7 +146,7 @@ Below is the Entity Relationship Diagram (ERD) that defines the data structure f
 This diagram outlines the relationships between key components such as clients, sessions, invoices, payments, galleries, and questionnaires/contract forms.
 
 <div align="center">
-  <img src="public/images/ERD_PBMS.png" alt="PBMS ERD" width="800">
+  <img src="public/readme-images/ERD.png" alt="PBMS ERD" width="800">
 </div>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -171,6 +177,7 @@ This diagram outlines the relationships between key components such as clients, 
  [![Canva]][Canva-url]
  [![Discord]][Discord-url]
  [![Canvas]][Canvas-url]
+ [![Zoom]][Zoom-url]
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -322,7 +329,6 @@ For full deployment documentation including Render Service Configuration, enviro
 <br>
 California State University, Sacramento
 <br>
-California State University, Sacramento
 6000 J Street, Sacramento, CA 95819
 <br>
 Campus Main Phone: (916) 278-6011
@@ -333,16 +339,23 @@ Campus Main Phone: (916) 278-6011
 
 ## Project Members
 
-Westley Valentin - wvalentin@csus.edu  
-Munir Omar - muniromar@csus.edu  
-Erds Mabilog - emabilog@csus.edu  
-Luis De Santiago - lpdesantiago@csus.edu  
-Ritchie Martinez - ritchiemartinez@csus.edu  
-Frank Kutsar - fkutsar@csus.edu  
-Abhijit Singh Ubhi - abhijitsinghubhi@csus.edu  
-Gaurav Shergill - gauravshergill@csus.edu  
-
-#### Project Link: [PBMS](https://github.com/wesbruh/PBMS)
+<table>
+  <tr>
+    <td>
+      Westley Valentin - wvalentin@csus.edu<br>
+      Munir Omar - muniromar@csus.edu<br>
+      Erds Mabilog - emabilog@csus.edu<br>
+      Luis De Santiago - lpdesantiago@csus.edu<br>
+      Ritchie Martinez - ritchiemartinez@csus.edu<br>
+      Frank Kutsar - fkutsar@csus.edu<br>
+      Abhijit Singh Ubhi - abhijitsinghubhi@csus.edu<br>
+      Gaurav Shergill - gauravshergill@csus.edu
+    </td>
+    <td>
+      <img src="public/readme-images/CODE_BLOODED_LOGO.jpg" alt="Code Blooded Team Logo" width="200">
+    </td>
+  </tr>
+</table>
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -410,3 +423,6 @@ Gaurav Shergill - gauravshergill@csus.edu
 
 [Canvas]: https://img.shields.io/badge/Canvas-E72429?logo=canvas
 [Canvas-url]: https://www.instructure.com/
+
+[Zoom]: https://img.shields.io/badge/Zoom-2D8CFF?logo=zoom&logoColor=white
+[Zoom-url]: https://www.zoom.com/
