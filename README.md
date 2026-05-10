@@ -63,9 +63,9 @@
 
 <!-- SYNOPSIS -->
 # About The Project 
-The Photography Business Management System (PBMS) is a full-stack web platform built for our client, Bailey White of Your Roots Photography. The system streamlines the entire client experience by allowing users to create accounts, schedule photography sessions, submit inquiries, make secure payments, and access their final galleries. On the admin side, the platform provides an intuitive dashboard for managing clients, bookings, invoices, contracts, galleries, and notifications all in one place.
+The Photography Business Management System (PBMS) is a full-stack web platform built for our client, Bailey White of Your Roots Photography. The system streamlines the entire client experience by allowing users to create accounts, submit inquiries to schedule photography sessions, make secure payments, and access their final galleries. On the admin side, the platform provides an intuitive dashboard for viewing relevant business analytics and managing clients, bookings, invoices, contracts, galleries, and notifications all in one place.
 
-The application was created because Bailey was managing all of these tasks manually and as a solo business owner. Booking sessions, sending invoices, delivering galleries, and tracking payments were all handled through separate tools or by hand. Our team recognized the need for a centralized, automated platform that would consolidate these workflows into a single system, reduce administrative overhead, and provide a more professional experience for her clients.
+This application was created because Bailey had been managing all of the tasks manually as a solo business owner. Booking sessions, sending invoices, delivering galleries, and tracking payments were all handled through separate tools or by hand. Our team recognized the need for a centralized, automated platform that would consolidate these workflows into a single system, reducing administrative overhead and provide a more professional experience for her and her clients.
 
 This project was developed as part of the Senior Capstone sequence (CSC 190/191) at California State University, Sacramento.
 
@@ -77,9 +77,9 @@ This project was developed as part of the Senior Capstone sequence (CSC 190/191)
 
 # Background
 
-Your Roots Photography is a modern photography brand based in Northern California that is dedicated to capturing real, emotional, and artistic imagery. With a focus on lifestyle, wedding, and maternity photography, the business combines a documentary approach with creative editing to produce stunning visuals that clients can treasure for years. The brand's mission is to create an effortless client experience, from booking to final gallery delivery completely. The business emphasizes professionalism, creativity, and strong client relationships.
+Your Roots Photography is a modern photography brand based in Northern California that is dedicated to capturing real, emotional, and artistic imagery. With a focus on lifestyle, wedding, and maternity photography, the business combines a documentary approach with creative editing to produce stunning visuals that clients can treasure for years to come. The brand's mission is to create an effortless client experience, from booking to final gallery delivery. The business emphasizes professionalism, creativity, and strong client relationships.
 
-Our team recognized the need for a centralized, automated platform that would streamline these processes. 
+Our team recognized the need for a centralized, automated platform that would streamline the following processes: 
 
 * Client dashboard - overview of all their photography-related information
 * Booking Requests
@@ -102,7 +102,7 @@ The home page introduces Your Roots Photography and highlights key services such
 </div>
 
 ### Login Page
-Users can create an account and log in to securely access their personal dashboard and content.
+Users can create an account and log in to securely access their personal dashboard and session information.
 
 <div align="center">
   <img src="public/readme-images/Login.png" alt="PBMS login page screenshot" width="900">
@@ -125,7 +125,7 @@ The Client Dashboard offers users a clean, organized, and personalized overview 
 </div>
 
 ### Admin Dashboard
-The Admin Dashboard gives the photographer full control over all business operations. From here, the admin can view business analytics, view and manage pending client bookings, upload photo galleries, create and download/send invoices, and manage pre-session questionnaires and contracts, all from a single centralized interface.
+The Admin Dashboard gives the photographer full control over all business operations. From here, the admin can view business analytics, view and manage pending client bookings, upload photo galleries, view and download invoices or manage payments, and manage pre-session questionnaire and contract templates, all from a single centralized interface.
 
 <div align="center">
   <img src="public/readme-images/AdminHome.png" alt="PBMS admin home page dashboard screenshot" width="900">
@@ -239,13 +239,13 @@ RESEND_API_KEY=<your_resend_api_key>
 
 ## Running the Application
  
-1. Start the backend server:
+1. From the project root, start the backend server by running:
    ```sh
    cd backend
    npm start
    ```
  
-2. In a separate terminal, start the frontend dev server:
+2. In a separate terminal, (from the project root) start the frontend dev server:
    ```sh
    npm run dev
    ```
@@ -257,6 +257,8 @@ RESEND_API_KEY=<your_resend_api_key>
 <!-- TESTING -->
 ## TESTING
 To test any new changes made to the application and help prevent regressions, run the local test suite before pushing code changes to the repository. This helps ensure that new changes do not affect existing functionality.
+
+> **Note:** ensure these commands are all also being run from the project root
 
 To run all tests with coverage enabled, use the following command:
 
