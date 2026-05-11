@@ -211,7 +211,6 @@ Follow these instructions to get a local copy of the project up and running on y
    ```sh
    cd backend
    npm ci
-   cd ..
    ```
    
 ## Environment Variables
@@ -239,9 +238,8 @@ RESEND_API_KEY=<your_resend_api_key>
 
 ## Running the Application
  
-1. From the project root, start the backend server by running:
+1. From the backend folder in the project root folder, start the server by running:
    ```sh
-   cd backend
    npm start
    ```
  
@@ -272,10 +270,10 @@ To run a specific test file with coverage enabled, use the following command:
 npm test <test_file_path> -- --coverage
 ```
 
-For example, to run the existing `SessionTypesMainPage.test.js` test file located in `tests/unit/frontend`, use the following command:
+For example, to run the existing `SessionTypesMainPage.test.js` test file located in `tests/unit/frontend/AdminPages`, use the following command:
 
 ```sh
-npm test tests/unit/frontend/SessionTypesMainPage.test.js -- --coverage
+npm test tests/unit/frontend/AdminPages/SessionTypesMainPage.test.js -- --coverage
 ```
 
 Additionally, below are the scripts available to run specific tests:
