@@ -267,13 +267,13 @@ npm test -- --coverage
 To run a specific test file with coverage enabled, use the following command:
 
 ```sh
-npm test <test_file_path> -- --coverage
+npm test <test_file_name> -- --coverage
 ```
 
 For example, to run the existing `SessionTypesMainPage.test.js` test file located in `tests/unit/frontend/AdminPages`, use the following command:
 
 ```sh
-npm test tests/unit/frontend/AdminPages/SessionTypesMainPage.test.js -- --coverage
+npm test SessionTypesMainPage.test.js -- --coverage
 ```
 
 Additionally, below are the scripts available to run specific tests:
